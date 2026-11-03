@@ -1,0 +1,12 @@
+<li class="file-row">
+  {{ icon.file(14) }}
+  <span>{{ file|original_filename }}</span>
+  {% if file.status.value == "pending_review" %}
+    <span class="badge warn">{{ t("files.pending") }}</span>
+    <a class="link" href="/files/{{ file.id }}/review">{{ t("files.review") }}</a>
+  {% elif file.status.value == "rejected" %}
+    <span class="badge error">{{ t("files.rejected") }}</span>
+  {% else %}
+    <span class="badge shield">{{ t("files.approved") }}</span>
+  {% endif %}
+</li>

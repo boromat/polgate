@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}{{ t("account.title") }} · {{ t("app.name") }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>{{ t("account.title") }}</h1>
+  <p class="sub">{{ t("account.intro") }}</p>
+</div>
+
+{% if flash %}<p class="alert ok spaced-below">{{ t(flash) }}</p>{% endif %}
+
+<div class="grid2">
+<div class="card">
+  <h3>{{ t("account.identity") }}</h3>
+  <dl class="facts">
+    <dt>{{ t("auth.username") }}</dt><dd class="mono">{{ user.username }}</dd>
+    <dt>{{ t("admin.role") }}</dt><dd><span class="badge">{{ user.role.value }}</span></dd>
+  </dl>
+  <form method="post" action="/account/language" class="row">
+    <label class="grow">{{ t("admin.language") }}
+      <select name="language">
+        <option value="pl" {{ 'selected' if user.language == 'pl' }}>PL</option>
+        <option value="en" {{ 'selected' if user.language == 'en' }}>EN</option>
+      </select>
+    </label>
+    <button class="btn secondary small" type="submit">{{ t("account.save_language") }}</button>
+  </form>
+</div>
+
+<div class="card">
+  <h3>{{ t("account.password") }}</h3>
+  {% if error %}<p class="alert error">{{ t(error) }}</p>{% endif %}
+  <form method="post" action="/account/password" class="stack">
+    <label>{{ t("account.current") }}
+      <input name="current" type="password" required autocomplete="current-password">
+    </label>
+    <label>{{ t("account.new") }}
+      <input name="new" type="password" required autocomplete="new-password" minlength="{{ min_length }}">
+    </label>
+    <label>{{ t("account.confirm") }}
+      <input name="confirm" type="password" required autocomplete="new-password" minlength="{{ min_length }}">
+    </label>
+    <p class="small subtle">{{ t("account.rule", count=min_length) }}</p>
+    <button class="btn" type="submit">{{ t("account.change") }}</button>
+  </form>
+</div>
+</div>
+{% endblock %}

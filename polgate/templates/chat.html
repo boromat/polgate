@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% block title %}{{ conversation.title or t("chat.untitled") }} · {{ t("app.name") }}{% endblock %}
+{% block body %}
+<div class="chat-layout">
+  <aside class="sidebar">
+    <form method="post" action="/chat/new">
+      <button class="btn block" type="submit">{{ icon.plus() }} {{ t("chat.new") }}</button>
+    </form>
+    <nav aria-label="{{ t('a11y.conversations') }}">
+      <ul class="conversations">
+        {% for c in conversations %}
+          <li class="{{ 'active' if c.id == conversation.id }}">
+            <a href="/chat/{{ c.id }}" {{ 'aria-current=page' if c.id == conversation.id }}>
+              {{ c.title or t("chat.untitled") }}
+            </a>
+          </li>
+        {% endfor %}
+      </ul>
+    </nav>
+    <p class="small subtle">{{ t("chat.sidebar_hint") }}</p>
+  </aside>
+
+  <main class="chat" id="main">
+    <header class="chat-header" data-print-note="{{ t('chat.print_note') }}">
+      <span class="chat-title">{{ conversation.title or t("chat.untitled") }}</span>
+      <div class="row">
+        {% if messages %}
+          <a class="link no-print" href="#" data-print>{{ t("chat.print") }}</a>
+        {% endif %}
+        {% if masking_off %}
+          <span class="badge error" title="{{ t('chat.unprotected_hint') }}">
+            {{ icon.shield(13) }} {{ t("chat.unprotected") }}
+          </span>
+        {% else %}
+          <span class="badge shield" title="{{ t('chat.protected_hint') }}">
+            {{ icon.shield(13) }} {{ t("chat.protected") }}
+          </span>
+        {% endif %}
+      </div>
+    </header>
+
+    {% if flash %}<p class="flash">{{ t(flash) }}</p>{% endif %}
+
+    <div id="messages">
+      {% if not messages %}
+        <div class="empty-state">
+          {{ icon.shield(40) }}
+          <h3>{{ t("chat.empty_title") }}</h3>
+          <p class="small">{{ t("chat.empty_body") }}</p>
+        </div>
+      {% endif %}
+      {% for m in messages %}
+        <article class="msg {{ m.role }}"
+                 data-speaker="{{ t('chat.speaker_you') if m.role == 'user' else t('chat.speaker_model') }}">
+          <div class="bubble">{{ m.text }}</div>
+          <div class="msg-meta">
+            <time datetime="{{ m.created_at | iso_utc }}" data-local-time>{{ m.created_at.strftime("%H:%M") }}</time>
+            {% if m.role == "user" %}
+              {% if m.entity_count %}
+                <span class="badge shield" title="{{ t('chat.masked_hint') }}">{{ icon.shield(11) }} {{ m.entity_count }}</span>
+              {% else %}
+                <span class="badge" title="{{ t('chat.nothing_masked_hint') }}">{{ t("chat.nothing_masked") }}</span>
+              {% endif %}
+              {% if m.judge_hits %}
+                <span class="badge warn">{{ t("chat.stage2_badge", count=m.judge_hits) }}</span>
+              {% endif %}
+              <button class="link no-print" hx-get="/chat/{{ conversation.id }}/messages/{{ m.id }}/preview"
+                      hx-target="#preview-{{ m.id }}" hx-swap="innerHTML"
+                      aria-controls="preview-{{ m.id }}">
+                {{ t("chat.preview") }}
+              </button>
+            {% endif %}
+          </div>
+          {% if m.role == "user" %}<div class="inline-preview" id="preview-{{ m.id }}"></div>{% endif %}
+        </article>
+      {% endfor %}
+    </div>
+
+    {% if approved_files %}
+      <div class="attachments no-print">
+        {% for f in approved_files %}<span class="chip">{{ icon.file(13) }} {{ f|original_filename }}</span>{% endfor %}
+      </div>
+    {% endif %}
+    <ul class="file-list no-print" id="file-list">
+      {# The partial reads `file`, so the loop has to bind that name: `f` left it undefined and
+         every conversation holding an unapproved upload rendered a 500. #}
+      {% for file in files if file.status.value != "approved" %}
+        {% include "partials/file_row.html" %}
+      {% endfor %}
+    </ul>
+
+    <div class="composer no-print">
+      <form class="composer-form" hx-post="/chat/{{ conversation.id }}/send" hx-target="#messages"
+            hx-swap="beforeend" hx-disabled-elt="find button" data-reset-on-success>
+        <div class="composer-main">
+          <label class="sr-only" for="composer-text">{{ t("chat.placeholder") }}</label>
+          <textarea id="composer-text" name="text" rows="2" required
+                    placeholder="{{ t('chat.placeholder') }}"
+                    data-autogrow="200" data-submit-on-enter></textarea>
+          <button class="btn" type="submit" aria-label="{{ t('chat.send') }}" title="{{ t('chat.send_hint') }}">
+            {{ icon.send() }}
+          </button>
+        </div>
+        <details class="composer-details">
+          <summary>{{ t("chat.more_options") }}</summary>
+          <label for="extra-terms">{{ t("chat.extra_terms") }}</label>
+          <input id="extra-terms" name="extra_terms" placeholder="{{ t('chat.extra_terms_hint') }}">
+        </details>
+      </form>
+
+      <form class="upload-row" hx-post="/files/upload?conversation_id={{ conversation.id }}"
+            hx-encoding="multipart/form-data" hx-target="#file-list" hx-swap="beforeend"
+            hx-disabled-elt="find button" data-reset-on-success>
+        <label class="file-picker">
+          {{ icon.paperclip(14) }} <span>{{ t("files.choose") }}</span>
+          <input type="file" name="file" required data-names>
+        </label>
+        <span class="small subtle" data-name></span>
+        <button class="btn secondary small" type="submit">{{ t("files.upload") }}</button>
+      </form>
+    </div>
+  </main>
+</div>
+{% endblock %}

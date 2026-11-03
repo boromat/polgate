@@ -1,0 +1,8 @@
+{% set path = request.url.path %}
+<h1 class="page-title">{{ t("nav.admin") }}</h1>
+<nav class="subnav">
+  <a href="/admin" class="{{ 'active' if path == '/admin' }}">{{ t("admin.stats") }}</a>
+  <a href="/admin/users" class="{{ 'active' if path.startswith('/admin/users') }}">{{ t("admin.users") }}</a>
+  <a href="/admin/policy" class="{{ 'active' if path.startswith('/admin/policy') }}">{{ t("admin.policy") }}</a>
+  <a href="/admin/audit" class="{{ 'active' if path.startswith('/admin/audit') }}">{{ t("admin.audit") }}</a>
+</nav>

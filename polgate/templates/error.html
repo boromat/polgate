@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}{{ status }} · {{ t("app.name") }}{% endblock %}
+{% block content %}
+<div class="auth-wrap">
+  <div class="card auth-card">
+    <p class="mono subtle">{{ status }}</p>
+    <h2>{{ t(title_key) }}</h2>
+    <p class="muted small">{{ t(body_key) }}</p>
+    <a class="btn block" href="/">{{ t("error.home") }}</a>
+  </div>
+</div>
+{% endblock %}

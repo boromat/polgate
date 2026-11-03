@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block content %}
+{% include "admin/_subnav.html" %}
+<div class="table-wrap">
+  <table class="grid">
+    <thead><tr>
+      <th>{{ t("auth.username") }}</th><th>{{ t("admin.role") }}</th>
+      <th>{{ t("admin.active") }}</th><th>{{ t("admin.actions") }}</th>
+    </tr></thead>
+    <tbody>
+      {% for u in users %}
+        <tr>
+          <td><strong>{{ u.username }}</strong></td>
+          <td><span class="badge">{{ u.role.value }}</span></td>
+          <td>
+            {% if u.is_active %}<span class="badge shield">{{ t("admin.yes") }}</span>
+            {% else %}<span class="badge error">{{ t("admin.no") }}</span>{% endif %}
+          </td>
+          <td>
+            <div class="row-actions compact">
+              <form method="post" action="/admin/users/{{ u.id }}/toggle">
+                <button class="link" type="submit">{{ t("admin.toggle") }}</button>
+              </form>
+              {% if u.id == user.id %}
+                <a class="link" href="/account">{{ t("admin.own_password") }}</a>
+              {% else %}
+                <form method="post" action="/admin/users/{{ u.id }}/password" class="row-actions compact">
+                  <label class="sr-only" for="pw-{{ u.id }}">{{ t("admin.new_password") }}</label>
+                  <input id="pw-{{ u.id }}" name="password" type="password" required
+                         minlength="{{ min_length }}" placeholder="{{ t('admin.new_password') }}">
+                  <button class="link" type="submit">{{ t("admin.reset_password") }}</button>
+                </form>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div class="card narrow spaced">
+  <h3>{{ t("admin.new_user") }}</h3>
+  <form method="post" action="/admin/users" class="stack">
+    <label>{{ t("auth.username") }}<input name="username" required></label>
+    <label>{{ t("auth.password") }}
+      <input name="password" type="password" required minlength="{{ min_length }}">
+    </label>
+    <div class="row">
+      <label class="grow">{{ t("admin.role") }}
+        <select name="role"><option value="user">user</option><option value="admin">admin</option></select>
+      </label>
+      <label class="grow">{{ t("admin.language") }}
+        <select name="language"><option value="pl">PL</option><option value="en">EN</option></select>
+      </label>
+    </div>
+    <button class="btn" type="submit">{{ t("admin.create") }}</button>
+  </form>
+</div>
+{% endblock %}

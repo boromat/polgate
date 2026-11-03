@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="hero">
+  <p class="eyebrow">{{ t("landing.eyebrow") }}</p>
+  <h1>{{ t("app.tagline") }}</h1>
+  <p class="lead">{{ t("app.pitch") }}</p>
+  <a class="btn" href="/login">{{ t("auth.login") }}</a>
+</section>
+
+<div class="sheet">
+  <div class="sheet-head">
+    <span>{{ t("landing.employee_types") }}</span>
+    <span>{{ t("landing.provider_sees") }}</span>
+  </div>
+  <div class="sheet-body">
+    <div class="sheet-col">
+      <p>Anna Wiśniewska<br>PESEL 45831523452<br>ul. Krótka 5, Kraków<br>anna@example.com</p>
+    </div>
+    <div class="sheet-divider"></div>
+    <div class="sheet-col">
+      <p><span class="token">&lt;OSOBA_1&gt;</span><br>PESEL <span class="token">&lt;PESEL_1&gt;</span><br><span class="token">&lt;ADRES_1&gt;</span>, <span class="token">&lt;MIEJSCE_1&gt;</span><br><span class="token">&lt;EMAIL_1&gt;</span></p>
+    </div>
+  </div>
+</div>
+
+<div class="features">
+  <div class="feature">
+    <span class="num">01</span>
+    <h3>{{ t("landing.f1_title") }}</h3>
+    <p>{{ t("landing.f1_body") }}</p>
+  </div>
+  <div class="feature">
+    <span class="num">02</span>
+    <h3>{{ t("landing.f2_title") }}</h3>
+    <p>{{ t("landing.f2_body") }}</p>
+  </div>
+  <div class="feature">
+    <span class="num">03</span>
+    <h3>{{ t("landing.f3_title") }}</h3>
+    <p>{{ t("landing.f3_body") }}</p>
+  </div>
+  <div class="feature">
+    <span class="num">04</span>
+    <h3>{{ t("landing.f4_title") }}</h3>
+    <p>{{ t("landing.f4_body") }}</p>
+  </div>
+</div>
+{% endblock %}

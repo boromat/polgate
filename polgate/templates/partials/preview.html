@@ -1,0 +1,11 @@
+<div class="preview">
+  <div class="col">
+    <h4>{{ t("preview.original") }}</h4>
+    <pre>{{ original }}</pre>
+  </div>
+  <div class="divider"></div>
+  <div class="col">
+    <h4>{{ t("preview.sent") }}</h4>
+    <pre>{{ sent | highlight_tokens }}</pre>
+  </div>
+</div>

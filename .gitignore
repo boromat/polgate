@@ -1,0 +1,20 @@
+.venv*/
+__pycache__/
+*.pyc
+.env
+# Runtime state: the database, uploaded documents and, when VAULT_KEY is left empty,
+# the generated Fernet key. None of it belongs in the repository.
+data/*
+!data/.gitkeep
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+
+# coverage artefacts
+.coverage
+.coverage.*
+htmlcov/
+
+# build output
+dist/
+build/

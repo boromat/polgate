@@ -1,0 +1,121 @@
+name: Release
+
+# Pushing a tag such as v0.1.0 publishes the hub: the Docker image to GitHub Container Registry and
+# a GitHub release whose notes come from CHANGELOG.md. The masking engine, polanon, is released to
+# PyPI from its own repository, https://github.com/boromat/polanon.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Tag, version and changelog agree
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+
+      # A release must not ship the placeholders the repository is created with.
+      - name: No placeholders left
+        run: |
+          if grep -rn --exclude-dir=.git -e GITHUB_OWNER -e "<author>" LICENSE README.md .github/ISSUE_TEMPLATE; then
+            echo "Replace the placeholders above before tagging a release." >&2
+            exit 1
+          fi
+
+      # A tag that disagrees with the code would publish an image under a number the hub inside it
+      # does not carry, and a release without its changelog entry would ship with no notes. The
+      # installed version is polgate.__version__, which pyproject.toml reads as its only version,
+      # so it is also the number the hub reports on /health.
+      - name: Compare
+        run: |
+          pip install --no-deps -e .
+          python - "${GITHUB_REF_NAME#v}" <<'PY'
+          import importlib.metadata
+          import re
+          import sys
+
+          tag = sys.argv[1]
+          version = importlib.metadata.version("polgate")
+          if version != tag:
+              sys.exit(f"tag v{tag} does not match polgate {version}")
+          changelog = open("CHANGELOG.md", encoding="utf-8").read()
+          if not re.search(rf"^## \[{re.escape(tag)}\]", changelog, re.MULTILINE):
+              sys.exit(f"CHANGELOG.md has no '## [{tag}]' section")
+          if re.search(rf"^## \[{re.escape(tag)}\] - Unreleased", changelog, re.MULTILINE):
+              sys.exit(f"CHANGELOG.md still says '## [{tag}] - Unreleased': write the release date")
+          PY
+
+  image:
+    name: Docker image to GitHub Container Registry
+    needs: check
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # arm64 as well, for Apple Silicon laptops and small ARM servers.
+      - uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
+
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      - uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # 0.1.0 and 0.1, plus latest for a release that is not a pre-release.
+      - id: meta
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+
+      - uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  github:
+    name: GitHub release
+    needs: image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Notes from the changelog
+        run: |
+          python - "${GITHUB_REF_NAME#v}" > notes.md <<'PY'
+          import re
+          import sys
+
+          tag = sys.argv[1]
+          changelog = open("CHANGELOG.md", encoding="utf-8").read()
+          section = re.search(
+              rf"^## \[{re.escape(tag)}\][^\n]*\n(.*?)(?=^## \[|\Z)", changelog, re.MULTILINE | re.DOTALL
+          )
+          print(section.group(1).strip())
+          PY
+
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --notes-file notes.md --verify-tag

@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block content %}
+{% include "admin/_subnav.html" %}
+<p class="policy-summary">
+  <span class="chip">{{ t("policy.hil_chat") }}: {{ t("policy.manual") if policy.hil_chat.value == "review" else t("policy.auto") }}</span>
+  <span class="chip">{{ t("policy.hil_files") }}: {{ t("policy.manual") if policy.hil_files.value == "review" else t("policy.auto") }}</span>
+  <span class="chip">{{ t("policy.judge") }}: {{ t("admin.yes") if policy.judge_enabled else t("admin.no") }}</span>
+  <span class="chip">{{ t("policy.entities") }}: {{ selected | length }}</span>
+  <span class="chip">{{ t("policy.vault_ttl_short", days=policy.vault_ttl_days) if policy.vault_ttl_days else t("policy.forever") }}</span>
+</p>
+{% if masking_off %}
+  <p class="alert error spaced-below">{{ t("admin.masking_off") }}</p>
+{% endif %}
+<form class="card wide" method="post" action="/admin/policy">
+  <fieldset>
+    <legend>{{ t("policy.review") }}</legend>
+    <div class="row">
+      <label class="grow">{{ t("policy.hil_chat") }}
+        <select name="hil_chat">
+          <option value="auto" {{ 'selected' if policy.hil_chat.value == 'auto' }}>{{ t("policy.auto") }}</option>
+          <option value="review" {{ 'selected' if policy.hil_chat.value == 'review' }}>{{ t("policy.manual") }}</option>
+        </select>
+      </label>
+      <label class="grow">{{ t("policy.hil_files") }}
+        <select name="hil_files">
+          <option value="auto" {{ 'selected' if policy.hil_files.value == 'auto' }}>{{ t("policy.auto") }}</option>
+          <option value="review" {{ 'selected' if policy.hil_files.value == 'review' }}>{{ t("policy.manual") }}</option>
+        </select>
+      </label>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>{{ t("policy.judge") }}</legend>
+    <label class="inline">
+      <input type="checkbox" name="judge_enabled" {{ 'checked' if policy.judge_enabled }}>
+      {{ t("policy.judge_enabled") }}
+    </label>
+    <label class="spaced">{{ t("policy.judge_fallback") }}
+      <select name="judge_fallback">
+        <option value="send_stage1" {{ 'selected' if policy.judge_fallback.value == 'send_stage1' }}>{{ t("policy.fallback_send") }}</option>
+        <option value="block" {{ 'selected' if policy.judge_fallback.value == 'block' }}>{{ t("policy.fallback_block") }}</option>
+      </select>
+    </label>
+  </fieldset>
+
+  <fieldset>
+    <legend>{{ t("policy.retention") }}</legend>
+    <div class="row">
+      <label class="grow">{{ t("policy.vault_ttl") }}
+        <input name="vault_ttl_days" type="number" min="1" value="{{ policy.vault_ttl_days or '' }}">
+      </label>
+      <label class="grow">{{ t("policy.history_ttl") }}
+        <input name="history_ttl_days" type="number" min="1" value="{{ policy.history_ttl_days or '' }}">
+      </label>
+    </div>
+    <p class="small subtle">{{ t("policy.retention_hint") }}</p>
+  </fieldset>
+
+  <fieldset>
+    <legend>{{ t("policy.entities") }}</legend>
+    <p class="small subtle">{{ t("policy.entities_hint") }}</p>
+    <div class="checks">
+      {% for e in all_entities %}
+        <label class="inline">
+          <input type="checkbox" name="entities" value="{{ e }}" {{ 'checked' if e in selected }}>
+          <span class="token">{{ e }}</span>
+        </label>
+      {% endfor %}
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>{{ t("policy.names") }}</legend>
+    <div class="row name-lists">
+      <div class="grow">
+        <label>{{ t("policy.denylist") }}
+          <textarea name="denylist" rows="8" placeholder="ACME Sp. z o.o.">{{ policy.denylist }}</textarea>
+        </label>
+        <p class="small subtle">{{ t("policy.denylist_hint") }}</p>
+      </div>
+      <div class="grow">
+        <label>{{ t("policy.allowlist") }}
+          <textarea name="allowlist" rows="8" placeholder="Facebook">{{ policy.allowlist }}</textarea>
+        </label>
+        <p class="small subtle">{{ t("policy.allowlist_hint") }}</p>
+      </div>
+    </div>
+  </fieldset>
+  <button class="btn spaced" type="submit">{{ t("policy.save") }}</button>
+</form>
+{% endblock %}

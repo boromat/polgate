@@ -1,0 +1,10 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Original values leaked somewhere they should not
+    url: https://github.com/boromat/polgate/security/advisories/new
+    about: Report privately. A public issue would publish the leak along with the bug.
+  - name: Something was not masked, or was masked wrongly
+    url: https://github.com/boromat/polanon/issues
+    about: >-
+      Detection belongs to polanon, the library that does the masking. Report it there, with
+      invented data only.

@@ -1,0 +1,102 @@
+[project]
+# The anonymization engine is the polanon library, installed from PyPI; this repository is the hub.
+name = "polgate"
+# The version is polgate.__version__ (see [tool.setuptools.dynamic]), the number /health reports.
+dynamic = ["version"]
+description = "Self-hosted company LLM hub that anonymizes PII locally before cloud LLM calls and restores it in responses. Polish-first."
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "BoroMat" }]
+requires-python = ">=3.12"
+# Packages that parse what users send or guard secrets start at their first release without a known
+# vulnerability: an older one still satisfied a looser floor, and pip keeps what is installed.
+dependencies = [
+    "fastapi>=0.115",
+    "starlette>=1.3.1",             # imported directly; fastapi's own floor allows vulnerable ones
+    "uvicorn[standard]>=0.30",
+    "jinja2>=3.1.6",
+    "python-multipart>=0.0.31",     # parses every upload
+    "itsdangerous>=2.2",            # signed session cookies
+    "sqlmodel>=0.0.22",
+    "pydantic-settings>=2.4",
+    "cryptography>=49",             # Fernet for the vault
+    "argon2-cffi>=23.1",            # password hashing
+    "httpx>=0.27",                  # OpenAI-compatible client + Ollama
+    "polanon[ner,judge]>=0.2.0",    # the masking engine; ner brings spaCy
+    "pypdf>=6.21.1",                # reads uploaded PDFs
+    "python-docx>=1.1",
+    "openpyxl>=3.1",
+    "sse-starlette>=2.1",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "pytest-asyncio>=0.23", "pytest-cov>=5", "ruff>=0.16", "mypy>=2.3", "pre-commit>=3.8", "httpx>=0.27"]
+ocr = ["pytesseract>=0.3", "pillow>=10"]          # needs the `tesseract` binary (sudo apt install tesseract-ocr tesseract-ocr-pol)
+
+[build-system]
+requires = ["setuptools>=77"]   # the SPDX `license` string and `license-files`
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.dynamic]
+version = { attr = "polgate.__version__" }
+
+[tool.setuptools.packages.find]
+include = ["polgate*"]
+
+# Templates, static files and translations are read from disk at runtime. An editable install reads
+# them from the source tree, which hid that a regular install - the Docker image, a wheel - had none
+# of them and failed on import looking for icons.html.
+[tool.setuptools.package-data]
+polgate = ["py.typed", "templates/**/*.html", "static/*", "static/fonts/*", "i18n/*.json"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+# E/W pycodestyle, F pyflakes, I isort, UP pyupgrade, B bugbear, SIM simplify, C4 comprehensions,
+# N naming, D docstrings (Google style), S bandit security, RUF ruff-specific, PT pytest style, ANN annotations
+select = ["E", "W", "F", "I", "UP", "B", "SIM", "C4", "N", "D", "S", "RUF", "PT", "ANN"]
+ignore = [
+    "D100", "D104",          # module/package docstrings optional (package docstrings exist where useful)
+    "D203", "D213",          # conflicting docstring styles; we use D211 + D212
+    "ANN401",                # Any allowed in rare interop spots
+    "S101",                  # assert is fine in tests (and guarded invariants)
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["D", "ANN", "S105", "S106"]
+
+[tool.ruff.lint.flake8-bugbear]
+# FastAPI's dependency-injection idiom puts callables in argument defaults on purpose.
+extend-immutable-calls = ["fastapi.Depends", "fastapi.Form", "fastapi.File", "fastapi.Query", "fastapi.Path"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.format]
+quote-style = "double"
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_unreachable = true
+plugins = ["pydantic.mypy"]
+ignore_missing_imports = true   # spacy, argon2 and openpyxl ship partial or no stubs
+exclude = ["build/", ".venv/"]
+
+[tool.coverage.run]
+source = ["polgate"]
+branch = true
+
+[tool.coverage.report]
+# A floor, not a target: the suite sits well above it, and this is what stops it sliding back.
+fail_under = 90
+show_missing = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+addopts = "-q --strict-markers"
+markers = ["slow: needs the spaCy model or network"]

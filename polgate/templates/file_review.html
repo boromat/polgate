@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="spread spaced-below">
+  <h2>{{ file|original_filename }}</h2>
+  <a class="link" href="/chat/{{ file.conversation_id }}">&larr; {{ t("nav.chat") }}</a>
+</div>
+{% if file.status.value == "rejected" %}
+<p class="muted">{{ t("files.rejected_flash") }}</p>
+{% else %}
+<p class="muted small">{{ t("files.review_hint") }}</p>
+<div class="preview">
+  <div class="col"><h4>{{ t("preview.original") }}</h4><pre>{{ original }}</pre></div>
+  <div class="divider"></div>
+  <div class="col"><h4>{{ t("preview.sent") }}</h4><pre>{{ file.text_sent | highlight_tokens }}</pre></div>
+</div>
+{% if file.status.value == "pending_review" %}
+<div class="row-actions">
+  <form method="post" action="/files/{{ file.id }}/approve">
+    <button class="btn" type="submit">{{ t("files.approve") }}</button>
+  </form>
+  <form method="post" action="/files/{{ file.id }}/reject">
+    <button class="btn danger" type="submit">{{ t("files.reject") }}</button>
+  </form>
+</div>
+{% endif %}
+{% endif %}
+{% endblock %}

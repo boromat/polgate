@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="{{ lang }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}{{ t("app.name") }}{% endblock %}</title>
+  {# HTMX would otherwise inject a <style> element for its indicators, which the policy blocks.
+     It also leaves a 4xx or 5xx answer out of the page by default, while every error partial here
+     (a refused upload, an empty message, a translated error line) is written to be swapped in.
+     Evaluating strings and running scripts in swapped content stay off even though the policy
+     would block both: nothing here needs them, and the policy may not always be this strict. #}
+  <meta name="htmx-config" content='{"includeIndicatorStyles": false,
+    "allowEval": false, "allowScriptTags": false,
+    "responseHandling": [{"code": "204", "swap": false}, {"code": "[23]..", "swap": true},
+                         {"code": "[45]..", "swap": true, "error": true}]}'>
+  <link rel="stylesheet" href="{{ asset_url('style.css') }}">
+  <link rel="icon" href="/static/favicon.svg">
+  <script src="{{ asset_url('htmx.min.js') }}" defer></script>
+  <script src="{{ asset_url('app.js') }}" defer></script>
+</head>
+<body>
+<a class="skip-link" href="#main">{{ t("a11y.skip") }}</a>
+<header class="topbar">
+  <a class="brand" href="/"><span class="brand-logo">{{ icon.shield(15) }}</span> {{ t("app.name") }}</a>
+  <nav class="topnav">
+    {% if user %}
+      <a class="navlink {{ 'active' if request.url.path.startswith('/chat') }}" href="/chat"
+         aria-label="{{ t('nav.chat') }}" title="{{ t('nav.chat') }}">
+        {{ icon.chat(16) }} <span>{{ t("nav.chat") }}</span>
+      </a>
+      {% if user.role.value == "admin" %}
+        <a class="navlink {{ 'active' if request.url.path.startswith('/admin') }}" href="/admin"
+           aria-label="{{ t('nav.admin') }}" title="{{ t('nav.admin') }}">
+          {{ icon.sliders(16) }} <span>{{ t("nav.admin") }}</span>
+        </a>
+      {% endif %}
+    {% endif %}
+  </nav>
+  <div class="topbar-side">
+    {% if user %}
+      <a class="navlink {{ 'active' if request.url.path.startswith('/account') }}" href="/account"
+         aria-label="{{ t('nav.account') }}" title="{{ t('nav.account') }}">
+        {{ icon.lock(16) }} <span>{{ user.username }}</span>
+      </a>
+      <form class="inline-form" method="post" action="/logout">
+        <button class="navlink" type="submit" title="{{ t('nav.logout') }}" aria-label="{{ t('nav.logout') }}">
+          {{ icon.logout(16) }} <span class="sr-only">{{ t("nav.logout") }}</span>
+        </button>
+      </form>
+    {% else %}
+      <a class="navlink" href="/login">{{ t("auth.login") }}</a>
+    {% endif %}
+    <span class="lang" role="group" aria-label="{{ t('a11y.language') }}">
+      <a href="?lang=pl" class="{{ 'active' if lang == 'pl' }}">PL</a>
+      <a href="?lang=en" class="{{ 'active' if lang == 'en' }}">EN</a>
+    </span>
+  </div>
+</header>
+{% block body %}
+<main class="container" id="main">{% block content %}{% endblock %}</main>
+{% endblock %}
+</body>
+</html>

@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="auth-wrap">
+  <div class="card auth-card">
+    <div class="brand"><span class="brand-logo">{{ icon.shield(17) }}</span> {{ t("app.name") }}</div>
+    <form method="post" action="/login">
+      {% if error %}<p class="alert error">{{ t("auth.invalid") }}</p>{% endif %}
+      {% if locked %}<p class="alert warn">{{ t("auth.locked") }}</p>{% endif %}
+      <input type="hidden" name="next" value="{{ next_url or '/chat' }}">
+      <label>{{ t("auth.username") }}
+        <input name="username" required autofocus autocomplete="username" value="{{ username or '' }}">
+      </label>
+      <label>{{ t("auth.password") }}
+        <input name="password" type="password" required autocomplete="current-password">
+      </label>
+      <button class="btn block" type="submit">{{ t("auth.login") }}</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

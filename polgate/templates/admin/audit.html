@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block content %}
+{% include "admin/_subnav.html" %}
+<form method="get" class="filters">
+  <select name="event" data-autosubmit>
+    <option value="">{{ t("audit.all_events") }}</option>
+    {% for e in known_events %}<option value="{{ e }}" {{ 'selected' if e == event }}>{{ e }}</option>{% endfor %}
+  </select>
+</form>
+<div class="table-wrap">
+  <table class="grid">
+    <thead>
+      <tr><th>{{ t("audit.when") }}</th><th>{{ t("audit.event") }}</th><th>{{ t("audit.user") }}</th>
+          <th>{{ t("audit.entities") }}</th><th>{{ t("stats.stage2") }}</th><th>{{ t("audit.detail") }}</th></tr>
+    </thead>
+    <tbody>
+      {% for r in rows %}
+        <tr>
+          <td class="mono">{{ r.created_at.strftime("%Y-%m-%d %H:%M") }}</td>
+          <td><span class="badge">{{ r.event }}</span></td>
+          <td>{{ r.user_id or "-" }}</td>
+          <td>
+            {% for name, count in r.entity_counts_json | entity_counts %}
+              <span class="entity-count"><span class="token">{{ name }}</span> {{ count }}</span>
+            {% else %}-{% endfor %}
+          </td>
+          <td>{{ r.stage2_hits or "-" }}</td>
+          <td class="small muted">{{ r.detail or "-" }}</td>
+        </tr>
+      {% endfor %}
+      {% if not rows %}
+        <tr><td colspan="6" class="muted small">{{ t("audit.empty") }}</td></tr>
+      {% endif %}
+    </tbody>
+  </table>
+</div>
+<div class="pager">
+  {% if page > 0 %}<a class="btn secondary small" href="?page={{ page - 1 }}&event={{ event }}">&larr;</a>{% endif %}
+  {% if has_next %}<a class="btn secondary small" href="?page={{ page + 1 }}&event={{ event }}">&rarr;</a>{% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,36 @@
+# Company deployment: the hub, plus a local Ollama for the stage-2 judge when you want one.
+#
+#   cp .env.example .env                      # then set LLM_API_KEY in it
+#   docker compose up -d                      # hub only, judge on the mock or a remote backend
+#   docker compose --profile ollama up -d      # hub + local judge
+#   docker compose exec ollama ollama pull qwen2.5:1.5b   # once, after the first start
+#
+# SECRET_KEY, VAULT_KEY and ADMIN_PASSWORD left empty are generated on first start and kept in the
+# data volume, so the hub also starts without a .env (an optional env_file needs Compose 2.24 or
+# later). Back up VAULT_KEY, or vault.key in the volume, somewhere else: without it the stored
+# history cannot be read again. Behind HTTPS set COOKIE_SECURE=true in .env, or session cookies
+# travel in the clear.
+services:
+  hub:
+    build: .
+    restart: unless-stopped
+    ports: ["8000:8000"]
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      # Set JUDGE_BACKEND=ollama in .env to use the container below.
+      OLLAMA_BASE_URL: http://ollama:11434
+      DATABASE_URL: sqlite:////data/polgate.db
+      UPLOAD_DIR: /data/uploads
+    volumes: ["hubdata:/data"]
+
+  ollama:
+    image: ollama/ollama:latest
+    restart: unless-stopped
+    profiles: ["ollama"]
+    volumes: ["ollama:/root/.ollama"]
+
+volumes:
+  hubdata:
+  ollama:

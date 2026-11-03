@@ -1,0 +1,29 @@
+{# The user bubble plus an assistant bubble that fills itself from the event stream.
+   The wiring lives in /static/app.js; this markup only declares what it needs. #}
+<article class="msg user" data-speaker="{{ t('chat.speaker_you') }}">
+  <div class="bubble">{{ text }}</div>
+  <div class="msg-meta" data-sent-meta hidden>
+    <time data-local-time></time>
+    <span class="badge shield" title="{{ t('chat.masked_hint') }}" data-masked-count hidden>
+      {{ icon.shield(11) }} <span data-count></span>
+    </span>
+    <span class="badge" title="{{ t('chat.nothing_masked_hint') }}" data-nothing-masked hidden>
+      {{ t("chat.nothing_masked") }}
+    </span>
+    <button class="link no-print" type="button" hx-swap="innerHTML" hidden
+            data-preview-button data-preview-base="/chat/{{ conversation.id }}/messages/">
+      {{ t("chat.preview") }}
+    </button>
+  </div>
+  <div class="inline-preview" data-preview-target></div>
+</article>
+<article class="msg assistant" data-speaker="{{ t('chat.speaker_model') }}" aria-live="polite"
+         data-stream="/chat/{{ conversation.id }}/stream"
+         data-waiting-label="{{ t('chat.waiting') }}"
+         data-error-label="{{ t('chat.error') }}"
+         data-refused-label="{{ t('chat.error_refused') }}"
+         data-judge-label="{{ t('chat.error_judge') }}"
+         data-warn-label="{{ t('chat.sweep_warning') }}">
+  <div class="bubble" data-sink><span class="waiting">{{ t("chat.masking") }}</span></div>
+  <p class="msg-meta" data-status hidden></p>
+</article>

@@ -1,0 +1,43 @@
+name: Bug
+description: The hub does something it should not.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Never paste real personal data, logs containing it, or your `.env` here.** This issue is
+        public. If original values reached a provider, a log or another user, report it privately
+        from the Security tab instead.
+
+        A value that was not masked, or was masked wrongly, belongs to the library that does the
+        masking: report it at [polanon](https://github.com/boromat/polanon/issues).
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened, and what you expected
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: How to reproduce it
+      description: With invented data only.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version and how you run it
+      placeholder: 0.1.0, Docker image / source checkout
+    validations:
+      required: true
+  - type: input
+    id: polanon
+    attributes:
+      label: polanon version
+      description: >-
+        The output of `python -c "import polanon; print(polanon.__version__)"`, run where the hub
+        runs (in Docker, prefix it with `docker exec <container>`).
+      placeholder: 0.2.0
+    validations:
+      required: true

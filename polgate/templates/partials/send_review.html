@@ -1,0 +1,18 @@
+<form class="card review" hx-post="/chat/{{ conversation.id }}/send" hx-target="#messages"
+      hx-swap="beforeend" hx-disabled-elt="find button" data-remove-on-success>
+  <h4>{{ t("chat.review_title") }}</h4>
+  <pre>{{ preview.anonymized | highlight_tokens }}</pre>
+  <div class="stat-row">
+    {% for name, count in preview.entity_counts.items() %}
+      <span class="chip">{{ name }} &times;{{ count }}</span>
+    {% endfor %}
+    {% if not preview.entity_counts %}
+      <span class="chip">{{ t("chat.review_nothing") }}</span>
+    {% endif %}
+  </div>
+  <p class="small muted">{{ t("chat.review_hint", count=preview.entity_counts.values() | sum) }}</p>
+  <input type="hidden" name="text" value="{{ text }}">
+  <input type="hidden" name="extra_terms" value="{{ extra_terms }}">
+  <input type="hidden" name="approved" value="1">
+  <button class="btn" type="submit">{{ icon.send() }} {{ t("chat.send") }}</button>
+</form>

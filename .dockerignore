@@ -1,0 +1,18 @@
+# Anything here would end up in the build context, and data/ holds the database, the uploaded
+# documents and the vault key.
+.git
+.github
+.venv*
+data
+*.egg-info
+.mypy_cache
+.ruff_cache
+.pytest_cache
+htmlcov
+.coverage
+.coverage.*
+.env
+tests
+docs
+__pycache__
+*.pyc
