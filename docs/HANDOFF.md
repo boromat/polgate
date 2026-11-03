@@ -2,9 +2,8 @@
 
 Status: steps 1-12 are done and tested. The masking engine that steps 3-5 and 12 built lived here as
 `piianon/` and is now a library of its own, [polanon](https://github.com/boromat/polanon), which the
-hub installs from PyPI. CI builds the Docker image and starts it with nothing configured. What is
-left is the first release and making the repository public, which needs the owner's account: the
-one-time setup under *Remaining*, in the order given there.
+hub installs from PyPI. Version 0.1.0 was released on 2026-11-03: the repository is public and the
+image is on GitHub Container Registry. What is left is under *Known detection gaps* and *After MVP*.
 
 Read `CLAUDE.md` (rules) and `docs/ARCHITECTURE.md` (data flow) first. Run `/env-check` at the start
 of a session and `/quality-gate` before every commit, and `/pii-safety-review` as well for anything
@@ -109,7 +108,7 @@ moved to polanon and has grown since; the current numbers are in its
 
 ---
 
-## Remaining — all of it needs the owner
+## Release and what is left
 
 - [x] End-to-end run against a real provider (OpenRouter, `anthropic/claude-sonnet-4.5`). The request was
       captured at the HTTP transport as it left: for the synthetic Polish CV no mapping value was
@@ -137,24 +136,16 @@ moved to polanon and has grown since; the current numbers are in its
          `packaging/`, `benchmarks/`, `examples/` and the library's tests left this repository.
       4. [x] Create `boromat/polgate`, private until CI is green, and push one commit of its tree.
 - [x] Screenshots and a demo GIF for the README: `docs/images/demo.gif` and `docs/images/audit.png`.
-- [ ] One-time setup on GitHub and the first release, in this order:
-      1. Replace `Unreleased` in `CHANGELOG.md`'s `## [0.1.0]` heading with the day's date and commit
-         it; the release workflow refuses the tag otherwise.
-      2. Wait for CI to go green on `main`.
-      3. Make the repository public (Settings → General → Danger Zone → Change visibility).
-      4. Settings → Code security: enable private vulnerability reporting, which `SECURITY.md` and the
-         issue templates point to. GitHub offers it only on a public repository, hence after step 3.
-      5. Tag `v0.1.0`, push the tag and wait for the release workflow to finish. Not `v0.1.0-mvp`: the
-         workflow refuses a tag that differs from the package version.
-      6. Packages → polgate → Package settings: check that `ghcr.io/boromat/polgate` is public, and
-         change its visibility to public if it is not. GitHub's documentation disagrees with itself
-         about the visibility a package pushed by a workflow starts with.
-      7. Signed out of the registry (`docker logout ghcr.io`), `docker pull ghcr.io/boromat/polgate`
-         must succeed: it is the README's first command, and the README's Docker badge links to the
-         package.
-      8. Description and topics, for search, from the gear beside *About* on the repository page:
-         `pii`, `anonymization`, `pseudonymization`, `gdpr`, `rodo`, `llm`, `privacy`, `polish`,
-         `nlp`, `self-hosted`, `fastapi`.
+- [x] First release, 2026-11-03. The `0.1.0` heading in `CHANGELOG.md` was dated and CI went green
+      on `main`; then the repository was made public, private vulnerability reporting (which
+      `SECURITY.md` and the issue templates point to, and which GitHub offers only on a public
+      repository) was switched on, and the tag `v0.1.0` was pushed. The release workflow published
+      `ghcr.io/boromat/polgate` as `0.1.0`, `0.1` and `latest` for amd64 and arm64, which pulls
+      without signing in, and the GitHub release with the changelog section as its notes. The
+      description and topics are set.
+- A later release: raise `polgate.__version__` and date its `CHANGELOG.md` heading in one commit,
+      wait for CI on `main`, then push the tag `vX.Y.Z`. The workflow refuses a tag that differs from
+      the package version or a heading still marked `Unreleased`.
 
 ### Known detection gaps worth an issue each
 The first is polanon's and belongs in [its issue tracker](https://github.com/boromat/polanon/issues);
