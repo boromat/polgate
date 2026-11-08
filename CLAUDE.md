@@ -65,6 +65,7 @@ gets worse fails that build. The current numbers are in
 .venv/bin/pip install -e ".[dev]" && .venv/bin/python -m spacy download pl_core_news_md   # once
 ./run.sh                              # start the hub, checks the environment first
 ./run.sh 8080 --no-reload             # different port, no file watcher
+start.bat                             # the same on Windows; first run sets up .venv and .env
 .venv/bin/polanon "Jan Kowalski, PESEL 50810112354"   # the masking engine on its own
 .venv/bin/pytest --cov
 .venv/bin/ruff check . && .venv/bin/ruff format . && .venv/bin/mypy polgate

@@ -161,7 +161,18 @@ Sign in as `admin` with the password from `ADMIN_PASSWORD` in `.env`, or, when t
 you until you do. Set `LLM_API_KEY` to talk to a provider that needs a key; without a provider you
 can still exercise masking, uploads, previews and the admin panel.
 
-`run.sh` is a bash script, so on Windows run it from WSL, or do its steps yourself in PowerShell:
+**On Windows**, double-click `start.bat` in the checkout, or run it from a terminal. It needs
+Python 3.12 or newer from [python.org](https://www.python.org/downloads/); on its first run it
+creates `.venv`, installs the hub and the spaCy model and writes `.env` with generated keys, which
+takes a few minutes. Then it starts the hub and opens it in the browser. It takes the same port and
+`--no-reload` arguments as `run.sh`, plus `--no-browser`.
+
+```bat
+start.bat
+start.bat 8080 --no-reload
+```
+
+The same steps by hand, in PowerShell:
 
 ```powershell
 py -m venv .venv

@@ -6,6 +6,13 @@ All notable changes to this project are recorded here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- **`start.bat` for Windows**: double-click it to run the hub. The first run creates `.venv`,
+  installs the hub and the spaCy model and writes `.env` with generated keys; every run checks the
+  database schema, starts the hub and opens it in the browser. It takes the same arguments as
+  `run.sh`, plus `--no-browser`.
+
 ### Changed
 
 - **polanon 0.2.1 or later is required.** Its output sweep no longer reports a restored name the

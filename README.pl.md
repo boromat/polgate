@@ -176,8 +176,18 @@ wyświetlał ostrzeżenie, dopóki tego nie zrobisz. Ustaw `LLM_API_KEY`, żeby 
 który wymaga klucza; bez dostawcy nadal możesz wypróbować maskowanie, wgrywanie plików, podglądy
 i panel administracyjny.
 
-`run.sh` to skrypt basha, więc na Windowsie uruchom go z WSL albo wykonaj jego kroki samodzielnie
-w PowerShellu:
+**Na Windowsie** kliknij dwukrotnie `start.bat` w katalogu repozytorium albo uruchom go
+z terminala. Potrzebny jest Python 3.12 lub nowszy z [python.org](https://www.python.org/downloads/);
+przy pierwszym uruchomieniu skrypt tworzy `.venv`, instaluje hub i model spaCy oraz zapisuje `.env`
+z wygenerowanymi kluczami, co zajmuje kilka minut. Potem uruchamia hub i otwiera go w przeglądarce.
+Przyjmuje te same argumenty co `run.sh` (port i `--no-reload`), a do tego `--no-browser`.
+
+```bat
+start.bat
+start.bat 8080 --no-reload
+```
+
+Te same kroki ręcznie, w PowerShellu:
 
 ```powershell
 py -m venv .venv
