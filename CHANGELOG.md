@@ -4,6 +4,15 @@ All notable changes to this project are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project follows
 [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- **polanon 0.2.1 or later is required.** Its output sweep no longer reports a restored name the
+  model inflected, such as "Jan Kowalskia", as new personal data, and it masks phone numbers
+  written with a bare 48 prefix and e-mail addresses with Polish letters. See
+  [its changelog](https://github.com/boromat/polanon/blob/main/CHANGELOG.md).
+
 ## [0.1.0] - 2026-11-03
 
 The first release: the hub, as source and as a Docker image on GitHub Container Registry. The
