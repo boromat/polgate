@@ -52,8 +52,10 @@ def test_a_policy_saved_before_tracking_gets_the_foreign_identifiers(db_session)
     enabled = set(get_policy(db_session).enabled_entities.split(","))
 
     assert {"TAX_ID", "COMPANY_ID", "BANK_ACCOUNT", "BIRTH_DATE"} <= enabled
+    # Every type polanon added since then, whichever release is installed, not a list frozen here.
+    added = sorted(set(ENTITY_TYPES) - TYPES_BEFORE_TRACKING - OFF_BY_DEFAULT)
     assert [event.detail for event in _upgrade_events(db_session)] == [
-        "fields=enabled_entities new_entity_types=BANK_ACCOUNT,BIRTH_DATE,COMPANY_ID,TAX_ID"
+        f"fields=enabled_entities new_entity_types={','.join(added)}"
     ]
 
 
