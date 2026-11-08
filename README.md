@@ -71,10 +71,10 @@ restore, the optional language model and the stage-2 judge.
 
 ## How well it detects
 
-Detection is polanon's, and so is the benchmark that measures it. On its ten annotated sample
-documents, seven Polish and three invoices from abroad, the rules alone fully mask 85% of the values
+Detection is polanon's, and so is the benchmark that measures it. On its eleven annotated sample
+documents, eight Polish and three invoices from abroad, the rules alone fully mask 86% of the values
 and the rules with `pl_core_news_md` mask 98%, with nothing left half-masked; Presidio, on the same
-documents with the same model, fully masks 66%, 76% at its most lenient. Ten short documents are a
+documents with the same model, fully masks 66%, 76% at its most lenient. Eleven short documents are a
 regression check, not a research benchmark, and they were written by polanon's author, who tuned
 its rules on them. The [benchmark notes](https://github.com/boromat/polanon/blob/main/benchmarks/README.md)
 give the numbers per entity type and say what is missed and why.
@@ -226,7 +226,7 @@ leave. A name in running English or German prose, and any format the rules have 
 depends on a Polish language model that reads those languages poorly.
 
 Places, and names the guards do not know, are detected statistically, so some will be missed —
-on polanon's benchmark, detection misses three places in its ten documents. A surname standing alone in
+on polanon's benchmark, detection misses three places in its eleven documents. A surname standing alone in
 lowercase, with no first name or form of address next to it, is left to that model, which leans on
 capital letters.
 Identification by context ("the finance director of the only steelworks in town") is exactly what

@@ -75,11 +75,11 @@ przywracanie w strumieniu, opcjonalny model językowy i sędziego etapu 2.
 
 ## Skuteczność wykrywania
 
-Za wykrywanie odpowiada polanon i to w nim jest benchmark, który je mierzy. Na jego dziesięciu
-anotowanych dokumentach przykładowych (siedmiu polskich i trzech fakturach z zagranicy) same reguły
-w pełni maskują 85% wartości, a reguły z `pl_core_news_md` 98%, i żadna wartość nie zostaje
+Za wykrywanie odpowiada polanon i to w nim jest benchmark, który je mierzy. Na jego jedenastu
+anotowanych dokumentach przykładowych (ośmiu polskich i trzech fakturach z zagranicy) same reguły
+w pełni maskują 86% wartości, a reguły z `pl_core_news_md` 98%, i żadna wartość nie zostaje
 zamaskowana tylko częściowo; Presidio na tych samych dokumentach i z tym samym modelem w pełni
-maskuje 66%, a w najłagodniejszym ustawieniu 76%. Dziesięć krótkich dokumentów to test regresji,
+maskuje 66%, a w najłagodniejszym ustawieniu 76%. Jedenaście krótkich dokumentów to test regresji,
 a nie benchmark badawczy; napisał je autor polanon, który dostrajał na nich reguły biblioteki.
 [Notatki do benchmarku](https://github.com/boromat/polanon/blob/main/benchmarks/README.md) podają
 wyniki dla każdego typu danych i opisują, co zostaje pominięte i dlaczego.
@@ -246,7 +246,7 @@ format, którego reguły nie znają, nadal zależą od polskiego modelu językow
 sobie z tymi językami.
 
 Miejsca oraz nazwy, których detektory nie znają, są wykrywane statystycznie, więc część z nich
-umknie — w benchmarku polanon trzy miejsca z jego dziesięciu dokumentów zostają pominięte.
+umknie — w benchmarku polanon trzy miejsca z jego jedenastu dokumentów zostają pominięte.
 Nazwisko zapisane małą literą, bez imienia ani zwrotu grzecznościowego obok, pozostaje w gestii
 tego modelu, a on kieruje się wielkimi literami.
 Identyfikacja po kontekście („dyrektor finansowy jedynej huty w mieście”) to dokładnie to, do czego
