@@ -15,9 +15,13 @@ All notable changes to this project are recorded here. The format follows
 
 ### Changed
 
-- **polanon 0.2.1 or later is required.** Its output sweep no longer reports a restored name the
+- **polanon 0.2.2 or later is required.** Its output sweep no longer reports a restored name the
   model inflected, such as "Jan Kowalskia", as new personal data, and it masks phone numbers
-  written with a bare 48 prefix and e-mail addresses with Polish letters. See
+  written with a bare 48 prefix and e-mail addresses with Polish letters (0.2.1). It also masks
+  links to a person's profile as a new type, `LINK`, which the admin panel lists and an existing
+  policy switches on; a surname or a profile handle on its own once the full name or link was
+  masked; birth dates written in English; e-mail addresses with "[at]"; and a street without
+  "ul." before a postcode (0.2.2). See
   [its changelog](https://github.com/boromat/polanon/blob/main/CHANGELOG.md).
 
 ### Fixed
