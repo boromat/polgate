@@ -32,7 +32,7 @@ explains the data flow.
 7. Small machine (4 CPU, 8 GB RAM, no GPU): use `pl_core_news_md`, lazy-load models, never load GLiNER by default.
 8. Prefer finishing a change end-to-end (code + tests + i18n keys) over starting the next one.
 
-## Quality bar (this repo is a public portfolio piece: write it like a maintained OSS project)
+## Quality bar
 - Type hints on every signature; `mypy polgate` (strict) must pass. Google-style docstrings on public API.
 - `ruff check .` and `ruff format .` clean with the rule set in `pyproject.toml` (includes bandit `S` and naming `N`).
 - Tests for every behaviour; coverage >= 90% (the floor in `pyproject.toml`); no network in tests.
