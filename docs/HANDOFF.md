@@ -2,8 +2,11 @@
 
 Status: steps 1-12 are done and tested. The masking engine that steps 3-5 and 12 built lived here as
 `piianon/` and is now a library of its own, [polanon](https://github.com/boromat/polanon), which the
-hub installs from PyPI. Version 0.1.0 was released on 2026-11-03: the repository is public and the
-image is on GitHub Container Registry. What is left is under *Known detection gaps* and *After MVP*.
+hub installs from PyPI, now at 0.2.2 or later. Version 0.1.0 was released on 2026-11-03: the
+repository is public and the image is on GitHub Container Registry. Since then, unreleased on
+`main`: `start.bat` runs the hub on Windows, and the hub requires polanon 0.2.2, whose lone-surname
+masking needed one fix in the pre-send check (see *Since 0.1.0*). What is left is under *Known
+detection gaps* and *After MVP*.
 
 Read `CLAUDE.md` (rules) and `docs/ARCHITECTURE.md` (data flow) first. Run `/env-check` at the start
 of a session and `/quality-gate` before every commit, and `/pii-safety-review` as well for anything
@@ -147,9 +150,31 @@ moved to polanon and has grown since; the current numbers are in its
       wait for CI on `main`, then push the tag `vX.Y.Z`. The workflow refuses a tag that differs from
       the package version or a heading still marked `Unreleased`.
 
+### Since 0.1.0 (on `main`, not released yet)
+- [x] `start.bat` for Windows. A double click runs the hub; the first run creates `.venv`, installs
+      the hub and the spaCy model and writes `.env` with generated keys. Tested from a clean copy:
+      a first run, then a second one that starts in seconds.
+- [x] polanon 0.2.1, then 0.2.2, as the lower bound. 0.2.2 adds the `LINK` type, which the admin
+      panel lists and an existing policy switches on by itself, and masks a surname or a profile
+      handle on its own once the full name or link was masked. That put three-letter surnames such
+      as "Lis" into the mapping on their own, and the pre-send check found them inside "Lista" and
+      refused the message; a one-word value under four letters now counts only as a word of its own
+      or with a Polish case ending.
+- [x] A test of the policy upgrade derives the newly enabled types from polanon instead of listing
+      them, so a polanon release that adds a type does not fail this repository's CI.
+- [ ] Release 0.2.0 of the hub with the above, following the steps for a later release.
+
 ### Known detection gaps worth an issue each
-The first is polanon's and belongs in [its issue tracker](https://github.com/boromat/polanon/issues);
-the second is the hub's.
+All but the last are polanon's and belong in
+[its issue tracker](https://github.com/boromat/polanon/issues); the last is the hub's. Each was
+checked against polanon 0.2.2 without the language model.
+- A PESEL with a typo after its label: "pesel 78059938421" goes out whole, because the number fails
+  the date check (day 99). A number written right after the word "PESEL" is someone's identifier
+  even when it is mistyped.
+- A street without "ul." and without a postcode: "Adres: Japczaka 17." goes out whole; 0.2.2 reads
+  such a street only before a postcode.
+- The login part of an e-mail address on its own: after "jan.nowak@example.com" is masked, "jan.nowak"
+  later in the text comes out as "<OSOBA_1>.nowak", so the surname leaves.
 - A first name that is also a common word, in lowercase, before a surname that does not decline:
   "ani nowak" is not masked, while "Ani Nowak" and "jana kowalskiego" are. The rule has nothing to
   hold on to; the language model is the intended net, and it leans on capitals.
