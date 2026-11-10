@@ -562,6 +562,22 @@ def test_assert_no_raw_values_finds_a_short_pin_standing_as_a_number_of_its_own(
         assert_no_raw_values([{"content": content}], {"<SEKRET_1>": "2025"})
 
 
+@pytest.mark.parametrize(
+    "content",
+    ["Lista płac jest gotowa, <OSOBA_2> też.", "Kotłownia jest w piwnicy.", "lis przebiegł"],
+)
+def test_assert_no_raw_values_passes_a_short_surname_inside_another_word(content):
+    """polanon masks "Lis" on its own, not the "Lis" in "Lista", so the check does not either."""
+    mapping = {"<OSOBA_1>": "Anna Lis", "<OSOBA_2>": "Lis", "<OSOBA_3>": "Kot"}
+    assert_no_raw_values([{"content": content}], mapping)
+
+
+@pytest.mark.parametrize("content", ["Lis też ją dostanie.", "Nie ma pani Lisa.", "z Lisem"])
+def test_assert_no_raw_values_finds_a_short_surname_as_a_word_or_in_another_case(content):
+    with pytest.raises(LLMError):
+        assert_no_raw_values([{"content": content}], {"<OSOBA_2>": "Lis"})
+
+
 async def test_a_provider_error_quoting_a_typed_placeholder_is_reported(turn_setup):
     """The placeholder stands for itself in the mapping, and is no personal data to keep out."""
     session, conversation, user, anonymizer, policy = turn_setup

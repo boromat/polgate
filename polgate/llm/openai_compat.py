@@ -25,6 +25,12 @@ _GAP = chr(0)
 #: The lengths polanon calls a short number: four or five digits, such as a PIN. It leaves one
 #: alone inside a date, a time or an amount, and the check asks it where it would mask one.
 _SHORT_NUMBER_LENGTHS = range(4, 6)
+#: polanon looks for a known value shorter than this only as a whole word: the surname "Lis" it
+#: masks on its own is not in "Lista" or "Kotłownia", so the check does not find it there either.
+_WHOLE_WORD_BELOW = 4
+#: Polish case endings, so the same short surname written in another case ("Lisa", "Lisowi") is
+#: still found as the value it is.
+_CASE_ENDING = "owie|ach|ami|owi|em|om|ie|ów|[aeiuyąę]"
 
 
 class LLMError(RuntimeError):
@@ -43,7 +49,8 @@ def assert_no_raw_values(messages: Iterable[Mapping[str, str]], mapping: Mapping
     typed, which the mapping records as standing for itself, and a value the mapping hides, such as
     a password written as "<ADMIN_2024>". A short number such as a PIN counts only where the library
     would mask it: "15.04.2025" does not hold the PIN 2025, and refusing it would refuse every date
-    of that year.
+    of that year. A one-word value shorter than four letters, such as a surname masked on its own,
+    counts as a whole word or with a case ending ("Lis", "Lisa"), not inside another word ("Lista").
 
     Raises:
         LLMError: when a mapping value appears in any message content.
@@ -57,10 +64,17 @@ def assert_no_raw_values(messages: Iterable[Mapping[str, str]], mapping: Mapping
             continue
         if value.isdigit() and len(value) in _SHORT_NUMBER_LENGTHS:
             present = any(mask_known_values(text, {token: value}) != text for text in contents)
+        elif value.isalpha() and len(value) < _WHOLE_WORD_BELOW:
+            present = any(_short_word(value).search(text) for text in stripped)
         else:
             present = any(value in text for text in stripped)
         if present:
             raise LLMError(f"refusing to send: original value for {token} present in the payload")
+
+
+def _short_word(value: str) -> re.Pattern[str]:
+    """Match a short value as a word of its own, bare or with a Polish case ending."""
+    return re.compile(rf"(?<!\w){re.escape(value)}(?:{_CASE_ENDING})?(?!\w)")
 
 
 def _without_tokens(content: str, mapping: Mapping[str, str], hidden: set[str]) -> str:

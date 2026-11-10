@@ -20,6 +20,14 @@ All notable changes to this project are recorded here. The format follows
   written with a bare 48 prefix and e-mail addresses with Polish letters. See
   [its changelog](https://github.com/boromat/polanon/blob/main/CHANGELOG.md).
 
+### Fixed
+
+- **A short surname masked on its own no longer refuses an unrelated message.** polanon 0.2.2
+  masks a surname such as "Lis" wherever it stands alone, and the check before every provider call
+  then found it inside "Lista" or "Kotłownia" and refused to send. A one-word value shorter than
+  four letters now counts as a word of its own or with a Polish case ending ("Lis", "Lisa"), as
+  polanon matches it, and not inside another word.
+
 ## [0.1.0] - 2026-11-03
 
 The first release: the hub, as source and as a Docker image on GitHub Container Registry. The
