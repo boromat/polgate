@@ -29,7 +29,11 @@ def conversation(db_session):
 
 def test_encrypt_round_trips_and_hides_the_plaintext():
     encrypted = vault.encrypt("Jan Kowalski")
-    assert "Jan" not in encrypted
+    # The whole value: three letters such as "Jan" turn up in random base64 now and then, while a
+    # space never does, so this cannot fail by chance.
+    assert "Jan Kowalski" not in encrypted
+    # A fresh random IV each time, so equal values cannot be told apart by their ciphertext.
+    assert vault.encrypt("Jan Kowalski") != encrypted
     assert vault.decrypt(encrypted) == "Jan Kowalski"
 
 
