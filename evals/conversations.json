@@ -1,0 +1,394 @@
+[
+  {
+    "id": "payroll-attachment",
+    "attachments": [
+      {
+        "filename": "lista_plac_marzec.csv",
+        "text": "Imię i nazwisko;PESEL;Konto;Brutto\nKatarzyna Lis;55831212340;PL85 5979 7114 7104 9746 5075 2917;6200,00\nTomasz Zieliński;49910256781;PL38 0342 3667 1276 8426 8465 6321;7450,00\n"
+      }
+    ],
+    "turns": [
+      "Lista płac za marzec jest w załączniku. Policz sumę wynagrodzeń brutto i podaj ją w złotych.",
+      "Pani Lis dostała podwyżkę od kwietnia o 400 zł. Ile wyniesie suma po zmianie?",
+      "Przygotuj krótką notatkę dla Zielińskiego, że przelew pójdzie 10 kwietnia."
+    ],
+    "must_not_leak": [
+      "Katarzyna Lis",
+      "Lis",
+      "55831212340",
+      "PL85 5979 7114 7104 9746 5075 2917",
+      "Tomasz Zieliński",
+      "49910256781",
+      "PL38 0342 3667 1276 8426 8465 6321",
+      "Zielińskiego"
+    ],
+    "must_survive": ["Lista płac", "sumę wynagrodzeń brutto", "400 zł", "10 kwietnia"]
+  },
+  {
+    "id": "invoice-reminder",
+    "attachments": [],
+    "turns": [
+      "Napisz przypomnienie o zapłacie dla Marka Nowickiego, NIP 9412772426. Faktura FV/03/2025 na 4 920,00 zł, termin minął 14 marca. Numer konta do wpłaty: PL63 2233 0792 4402 6859 9528 9078.",
+      "Dodaj, że pan Nowicki może zadzwonić do mnie pod 601 234 567.",
+      "Skróć to do trzech zdań."
+    ],
+    "must_not_leak": [
+      "Marka Nowickiego",
+      "9412772426",
+      "PL63 2233 0792 4402 6859 9528 9078",
+      "Nowicki",
+      "601 234 567"
+    ],
+    "must_survive": ["FV/03/2025", "4 920,00 zł", "14 marca", "Skróć to do trzech zdań."]
+  },
+  {
+    "id": "cv-attachment",
+    "attachments": [
+      {
+        "filename": "CV Magdalena Wójcik.txt",
+        "text": "Magdalena Wójcik\nul. Kwiatowa 7/3, 31-542 Kraków\ntel. 502 987 654\nmagdalena.wojcik@example.com\nData urodzenia: 4 lipca 1991\n\nDoświadczenie:\n2019-2024 Specjalistka ds. kadr i płac\n2015-2019 Asystentka biura\n\nUmiejętności: Excel, Płatnik, prawo pracy\n"
+      }
+    ],
+    "turns": [
+      "Oceń to CV pod kątem stanowiska specjalisty ds. kadr i płac.",
+      "Czy pani Wójcik zna program Płatnik?",
+      "Napisz zaproszenie na rozmowę do Magdaleny na wtorek, godz. 10:00."
+    ],
+    "must_not_leak": [
+      "Magdalena Wójcik",
+      "ul. Kwiatowa 7/3",
+      "31-542 Kraków",
+      "502 987 654",
+      "magdalena.wojcik@example.com",
+      "4 lipca 1991",
+      "Wójcik",
+      "Magdaleny"
+    ],
+    "must_survive": ["Excel", "Płatnik", "specjalisty ds. kadr i płac", "godz. 10:00"]
+  },
+  {
+    "id": "sick-leave",
+    "attachments": [],
+    "turns": [
+      "Pracownik Paweł Kamiński, PESEL 58872343211, przyniósł zwolnienie lekarskie od 3 do 14 kwietnia. Jak to rozliczyć w ZUS?",
+      "Kamińskiemu kończy się umowa 30 kwietnia, czy to coś zmienia?"
+    ],
+    "must_not_leak": ["Paweł Kamiński", "58872343211", "Kamińskiemu"],
+    "must_survive": ["zwolnienie lekarskie", "ZUS", "30 kwietnia"]
+  },
+  {
+    "id": "contract-parties",
+    "attachments": [],
+    "turns": [
+      "Sprawdź komparycję umowy. Zleceniodawca: Biuro Rachunkowe Saldo Sp. z o.o., KRS 0000412345, NIP 9712417149, REGON 434259868, reprezentowana przez prezesa zarządu Agnieszkę Mazur. Zleceniobiorca: Krzysztof Wróbel, PESEL 04450924688, zam. ul. Polna 3, 62-020 Swarzędz.",
+      "Czy pani Mazur może podpisać sama, jeśli w KRS jest reprezentacja łączna?"
+    ],
+    "must_not_leak": [
+      "0000412345",
+      "9712417149",
+      "434259868",
+      "Agnieszkę Mazur",
+      "Krzysztof Wróbel",
+      "04450924688",
+      "ul. Polna 3",
+      "62-020 Swarzędz",
+      "Mazur"
+    ],
+    "must_survive": ["komparycję umowy", "prezesa zarządu", "reprezentacja łączna"]
+  },
+  {
+    "id": "it-support",
+    "attachments": [],
+    "turns": [
+      "Serwer pod adresem 192.168.10.24 nie odpowiada, MAC karty sieciowej to 3C:52:82:1A:4F:9E. Hasło administratora: Zima2025!Lod. Co sprawdzić najpierw?",
+      "Zgłaszający to Robert Kaczmarek z działu księgowości, robert.kaczmarek@firma.example. Używamy Microsoft Teams, napisz mu wiadomość, że się tym zajmujemy."
+    ],
+    "must_not_leak": [
+      "192.168.10.24",
+      "3C:52:82:1A:4F:9E",
+      "Zima2025!Lod",
+      "Robert Kaczmarek",
+      "robert.kaczmarek@firma.example"
+    ],
+    "must_survive": ["Microsoft Teams", "działu księgowości", "Co sprawdzić najpierw?"]
+  },
+  {
+    "id": "fleet-fine",
+    "attachments": [],
+    "turns": [
+      "Służbowy samochód o numerze rejestracyjnym WE 4H217, VIN WF0XXXGCDX8A12345, prowadziła Jolanta Szymańska, kiedy przyszedł mandat za przekroczenie prędkości.",
+      "Szymańska twierdzi, że w tym czasie auto stało na parkingu. Napisz odwołanie od mandatu."
+    ],
+    "must_not_leak": ["WE 4H217", "WF0XXXGCDX8A12345", "Jolanta Szymańska", "Szymańska"],
+    "must_survive": ["mandat za przekroczenie prędkości", "odwołanie od mandatu"]
+  },
+  {
+    "id": "debt-collection",
+    "attachments": [],
+    "turns": [
+      "Dłużnik Andrzej Lewandowski, zam. ul. Brzozowa 21 m. 4, 90-418 Łódź, zalega z czynszem 3 600 zł. Wpłaty miał robić na PL49 6666 1760 3137 2159 0109 2815. Napisz przedsądowe wezwanie do zapłaty.",
+      "Dopisz, że Lewandowskiemu naliczymy odsetki ustawowe za opóźnienie."
+    ],
+    "must_not_leak": [
+      "Andrzej Lewandowski",
+      "ul. Brzozowa 21 m. 4",
+      "90-418 Łódź",
+      "PL49 6666 1760 3137 2159 0109 2815",
+      "Lewandowskiemu"
+    ],
+    "must_survive": ["3 600 zł", "przedsądowe wezwanie do zapłaty", "odsetki ustawowe"]
+  },
+  {
+    "id": "meeting-notes",
+    "attachments": [],
+    "turns": [
+      "Notatka ze spotkania: Piotr Wiśniewski przedstawił budżet, Ewa Dąbrowska zgłosiła opóźnienie dostaw, a Michał Kozłowski przejmie kontakt z dostawcą. Zrób z tego listę zadań.",
+      "Dodaj, że Piotrowi trzeba przypomnieć o fakturach, a Dąbrowskiej przesłać harmonogram.",
+      "Kto odpowiada za kontakt z dostawcą? Odpowiedz jednym zdaniem i wymień Kozłowskiego z nazwiska."
+    ],
+    "must_not_leak": [
+      "Piotr Wiśniewski",
+      "Ewa Dąbrowska",
+      "Michał Kozłowski",
+      "Piotrowi",
+      "Dąbrowskiej",
+      "Kozłowskiego"
+    ],
+    "must_survive": ["listę zadań", "harmonogram", "opóźnienie dostaw"]
+  },
+  {
+    "id": "complaint-email",
+    "attachments": [],
+    "turns": [
+      "Odpisz klientce uprzejmie, że przyjmujemy reklamację:\n\nOd: Barbara Jankowska <b.jankowska@poczta.example>\nTemat: Reklamacja zamówienia 48213\n\nDzień dobry, pralka dostarczona 2 czerwca nie wiruje. Proszę o kontakt pod numerem +48 785 112 334. Adres dostawy: ul. Słoneczna 8, 05-500 Piaseczno.\nPozdrawiam, Barbara Jankowska",
+      "Pani Jankowskiej zaproponuj odbiór pralki w piątek między 8 a 12."
+    ],
+    "must_not_leak": [
+      "Barbara Jankowska",
+      "b.jankowska@poczta.example",
+      "+48 785 112 334",
+      "ul. Słoneczna 8",
+      "05-500 Piaseczno",
+      "Jankowskiej"
+    ],
+    "must_survive": ["Reklamacja zamówienia 48213", "pralka dostarczona 2 czerwca", "między 8 a 12"]
+  },
+  {
+    "id": "obfuscated-email",
+    "attachments": [],
+    "turns": [
+      "Klientka podała kontakt w formie anna.nowak [at] example.com i telefon 604 223 118. Imię i nazwisko: Anna Nowak. Ułóż odpowiedź z podziękowaniem za zapytanie ofertowe.",
+      "Czy Nowak pytała też o rabat? Napisz, że dajemy 5% przy zamówieniu do końca miesiąca."
+    ],
+    "must_not_leak": ["anna.nowak [at] example.com", "604 223 118", "Anna Nowak", "Nowak"],
+    "must_survive": ["zapytanie ofertowe", "5% przy zamówieniu"]
+  },
+  {
+    "id": "short-surname",
+    "attachments": [],
+    "turns": [
+      "Na liście obecności brakuje podpisu Adama Kota. Kotłownia w budynku B była zamknięta, więc szkolenie przeniesiono do sali 12.",
+      "Przypomnij Kotowi, że lista obecności musi być podpisana do piątku."
+    ],
+    "must_not_leak": ["Adama Kota", "Kotowi"],
+    "must_survive": ["liście obecności", "Kotłownia", "lista obecności", "sali 12"]
+  },
+  {
+    "id": "no-personal-data-vat",
+    "attachments": [],
+    "turns": [
+      "Jak policzyć VAT 23% od kwoty netto 1 250,00 zł? Pokaż wzór, który wpiszę w Excelu.",
+      "A jeśli kwota jest brutto, jak wyliczyć netto?"
+    ],
+    "must_not_leak": [],
+    "must_survive": ["VAT 23%", "1 250,00 zł", "Excelu", "jak wyliczyć netto?"]
+  },
+  {
+    "id": "no-personal-data-marketing",
+    "attachments": [],
+    "turns": [
+      "Napisz trzy pomysły na post na LinkedIn o tym, że nasza firma obchodzi 15-lecie. Ton ciepły, bez przesady.",
+      "Zaproponuj też krótkie hasło na Instagram."
+    ],
+    "must_not_leak": [],
+    "must_survive": ["LinkedIn", "15-lecie", "Instagram", "Ton ciepły"]
+  },
+  {
+    "id": "id-card",
+    "attachments": [],
+    "turns": [
+      "Klientka okazała dowód osobisty FEA629729, nazywa się Zofia Pawlak, PESEL 12413013573. Czy możemy wydać jej kartę lojalnościową bez skanu dokumentu?",
+      "Zapisz w notatce, że Pawlak odebrała kartę."
+    ],
+    "must_not_leak": ["FEA629729", "Zofia Pawlak", "12413013573", "Pawlak"],
+    "must_survive": ["kartę lojalnościową", "bez skanu dokumentu"]
+  },
+  {
+    "id": "card-payment",
+    "attachments": [],
+    "turns": [
+      "Płatność kartą 4111 1111 1111 1111 na nazwisko Marcin Górski została odrzucona. Jak wytłumaczyć klientowi, co się stało?",
+      "Napisz SMS do pana Górskiego, najwyżej dwa zdania."
+    ],
+    "must_not_leak": ["4111 1111 1111 1111", "Marcin Górski", "Górskiego"],
+    "must_survive": ["została odrzucona", "najwyżej dwa zdania"]
+  },
+  {
+    "id": "english-reply",
+    "attachments": [],
+    "turns": [
+      "Please draft a short reply to John Smith (john.smith@example.org), born 14 March 1990, who asked about invoice 2025/118.",
+      "Also mention that Mr Smith can call our office on +44 20 7946 0958."
+    ],
+    "must_not_leak": [
+      "John Smith",
+      "john.smith@example.org",
+      "14 March 1990",
+      "Smith",
+      "+44 20 7946 0958"
+    ],
+    "must_survive": ["invoice 2025/118", "draft a short reply"]
+  },
+  {
+    "id": "rental-agreement",
+    "attachments": [
+      {
+        "filename": "umowa_najmu.txt",
+        "text": "Umowa najmu lokalu mieszkalnego\n\nWynajmujący: Halina Kubiak, PESEL 53891786427, zam. ul. Lipowa 12, 87-100 Toruń\nNajemca: Damian Sikora, PESEL 47822897535\n\nCzynsz: 2 300 zł miesięcznie, płatny na rachunek PL40 9013 9624 5957 1177 7741 2154 do 10. dnia miesiąca.\nKaucja: 4 600 zł.\nOkres najmu: 12 miesięcy.\n"
+      }
+    ],
+    "turns": [
+      "Sprawdź, czy ta umowa najmu ma wszystkie ważne zapisy.",
+      "Czy pan Sikora może wypowiedzieć umowę przed terminem?",
+      "Napisz aneks podnoszący czynsz o 150 zł. Podpisują Kubiak i Sikora."
+    ],
+    "must_not_leak": [
+      "Halina Kubiak",
+      "53891786427",
+      "ul. Lipowa 12",
+      "87-100 Toruń",
+      "Damian Sikora",
+      "47822897535",
+      "PL40 9013 9624 5957 1177 7741 2154",
+      "Sikora",
+      "Kubiak"
+    ],
+    "must_survive": ["Umowa najmu lokalu mieszkalnego", "Kaucja: 4 600 zł", "o 150 zł"]
+  },
+  {
+    "id": "transfer-confirmation",
+    "attachments": [],
+    "turns": [
+      "Potwierdź księgowej, że przelew 12 400 zł z konta PL65728038528084148525388853 na rachunek dostawcy PL86 9336 3387 5004 7439 5755 1313 wyszedł dziś. Zlecił go Grzegorz Pietrzak.",
+      "Pietrzak pyta, czy potwierdzenie trzeba gdzieś podpisać."
+    ],
+    "must_not_leak": [
+      "PL65728038528084148525388853",
+      "PL86 9336 3387 5004 7439 5755 1313",
+      "Grzegorz Pietrzak",
+      "Pietrzak"
+    ],
+    "must_survive": ["12 400 zł", "rachunek dostawcy"]
+  },
+  {
+    "id": "email-signature",
+    "attachments": [],
+    "turns": [
+      "Streść ten mail w dwóch zdaniach:\n\nCześć, w załączeniu harmonogram dostaw na maj. Proszę o potwierdzenie do środy.\n--\nŁukasz Michalski\nKierownik zakupów\ntel. kom. 698 450 112\nlukasz.michalski@dostawy.example",
+      "Odpisz Łukaszowi, że potwierdzam terminy."
+    ],
+    "must_not_leak": [
+      "Łukasz Michalski",
+      "698 450 112",
+      "lukasz.michalski@dostawy.example",
+      "Łukaszowi"
+    ],
+    "must_survive": ["harmonogram dostaw na maj", "Kierownik zakupów", "potwierdzam terminy"]
+  },
+  {
+    "id": "school-consent",
+    "attachments": [],
+    "turns": [
+      "Wychowawczyni napisała, że Oliwia Zając (PESEL 08520131413) z klasy 3b nie oddała zgody na wycieczkę. Mama, Iwona Zając, prosi o wzór takiej zgody.",
+      "Dopisz miejsce na podpis Iwony Zając i datę."
+    ],
+    "must_not_leak": ["Oliwia Zając", "08520131413", "Iwona Zając", "Iwony Zając"],
+    "must_survive": ["klasy 3b", "zgody na wycieczkę", "miejsce na podpis"]
+  },
+  {
+    "id": "delivery-route",
+    "attachments": [
+      {
+        "filename": "zamowienia.csv",
+        "text": "nr;odbiorca;adres;telefon\n1043;Stanisław Krawczyk;ul. Leśna 4, 43-300 Bielsko-Biała;512 300 441\n1044;Elżbieta Kowalczyk;ul. Szkolna 19, 20-001 Lublin;733 908 215\n"
+      }
+    ],
+    "turns": [
+      "Ułóż kolejność dostaw dla zamówień z załącznika tak, żeby kurier przejechał jak najmniej kilometrów.",
+      "Kowalczyk prosi o dostawę po 16:00, uwzględnij to."
+    ],
+    "must_not_leak": [
+      "Stanisław Krawczyk",
+      "ul. Leśna 4",
+      "43-300 Bielsko-Biała",
+      "512 300 441",
+      "Elżbieta Kowalczyk",
+      "ul. Szkolna 19",
+      "20-001 Lublin",
+      "733 908 215",
+      "Kowalczyk"
+    ],
+    "must_survive": ["kolejność dostaw", "po 16:00"]
+  },
+  {
+    "id": "court-case",
+    "attachments": [],
+    "turns": [
+      "Sygnatura I C 1234/24. Powód: Wojciech Baran, pozwana: Renata Duda. Przygotuj streszczenie pozwu o zapłatę 18 000 zł.",
+      "Jakie argumenty może podnieść Duda w odpowiedzi na pozew?",
+      "Baranowi zależy na szybkim terminie rozprawy, co doradzisz?"
+    ],
+    "must_not_leak": ["Wojciech Baran", "Renata Duda", "Duda", "Baranowi"],
+    "must_survive": ["I C 1234/24", "pozwu o zapłatę 18 000 zł", "odpowiedzi na pozew"]
+  },
+  {
+    "id": "annual-review",
+    "attachments": [],
+    "turns": [
+      "Ocena roczna: Kasia Wrona świetnie prowadzi projekty, ale spóźnia się z raportami. Napisz to łagodniej.",
+      "Dodaj, że Kasia dostanie premię 1 500 zł za ostatni kwartał."
+    ],
+    "must_not_leak": ["Kasia Wrona", "Kasia"],
+    "must_survive": ["Ocena roczna", "premię 1 500 zł"]
+  },
+  {
+    "id": "car-insurance-claim",
+    "attachments": [],
+    "turns": [
+      "Szkoda komunikacyjna: kierowca Leszek Sobczak, PESEL 51860627182, pojazd o numerze rejestracyjnym PO 5KR73. Do kolizji doszło na parkingu przed biurem. Opisz przebieg zdarzenia do zgłoszenia.",
+      "Sobczak dosłał zdjęcia, co jeszcze trzeba dołączyć do zgłoszenia szkody?"
+    ],
+    "must_not_leak": ["Leszek Sobczak", "51860627182", "PO 5KR73", "Sobczak"],
+    "must_survive": ["Szkoda komunikacyjna", "zgłoszenia szkody"]
+  },
+  {
+    "id": "pesel-correction",
+    "attachments": [],
+    "turns": [
+      "Pracownica Natalia Bielska twierdzi, że w kadrach mamy błędny PESEL: 15501416181. Prawidłowy to 15501416180. Napisz maila do kadr z prośbą o korektę.",
+      "Bielskiej potrzebne jest też zaświadczenie o zatrudnieniu, dopisz to."
+    ],
+    "must_not_leak": ["Natalia Bielska", "15501416181", "15501416180", "Bielskiej"],
+    "must_survive": ["prośbą o korektę", "zaświadczenie o zatrudnieniu"]
+  },
+  {
+    "id": "courier-pickup",
+    "attachments": [],
+    "turns": [
+      "Kurier ma odebrać paczkę z Długiej 17 w Białymstoku od pani Teresy Głowackiej, telefon 600 450 781. Napisz zlecenie odbioru.",
+      "Głowacka prosi, żeby kurier zadzwonił kwadrans wcześniej."
+    ],
+    "must_not_leak": ["Długiej 17", "Teresy Głowackiej", "600 450 781", "Głowacka"],
+    "must_survive": ["zlecenie odbioru", "kwadrans wcześniej"]
+  }
+]

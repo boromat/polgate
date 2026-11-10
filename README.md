@@ -79,6 +79,13 @@ regression check, not a research benchmark, and they were written by polanon's a
 its rules on them. The [benchmark notes](https://github.com/boromat/polanon/blob/main/benchmarks/README.md)
 give the numbers per entity type and say what is missed and why.
 
+The hub measures what reaches the provider in its own [leak evaluation](evals/README.md): 27
+made-up conversations, 60 turns and four attached files, played through the running hub against a
+stand-in provider that records every request. With polanon 0.2.2, 4 of the 125 values that must stay
+inside reached the provider, 2 of 76 ordinary phrases were masked when they should not have been, no
+turn was refused and all 60 answers came back exactly as typed. The hub's author wrote those
+conversations as well, and the evaluation's notes list each miss.
+
 ## Features
 
 - **Chat like any assistant**, with conversations, history and streamed answers.
@@ -252,10 +259,12 @@ organisation compliant with anything.
 .venv/bin/pytest --cov                                    # 98% coverage
 .venv/bin/ruff check . && .venv/bin/ruff format --check .
 .venv/bin/mypy polgate                                    # strict
+.venv/bin/python evals/run.py                             # what reaches the provider
 ```
 
 Detection is developed and measured in [polanon](https://github.com/boromat/polanon), so this
-repository has no benchmark of its own. `CONTRIBUTING.md` has the full quality bar,
+repository has no benchmark of its own; [`evals/`](evals/README.md) measures what the hub as a whole
+lets through to the provider. `CONTRIBUTING.md` has the full quality bar,
 `docs/ARCHITECTURE.md` the data flow, `CHANGELOG.md` what changed, and `CLAUDE.md` the rules an AI
 assistant should follow when working in this repository.
 

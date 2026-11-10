@@ -68,6 +68,7 @@ gets worse fails that build. The current numbers are in
 start.bat                             # the same on Windows; first run sets up .venv and .env
 .venv/bin/polanon "Jan Kowalski, PESEL 50810112354"   # the masking engine on its own
 .venv/bin/pytest --cov
+.venv/bin/python evals/run.py         # what reaches the provider, see evals/README.md
 .venv/bin/ruff check . && .venv/bin/ruff format . && .venv/bin/mypy polgate
 ```
 

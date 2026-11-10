@@ -12,6 +12,12 @@ All notable changes to this project are recorded here. The format follows
   installs the hub and the spaCy model and writes `.env` with generated keys; every run checks the
   database schema, starts the hub and opens it in the browser. It takes the same arguments as
   `run.sh`, plus `--no-browser`.
+- **A leak evaluation** in `evals/`: 27 made-up conversations, with attachments, surnames in
+  another case and a mistyped PESEL, played through the running hub against a local provider that
+  records every request. It counts the listed values that reach the provider, ordinary phrases
+  masked when they should not be, refused turns and answers not restored exactly. With polanon
+  0.2.2: 4 of 125 values leak, all of them detection gaps listed in `evals/README.md`. CI runs it
+  with the mock judge and fails on any finding `evals/known_gaps.json` does not list.
 
 ### Changed
 

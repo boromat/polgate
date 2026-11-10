@@ -162,17 +162,32 @@ moved to polanon and has grown since; the current numbers are in its
       or with a Polish case ending.
 - [x] A test of the policy upgrade derives the newly enabled types from polanon instead of listing
       them, so a polanon release that adds a type does not fail this repository's CI.
+- [x] A leak evaluation in `evals/`: 27 made-up conversations played through the running hub
+      against a local provider that records every request. With polanon 0.2.2 and the mock judge,
+      4 of 125 listed values reach the provider, 2 of 76 phrases are masked when they should not be,
+      nothing is refused and every answer is restored exactly. CI runs it with `--check`, which
+      accepts the misses in `evals/known_gaps.json` and fails on a new one; take a miss off that
+      list when a polanon release fixes it. Ollama has not been measured yet.
 - [ ] Release 0.2.0 of the hub with the above, following the steps for a later release.
 
 ### Known detection gaps worth an issue each
 All but the last are polanon's and belong in
 [its issue tracker](https://github.com/boromat/polanon/issues); the last is the hub's. Each was
-checked against polanon 0.2.2 without the language model.
+checked against polanon 0.2.2, the ones the leak evaluation found with `pl_core_news_md` loaded.
 - A PESEL with a typo after its label: "pesel 78059938421" goes out whole, because the number fails
   the date check (day 99). A number written right after the word "PESEL" is someone's identifier
   even when it is mistyped.
+  The same with a valid date and a wrong check digit: "PESEL: 15501416181" (the leak evaluation's
+  `pesel-correction`).
 - A street without "ul." and without a postcode: "Adres: Japczaka 17." goes out whole; 0.2.2 reads
-  such a street only before a postcode.
+  such a street only before a postcode. The leak evaluation finds it as "z Długiej 17".
+- A password after a label polanon does not know: "Hasło administratora: Zima2025!Lod" goes out,
+  while "Hasło:" and "Hasło do serwera:" are masked (`it-support`).
+- A feminine surname in another case, without "pani" before it, a turn after the full name was
+  masked: "Natalia Bielska", then "Bielskiej potrzebne jest..." goes out; "pani Bielskiej" and the
+  masculine "Kamińskiemu" are masked (`pesel-correction`).
+- Over-masking, not a leak: "Płatnik" (ZUS's payroll program) and "ZUS" itself are masked as company
+  names. Both could join the well-known names in `polanon.allowlist`.
 - The login part of an e-mail address on its own: after "jan.nowak@example.com" is masked, "jan.nowak"
   later in the text comes out as "<OSOBA_1>.nowak", so the surname leaves.
 - A first name that is also a common word, in lowercase, before a surname that does not decline:

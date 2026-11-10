@@ -45,6 +45,13 @@ jobs:
       - name: Test
         run: pytest --cov --cov-report=term-missing
 
+      # The conversations of evals/ through the whole hub, against a local stand-in provider and
+      # the mock judge. It fails on any leak or over-masking evals/known_gaps.json does not list.
+      - name: Leak evaluation
+        env:
+          JUDGE_BACKEND: mock
+        run: python evals/run.py --check
+
   package:
     name: Built wheel installs and runs
     runs-on: ubuntu-latest

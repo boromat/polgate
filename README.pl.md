@@ -84,6 +84,14 @@ a nie benchmark badawczy; napisał je autor polanon, który dostrajał na nich r
 [Notatki do benchmarku](https://github.com/boromat/polanon/blob/main/benchmarks/README.md) podają
 wyniki dla każdego typu danych i opisują, co zostaje pominięte i dlaczego.
 
+To, co dociera do dostawcy, hub mierzy we własnej [ewaluacji wycieków](evals/README.md): 27
+zmyślonych rozmów, 60 tur i cztery załączone pliki, przepuszczonych przez działający hub do atrapy
+dostawcy, która zapisuje każde żądanie. Z polanon 0.2.2 do dostawcy dotarły 4 ze 125 wartości, które
+miały zostać w firmie, 2 z 76 zwykłych zwrotów zostały niepotrzebnie zamaskowane, żadna tura nie
+została odrzucona, a każda z 60 odpowiedzi wróciła dokładnie w tej postaci, w jakiej wpisano
+wiadomość. Te rozmowy też napisał autor huba, a notatki do ewaluacji opisują każde pominięcie
+(po angielsku).
+
 ## Funkcje
 
 - **Czat jak w każdym asystencie**: rozmowy, historia i odpowiedzi przesyłane strumieniowo.
@@ -271,11 +279,13 @@ sprawia, że organizacja spełnia jakiekolwiek wymogi.
 .venv/bin/pytest --cov                                    # pokrycie 98%
 .venv/bin/ruff check . && .venv/bin/ruff format --check .
 .venv/bin/mypy polgate                                    # tryb strict
+.venv/bin/python evals/run.py                             # co dociera do dostawcy
 ```
 
 Wykrywanie jest rozwijane i mierzone w [polanon](https://github.com/boromat/polanon), więc to
-repozytorium nie ma własnego benchmarku. `CONTRIBUTING.md` opisuje pełne wymagania jakościowe,
-`docs/ARCHITECTURE.md` — przepływ danych, `CHANGELOG.md` — historię zmian, a `CLAUDE.md` — zasady,
+repozytorium nie ma własnego benchmarku; [`evals/`](evals/README.md) mierzy, co hub jako całość
+przepuszcza do dostawcy. `CONTRIBUTING.md` opisuje pełne wymagania jakościowe,
+`docs/ARCHITECTURE.md` przepływ danych, `CHANGELOG.md` historię zmian, a `CLAUDE.md` zasady,
 których asystent AI powinien przestrzegać przy pracy w tym repozytorium.
 
 ## Licencja
