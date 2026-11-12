@@ -59,11 +59,39 @@ class Settings(BaseSettings):
     #: resent in full with every single message.
     attachment_budget_chars: int = 60_000
 
+    # search in attachments (RAG): a file over the budget above sends the passages that match the
+    # question instead of its first characters
+    #: Embedding model at the endpoint below. Empty switches the search off, so no text goes to an
+    #: embeddings endpoint until somebody chooses one.
+    embedding_model: str = ""
+    #: OpenAI-compatible API root for /embeddings. Empty: the chat provider's `llm_base_url`.
+    embedding_base_url: str = ""
+    #: Key for that endpoint. Empty: the chat key when the chat endpoint is used, otherwise none, so
+    #: the chat provider's key never travels to another host.
+    embedding_api_key: str = ""
+    #: Passages sent to the embeddings endpoint per request.
+    embedding_batch_size: int = 64
+    #: Target length of one passage, in characters.
+    retrieval_chunk_chars: int = 1_200
+    #: Passages indexed per file. The rest of a longer file is not searched, and the employee and
+    #: the model are told so.
+    retrieval_max_chunks_per_file: int = 500
+
     # NLP
     spacy_model: str = "pl_core_news_md"
 
     # UI
     default_language: str = "pl"  # pl | en
+
+    def embedding_endpoint(self) -> tuple[str, str]:
+        """Return the API root and the key for /embeddings.
+
+        Without an endpoint of its own the chat provider's is used, key included. With one, only
+        its own key is sent: the chat key belongs to the chat provider and goes nowhere else.
+        """
+        if not self.embedding_base_url:
+            return self.llm_base_url, self.embedding_api_key or self.llm_api_key
+        return self.embedding_base_url, self.embedding_api_key
 
 
 @lru_cache

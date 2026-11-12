@@ -139,9 +139,7 @@ async def stream_chat(
         LLMError: on a non-2xx response or a malformed stream.
     """
     payload = {"model": model, "messages": messages, "stream": True}
-    headers = {"HTTP-Referer": "https://github.com/boromat/polgate", "X-Title": "polgate"}
-    if api_key:
-        headers["Authorization"] = f"Bearer {api_key}"
+    headers = _headers(api_key)
     owns_client = client is None
     active = client or httpx.AsyncClient(timeout=timeout)
     try:
@@ -165,6 +163,73 @@ async def stream_chat(
     finally:
         if owns_client:
             await active.aclose()
+
+
+async def embed(
+    texts: list[str],
+    *,
+    model: str,
+    base_url: str,
+    api_key: str,
+    timeout: float = 60.0,
+    client: httpx.AsyncClient | None = None,
+) -> list[list[float]]:
+    """Return one embedding per text from an OpenAI-compatible ``/embeddings`` endpoint.
+
+    Args:
+        texts: the inputs; like chat messages, they must already be anonymized and checked with
+            :func:`assert_no_raw_values`.
+        model: embedding model identifier at that endpoint.
+        base_url: API root, e.g. ``http://localhost:1234/v1`` for LM Studio.
+        api_key: bearer token; empty sends no ``Authorization`` header.
+        timeout: total request timeout in seconds.
+        client: optional injected client, used by tests.
+
+    Returns:
+        The vectors, in the order of ``texts``.
+
+    Raises:
+        LLMError: on a non-2xx response, a transport failure or an answer that does not hold one
+            vector per input.
+    """
+    owns_client = client is None
+    active = client or httpx.AsyncClient(timeout=timeout)
+    try:
+        response = await active.post(
+            f"{base_url.rstrip('/')}/embeddings",
+            json={"model": model, "input": texts},
+            headers=_headers(api_key),
+        )
+    except httpx.HTTPError as exc:
+        raise LLMError(f"embeddings request failed: {exc}") from exc
+    finally:
+        if owns_client:
+            await active.aclose()
+    if response.status_code >= 400:
+        raise LLMError(
+            f"embeddings endpoint returned {response.status_code}: {response.text[:300]}"
+        )
+    return _vectors(response, len(texts))
+
+
+def _vectors(response: httpx.Response, expected: int) -> list[list[float]]:
+    """Read the vectors of an embeddings answer, ordered by their ``index``."""
+    try:
+        rows = sorted(response.json()["data"], key=lambda row: row.get("index", 0))
+        vectors = [[float(x) for x in row["embedding"]] for row in rows]
+    except (ValueError, KeyError, TypeError, AttributeError) as exc:
+        raise LLMError("embeddings endpoint returned an unreadable answer") from exc
+    if len(vectors) != expected or any(not vector for vector in vectors):
+        raise LLMError(f"embeddings endpoint returned {len(vectors)} vectors for {expected} inputs")
+    return vectors
+
+
+def _headers(api_key: str) -> dict[str, str]:
+    """Return the request headers; an empty key sends no ``Authorization`` header at all."""
+    headers = {"HTTP-Referer": "https://github.com/boromat/polgate", "X-Title": "polgate"}
+    if api_key:
+        headers["Authorization"] = f"Bearer {api_key}"
+    return headers
 
 
 def _parse_sse_line(line: str) -> str | None:

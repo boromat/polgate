@@ -117,3 +117,74 @@ async def test_an_empty_key_sends_no_authorization_header():
 
     assert "authorization" not in seen["headers"]
     assert seen["headers"]["x-title"] == "polgate"
+
+
+async def _embed(handler, texts, api_key: str = "k"):
+    from polgate.llm.openai_compat import embed
+
+    async with _client(handler) as client:
+        return await embed(
+            texts, model="bge-m3", base_url="http://embed.test/v1/", api_key=api_key, client=client
+        )
+
+
+async def test_embeddings_come_back_in_the_order_of_the_inputs():
+    seen = []
+
+    def handler(request):
+        seen.append((str(request.url), json.loads(request.content), request.headers))
+        rows = [{"index": 1, "embedding": [0.0, 1.0]}, {"index": 0, "embedding": [1.0, 0.0]}]
+        return httpx.Response(200, json={"data": rows})
+
+    vectors = await _embed(handler, ["<OSOBA_1> zarabia", "umowa najmu"])
+
+    assert vectors == [[1.0, 0.0], [0.0, 1.0]]
+    url, payload, headers = seen[0]
+    assert url == "http://embed.test/v1/embeddings"
+    assert payload == {"model": "bge-m3", "input": ["<OSOBA_1> zarabia", "umowa najmu"]}
+    assert headers["authorization"] == "Bearer k"
+
+
+async def test_embeddings_without_a_key_send_no_authorization_header():
+    def handler(request):
+        assert "authorization" not in request.headers
+        return httpx.Response(200, json={"data": [{"index": 0, "embedding": [1.0]}]})
+
+    assert await _embed(handler, ["x"], api_key="") == [[1.0]]
+
+
+@pytest.mark.parametrize(
+    "response",
+    [
+        httpx.Response(500, text="model not loaded"),
+        httpx.Response(200, text="not json"),
+        httpx.Response(200, json={"data": [{"index": 0, "embedding": [1.0]}]}),
+        httpx.Response(200, json={"data": [{"index": 0}, {"index": 1}]}),
+        httpx.Response(200, json={"data": [{"index": 0, "embedding": []}, {"embedding": [1]}]}),
+    ],
+)
+async def test_an_unusable_embeddings_answer_becomes_an_llm_error(response):
+    with pytest.raises(LLMError, match="embeddings"):
+        await _embed(lambda request: response, ["a", "b"])
+
+
+async def test_an_embeddings_transport_failure_becomes_an_llm_error():
+    def handler(request):
+        raise httpx.ConnectError("connection refused")
+
+    with pytest.raises(LLMError, match="embeddings request failed"):
+        await _embed(handler, ["a"])
+
+
+def test_the_chat_key_never_travels_to_another_embeddings_host():
+    from polgate.config import Settings
+
+    shared = Settings(llm_base_url="https://chat.test/v1", llm_api_key="chat-key")
+    assert shared.embedding_endpoint() == ("https://chat.test/v1", "chat-key")
+
+    local = Settings(
+        llm_base_url="https://chat.test/v1",
+        llm_api_key="chat-key",
+        embedding_base_url="http://localhost:1234/v1",
+    )
+    assert local.embedding_endpoint() == ("http://localhost:1234/v1", "")
