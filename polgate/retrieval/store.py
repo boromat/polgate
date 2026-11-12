@@ -50,3 +50,8 @@ def delete_for_files(session: Session, file_ids: Sequence[int]) -> int:
     count = session.exec(select(func.count()).select_from(AttachmentChunk).where(condition)).one()
     session.exec(delete(AttachmentChunk).where(condition))
     return int(count)
+
+
+def delete_rows(session: Session, ids: Sequence[int]) -> None:
+    """Delete passages by primary key; the caller commits."""
+    session.exec(delete(AttachmentChunk).where(col(AttachmentChunk.id).in_(ids)))

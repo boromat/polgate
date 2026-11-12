@@ -34,13 +34,16 @@ from polgate.models import (
     User,
     utcnow,
 )
+from polgate.retrieval.search import AttachmentSearch, SearchResult, SearchUnavailableError
 from polgate.vault import store as vault
 
 logger = logging.getLogger(__name__)
 
 _TOKEN_RE = re.compile(TOKEN_PATTERN)
 
-EventType = Literal["preview", "token", "done", "error"]
+#: ``status`` tells the page what the hub is doing before the answer starts: ``indexing`` while a
+#: long attachment is indexed for the first time, ``capped`` when one was longer than it indexes.
+EventType = Literal["status", "preview", "token", "done", "error"]
 
 
 @dataclass
@@ -80,10 +83,21 @@ def _history_messages(
     return kept
 
 
+def _approved_files(session: Session, conversation: Conversation) -> list[FileAsset]:
+    """Return the conversation's approved files that still hold text, oldest first."""
+    files = session.exec(
+        select(FileAsset)
+        .where(col(FileAsset.conversation_id) == conversation.id)
+        .where(col(FileAsset.status) == FileStatus.APPROVED)
+        .order_by(col(FileAsset.id))
+    ).all()
+    return [f for f in files if f.text_sent]
+
+
 def _attachment_messages(
-    session: Session, conversation: Conversation, budget_chars: int
+    files: list[FileAsset], budget_chars: int, searched: dict[int, str]
 ) -> list[dict[str, str]]:
-    """Return approved file contents, each trimmed to ``budget_chars``.
+    """Return each approved file's text: the passages found for it, or the file cut to the budget.
 
     Only ``text_sent`` is used. It was produced at upload time from the file name followed by the
     extracted text, so the name is already masked; repeating ``filename`` here would send a raw
@@ -91,19 +105,59 @@ def _attachment_messages(
 
     Attachments are resent with every turn, so a long document is not a one-off cost: the trim is
     what stops one 200-page PDF from being paid for again on each message. When text is dropped the
-    model is told, in the same words the extractor uses, rather than left to guess.
+    model is told, in the same words the extractor uses, rather than left to guess; passages chosen
+    by the search say so the same way.
     """
-    files = session.exec(
-        select(FileAsset)
-        .where(col(FileAsset.conversation_id) == conversation.id)
-        .where(col(FileAsset.status) == FileStatus.APPROVED)
-        .order_by(col(FileAsset.id))
-    ).all()
-    return [
-        {"role": "system", "content": f"Załączony plik:\n{_trim(f.text_sent, budget_chars)}"}
-        for f in files
-        if f.text_sent
-    ]
+    texts = [searched.get(f.id or 0) or _trim(f.text_sent, budget_chars) for f in files]
+    return [{"role": "system", "content": f"Załączony plik:\n{text}"} for text in texts]
+
+
+async def _search_attachments(
+    session: Session,
+    conversation: Conversation,
+    user: User,
+    search: AttachmentSearch,
+    files: list[FileAsset],
+    question: str,
+    found: SearchResult,
+) -> AsyncIterator[TurnEvent]:
+    """Search the long files for ``question`` into ``found``, telling the page while it indexes.
+
+    When the search cannot run, ``found`` stays empty, so every file is cut to the budget as before
+    the search existed, and the audit trail records why in a word and how many files, nothing more.
+    """
+    documents = search.documents([f for f in files if search.applies_to(f)])
+    if not documents:
+        return
+    indexing = search.needs_indexing(session, documents)
+    if indexing:
+        yield TurnEvent("status", detail="indexing")
+    try:
+        result = await search.search(session, documents, question)
+    except SearchUnavailableError as exc:
+        logger.warning("attachment search unavailable (%s); sending the files cut", exc.reason)
+        audit.log(
+            session,
+            event="attachment_search_failed",
+            user_id=user.id,
+            conversation_id=conversation.id,
+            detail=f"reason={exc.reason} files={len(documents)}",
+        )
+        return
+    found.texts.update(result.texts)
+    found.passages, found.stale, found.capped = result.passages, result.stale, result.capped
+    if indexing and result.capped:
+        yield TurnEvent("status", detail="capped")
+
+
+def _search_question(anonymized: str, history: list[dict[str, str]]) -> str:
+    """Return what the search looks for: this message, after the employee's previous one.
+
+    A follow-up such as "and how much does she earn?" names nobody; the message before it does.
+    Both are masked: the previous one is what the provider received at the time.
+    """
+    previous = [m["content"] for m in history if m["role"] == MessageRole.USER.value]
+    return f"{previous[-1]}\n{anonymized}" if previous else anonymized
 
 
 def _mask_replay(messages: list[dict[str, str]], mapping: dict[str, str]) -> list[dict[str, str]]:
@@ -180,9 +234,18 @@ async def run_turn(
         yield TurnEvent("error", detail="judge_unavailable")
         return
 
+    history = _history_messages(session, conversation, settings.history_budget_chars)
+    files = _approved_files(session, conversation)
+    found = SearchResult()
+    search = AttachmentSearch(settings, policy, result.mapping, client)
+    question = _search_question(result.anonymized, history)
+    async for event in _search_attachments(
+        session, conversation, user, search, files, question, found
+    ):
+        yield event
     replayed = [
-        *_attachment_messages(session, conversation, settings.attachment_budget_chars),
-        *_history_messages(session, conversation, settings.history_budget_chars),
+        *_attachment_messages(files, settings.attachment_budget_chars, found.texts),
+        *history,
     ]
     # Earlier turns are replayed from what was sent at the time, and a value that has a token now
     # may have gone out in the clear back then: a word the employee only now asked to mask, a
@@ -298,7 +361,7 @@ async def run_turn(
         stage2_hits=result.judge_hits,
         # The backend is recorded because it answers a compliance question the counts cannot:
         # with `remote`, the stage-1 masked text left the network as well as the final prompt.
-        detail=_judge_detail(policy, settings, failed=result.judge_failed),
+        detail=_judge_detail(policy, settings, failed=result.judge_failed) + _search_detail(found),
     )
     if not report.is_clean:
         audit.log(
@@ -317,6 +380,16 @@ def _judge_detail(policy: Policy, settings: Settings, *, failed: bool) -> str:
     """Describe stage 2 for the audit row: which backend ran, and whether it failed."""
     backend = settings.judge_backend if policy.judge_enabled else "off"
     return f"judge={backend}" + (" judge_failed" if failed else "")
+
+
+def _search_detail(found: SearchResult) -> str:
+    """Describe the search for the audit row, in counts: files, passages sent, stale passages."""
+    if not found.texts:
+        return ""
+    return (
+        f" search_files={len(found.texts)} search_passages={found.passages}"
+        f" stale_passages={found.stale}"
+    )
 
 
 def _require_id(conversation: Conversation) -> int:

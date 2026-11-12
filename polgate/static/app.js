@@ -126,6 +126,17 @@
       }
     }
 
+    /* What the hub is doing before the answer starts: indexing a long attachment the first time
+       it is searched, and, when that file is longer than the hub indexes, a note that stays. */
+    source.addEventListener("status", function (event) {
+      var detail = read(event).detail;
+      if (detail === "capped") {
+        showBadge(status, "warn", article.dataset.cappedLabel);
+      } else if (detail === "indexing" && !started) {
+        setWaiting(sink, article.dataset.indexingLabel);
+      }
+    });
+
     source.addEventListener("preview", function (event) {
       var data = read(event);
       showSent(question, data.text || "", data.detail);

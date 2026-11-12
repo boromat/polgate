@@ -224,4 +224,10 @@ class Policy(SQLModel, table=True):
     # a later release adds joins the allowlist without bringing back one the admin removed. Empty on
     # a policy saved before the field existed; see policy_loader.get_policy.
     well_known_names_known: str = ""
+    # Search in attachments (polgate/retrieval): a file over the attachment budget sends the
+    # passages that match the question instead of its first characters. Works only once
+    # EMBEDDING_MODEL is set; this switch lets the administrator keep it off even then.
+    attachment_retrieval: bool = True
+    # Passages chosen per file and turn, at most; they also have to fit the attachment budget.
+    retrieval_top_k: int = 6
     updated_at: datetime = Field(default_factory=utcnow)
