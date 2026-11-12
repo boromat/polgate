@@ -7,6 +7,7 @@ from sqlmodel import select
 from polgate.auth.passwords import hash_password
 from polgate.config import get_settings
 from polgate.models import (
+    AttachmentChunk,
     Conversation,
     FileAsset,
     FileStatus,
@@ -179,7 +180,7 @@ def test_expired_vault_entries_are_removed_whatever_the_history_ttl_says(db_sess
 
 def test_the_audit_summary_carries_counts_and_nothing_else():
     detail = PurgeReport(vault_entries=2, messages=3).as_detail()
-    assert detail == "vault=2 pending=0 messages=3 files=0 conversations=0 orphans=0"
+    assert detail == ("vault=2 pending=0 messages=3 files=0 passages=0 conversations=0 orphans=0")
     assert PurgeReport(files=1).total == 1
 
 
@@ -382,3 +383,61 @@ def test_the_longest_retention_an_admin_can_set_does_not_overflow(db_session):
     entry = db_session.exec(select(VaultEntry)).one()
     assert entry.expires_at is not None
     assert (entry.expires_at.year - utcnow().year) in (MAX_TTL_DAYS // 365, MAX_TTL_DAYS // 365 + 1)
+
+
+def _chunk(file_id: int, conversation_id: int, position: int) -> AttachmentChunk:
+    return AttachmentChunk(
+        file_id=file_id,
+        conversation_id=conversation_id,
+        position=position,
+        text_sent="<OSOBA_1> fragment",
+        vector=bytes(4),
+        embedding_model="bge-m3",
+    )
+
+
+def test_an_expired_file_takes_its_indexed_passages_with_it(db_session, tmp_path):
+    conversation = _conversation(db_session, age_days=1)
+    asset = FileAsset(
+        conversation_id=conversation.id,
+        user_id=_owner(db_session).id,
+        filename="regulamin.txt",
+        mime_type="text/plain",
+        size_bytes=1,
+        storage_path=str(tmp_path / "gone.txt"),
+        status=FileStatus.APPROVED,
+        created_at=utcnow() - timedelta(days=200),
+    )
+    db_session.add(asset)
+    db_session.commit()
+    db_session.add_all([_chunk(asset.id, conversation.id, i) for i in range(3)])
+    db_session.commit()
+
+    report = purge(db_session, Policy(history_ttl_days=30), get_settings())
+
+    assert (report.files, report.passages) == (1, 3)
+    assert db_session.exec(select(AttachmentChunk)).all() == []
+    assert "passages=3" in report.as_detail()
+
+
+def test_an_emptied_conversation_leaves_no_passage_behind(db_session):
+    conversation = _conversation(db_session, age_days=90)
+    _message(db_session, conversation, age_days=90)
+    asset = FileAsset(
+        conversation_id=conversation.id,
+        user_id=_owner(db_session).id,
+        filename="plik.txt",
+        mime_type="text/plain",
+        size_bytes=1,
+        storage_path="none",
+        created_at=utcnow() - timedelta(days=90),
+    )
+    db_session.add(asset)
+    db_session.commit()
+    db_session.add_all([_chunk(asset.id, conversation.id, i) for i in range(2)])
+    db_session.commit()
+
+    report = purge(db_session, Policy(history_ttl_days=30), get_settings())
+
+    assert (report.files, report.passages, report.conversations) == (1, 2, 1)
+    assert db_session.exec(select(AttachmentChunk)).all() == []

@@ -8,7 +8,8 @@ settings in the admin panel have to be real deletions rather than labels on a fo
     readable, but the answers can no longer be de-anonymized, which is exactly the point.
 
 ``history_ttl_days``
-    how long messages and uploaded files survive. Messages are removed individually, so a long
+    how long messages and uploaded files survive, with the passages the search in attachments
+    indexed from a file. Messages are removed individually, so a long
     running conversation loses its old turns instead of being kept alive by its newest one, and a
     conversation left with nothing is removed with its mapping.
 
@@ -32,6 +33,7 @@ from sqlmodel import Session, col, select
 from polgate.config import Settings
 from polgate.models import (
     MAX_TTL_DAYS,
+    AttachmentChunk,
     Conversation,
     FileAsset,
     Message,
@@ -40,6 +42,7 @@ from polgate.models import (
     VaultEntry,
     utcnow,
 )
+from polgate.retrieval import store as passages
 from polgate.vault import store as vault
 
 logger = logging.getLogger(__name__)
@@ -60,6 +63,7 @@ class PurgeReport:
     pending_turns: int = 0
     messages: int = 0
     files: int = 0
+    passages: int = 0
     conversations: int = 0
     orphan_uploads: int = 0
 
@@ -71,6 +75,7 @@ class PurgeReport:
             + self.pending_turns
             + self.messages
             + self.files
+            + self.passages
             + self.conversations
             + self.orphan_uploads
         )
@@ -79,7 +84,8 @@ class PurgeReport:
         """Return an audit-safe summary: counts only, never a value or an identifier."""
         return (
             f"vault={self.vault_entries} pending={self.pending_turns} "
-            f"messages={self.messages} files={self.files} conversations={self.conversations} "
+            f"messages={self.messages} files={self.files} passages={self.passages} "
+            f"conversations={self.conversations} "
             f"orphans={self.orphan_uploads}"
         )
 
@@ -98,13 +104,14 @@ def purge(session: Session, policy: Policy, settings: Settings) -> PurgeReport:
     now = utcnow()
     vault_entries = vault.purge_expired(session)
     pending = _purge_pending_turns(session, now, settings.pending_turn_ttl_minutes)
-    messages, files, conversations = _purge_history(session, now, policy.history_ttl_days)
+    messages, files, chunks, conversations = _purge_history(session, now, policy.history_ttl_days)
     session.commit()
     report = PurgeReport(
         vault_entries=vault_entries,
         pending_turns=pending,
         messages=messages,
         files=files,
+        passages=chunks,
         conversations=conversations,
         orphan_uploads=_purge_orphan_uploads(session, settings.upload_dir, now),
     )
@@ -126,10 +133,15 @@ def _purge_pending_turns(session: Session, now: datetime, ttl_minutes: int) -> i
     return len(stale)
 
 
-def _purge_history(session: Session, now: datetime, ttl_days: int | None) -> tuple[int, int, int]:
-    """Delete messages and files past the history TTL, then conversations left with neither."""
+def _purge_history(
+    session: Session, now: datetime, ttl_days: int | None
+) -> tuple[int, int, int, int]:
+    """Delete messages and files past the history TTL, then conversations left with neither.
+
+    A file's passages go before the file: they refer to it, and the database enforces that.
+    """
     if ttl_days is None:
-        return 0, 0, 0
+        return 0, 0, 0, 0
     cutoff = now - timedelta(days=min(ttl_days, MAX_TTL_DAYS))
 
     messages = [
@@ -141,13 +153,14 @@ def _purge_history(session: Session, now: datetime, ttl_days: int | None) -> tup
     files = [
         row for row in session.exec(select(FileAsset)).all() if _as_utc(row.created_at) < cutoff
     ]
+    chunks = passages.delete_for_files(session, [f.id for f in files if f.id is not None])
     for asset in files:
         Path(asset.storage_path).unlink(missing_ok=True)
         session.delete(asset)
     session.flush()
 
     conversations = _purge_empty_conversations(session, cutoff)
-    return len(messages), len(files), conversations
+    return len(messages), len(files), chunks, conversations
 
 
 def _purge_orphan_uploads(session: Session, upload_dir: Path, now: datetime) -> int:
@@ -199,11 +212,16 @@ def _has_content(session: Session, conversation: Conversation) -> bool:
 
 
 def _delete_conversation_traces(session: Session, conversation: Conversation) -> None:
-    """Delete the vault mapping belonging to a conversation, before the conversation itself.
+    """Delete what refers to a conversation, before the conversation itself.
 
-    The rows are flushed here: left to the end of the pass, the database may be asked to delete the
-    conversation first, and its foreign keys refuse that, which rolled back the whole pass.
+    That is its vault mapping and any passage left of its files. The rows are flushed here: left to
+    the end of the pass, the database may be asked to delete the conversation first, and its foreign
+    keys refuse that, which rolled back the whole pass.
     """
+    for chunk in session.exec(
+        select(AttachmentChunk).where(col(AttachmentChunk.conversation_id) == conversation.id)
+    ).all():
+        session.delete(chunk)
     for entry in session.exec(
         select(VaultEntry).where(col(VaultEntry.conversation_id) == conversation.id)
     ).all():

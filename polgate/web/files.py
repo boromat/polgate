@@ -29,6 +29,7 @@ from polgate.files.extract import (
 from polgate.models import Conversation, FileAsset, FileStatus, HilMode, User
 from polgate.policy_loader import get_policy
 from polgate.rendering import render
+from polgate.retrieval import store as passages
 from polgate.vault import store as vault
 from polgate.web.chat import build_anonymizer
 
@@ -261,10 +262,11 @@ def reject(
     user: User = Depends(current_user),
     session: Session = Depends(get_session),
 ) -> Response:
-    """Reject a file; its text is never attached, and the bytes and the extracted text are removed.
+    """Reject a file; its text is never attached, and what was kept of it is removed.
 
-    The row stays, with the masked file name, so the conversation still shows that a file was
-    offered and turned down.
+    The bytes, the extracted text and the passages the search indexed from it go. The row stays,
+    with the masked file name, so the conversation still shows that a file was offered and turned
+    down.
     """
     asset = _load_asset(session, file_id, user)
     asset.status = FileStatus.REJECTED
@@ -273,6 +275,7 @@ def reject(
     # The original name goes with the text; pages fall back to the masked one.
     asset.filename_enc = ""
     Path(asset.storage_path).unlink(missing_ok=True)
+    removed = passages.delete_for_files(session, [file_id])
     session.add(asset)
     session.commit()
     audit.log(
@@ -280,7 +283,7 @@ def reject(
         event="file_rejected",
         user_id=user.id,
         conversation_id=asset.conversation_id,
-        detail=f"file_id={file_id}",
+        detail=f"file_id={file_id} passages={removed}",
     )
     return RedirectResponse(
         f"/chat/{asset.conversation_id}?flash=files.rejected_flash", status_code=303

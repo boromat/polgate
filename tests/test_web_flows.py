@@ -820,6 +820,32 @@ def test_rejecting_a_file_drops_its_extracted_text(admin_client):
     assert asset.text_sent == ""
 
 
+def test_rejecting_a_file_drops_the_passages_indexed_from_it(admin_client):
+    from polgate.models import AttachmentChunk, AuditEvent
+
+    file_id = _upload_for_review(admin_client)
+    with Session(get_engine()) as session:
+        asset = session.get(FileAsset, file_id)
+        session.add(
+            AttachmentChunk(
+                file_id=file_id,
+                conversation_id=asset.conversation_id,
+                position=0,
+                text_sent="fragment",
+                vector=bytes(4),
+                embedding_model="bge-m3",
+            )
+        )
+        session.commit()
+
+    admin_client.post(f"/files/{file_id}/reject")
+
+    with Session(get_engine()) as session:
+        assert session.exec(select(AttachmentChunk)).all() == []
+        event = session.exec(select(AuditEvent).where(AuditEvent.event == "file_rejected")).one()
+    assert event.detail == f"file_id={file_id} passages=1"
+
+
 def test_the_review_page_of_a_rejected_file_offers_nothing_to_approve(admin_client):
     file_id = _upload_for_review(admin_client)
     admin_client.post(f"/files/{file_id}/reject")
