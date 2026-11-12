@@ -6,7 +6,10 @@ messages later. This script plays every conversation in ``conversations.json`` t
 application, the way a browser does: it signs in, uploads and approves the attachments, sends each
 turn and reads the answer stream. The provider is a local HTTP server that records every request it
 receives and answers by repeating the masked message back, cut into small chunks, so the restored
-answer must equal what the employee typed.
+answer must equal what the employee typed. It serves ``/embeddings`` too, with a stand-in model
+(``bag_of_words.py``), and the attachment budget is set small, so every attachment goes through the
+search in attachments and its passages through the embeddings endpoint; what reached that endpoint
+counts as received like the chat. ``--no-search`` plays the conversations without the search.
 
 It counts four things:
 
@@ -39,9 +42,14 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
 
+from bag_of_words import vector
+
 DATASET = Path(__file__).resolve().parent / "conversations.json"
 #: The leaks and over-masking polanon is known to produce here, which ``--check`` accepts.
 KNOWN_GAPS = DATASET.with_name("known_gaps.json")
+#: The attachment budget with the search on: smaller than every attachment here, so each one is
+#: searched, and its passages go through the embeddings endpoint.
+SEARCH_BUDGET = 120
 #: Characters per streamed chunk. Small, so tokens arrive split and the restorer has to join them.
 CHUNK = 3
 _MIME = {".csv": "text/csv", ".txt": "text/plain"}
@@ -89,16 +97,24 @@ class FakeProvider:
     def __init__(self) -> None:
         """Bind to a free local port; :meth:`start` begins serving."""
         self.requests: list[dict[str, Any]] = []
+        self.embedded: list[list[str]] = []
         provider = self
 
         class Handler(BaseHTTPRequestHandler):
             def do_POST(self) -> None:
                 length = int(self.headers.get("Content-Length", "0"))
                 payload = json.loads(self.rfile.read(length))
+                if self.path.endswith("/embeddings"):
+                    provider.embedded.append(payload["input"])
+                    self._answer("application/json", json.dumps(_embeddings(payload["input"])))
+                    return
                 provider.requests.append(payload)
-                body = _sse(_last_user_message(payload)).encode()
+                self._answer("text/event-stream", _sse(_last_user_message(payload)))
+
+            def _answer(self, content_type: str, text: str) -> None:
+                body = text.encode()
                 self.send_response(200)
-                self.send_header("Content-Type", "text/event-stream")
+                self.send_header("Content-Type", content_type)
                 self.send_header("Content-Length", str(len(body)))
                 self.end_headers()
                 self.wfile.write(body)
@@ -120,6 +136,11 @@ class FakeProvider:
     def stop(self) -> None:
         """Stop serving."""
         self._server.shutdown()
+
+
+def _embeddings(texts: list[str]) -> dict[str, Any]:
+    """Answer an embeddings request with the stand-in model."""
+    return {"data": [{"index": i, "embedding": vector(t)} for i, t in enumerate(texts)]}
 
 
 def _last_user_message(payload: dict[str, Any]) -> str:
@@ -196,7 +217,7 @@ def _sse_events(body: str) -> Iterator[tuple[str, dict[str, str]]]:
             yield event, json.loads(data)
 
 
-def _configure(workdir: Path, provider_url: str, password: str) -> None:
+def _configure(workdir: Path, provider_url: str, password: str, budget: int | None) -> None:
     """Point the hub at a scratch database and the fake provider, before it reads its settings."""
     from cryptography.fernet import Fernet
 
@@ -213,6 +234,16 @@ def _configure(workdir: Path, provider_url: str, password: str) -> None:
             "ADMIN_PASSWORD": password,
         }
     )
+    if budget is not None:
+        # Small enough that every attachment here is searched, passage by passage.
+        os.environ.update(
+            {
+                "EMBEDDING_MODEL": "eval/bag-of-words",
+                "EMBEDDING_BASE_URL": provider_url,
+                "ATTACHMENT_BUDGET_CHARS": str(budget),
+                "RETRIEVAL_CHUNK_CHARS": str(max(budget // 2, 40)),
+            }
+        )
     os.environ.setdefault("JUDGE_BACKEND", "mock")
 
 
@@ -238,6 +269,7 @@ def run(conversations: Sequence[Conversation], provider: FakeProvider) -> list[R
         for conversation in conversations:
             result = Result(id=conversation.id, turns=len(conversation.turns))
             first_request = len(provider.requests)
+            first_embedding = len(provider.embedded)
             created = client.post("/chat/new")
             conversation_id = int(created.headers["location"].rsplit("/", 1)[1])
 
@@ -285,11 +317,13 @@ def run(conversations: Sequence[Conversation], provider: FakeProvider) -> list[R
                 if answer != text.strip():
                     result.not_restored.append(index)
 
-            received = "\n".join(
+            chat = [
                 str(message.get("content", ""))
                 for payload in provider.requests[first_request:]
                 for message in payload.get("messages", [])
-            )
+            ]
+            embedded = [text for batch in provider.embedded[first_embedding:] for text in batch]
+            received = "\n".join([*chat, *embedded])
             with Session(get_engine()) as session:
                 mapping = vault.load_mapping(session, conversation_id)
                 result.judge_failed = sum(
@@ -415,6 +449,15 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument(
         "--off-list", action="store_true", help="list the values masked that no list names"
     )
+    parser.add_argument(
+        "--no-search", action="store_true", help="send attachments cut, without the search"
+    )
+    parser.add_argument(
+        "--attachment-budget",
+        type=int,
+        default=SEARCH_BUDGET,
+        help=f"attachment budget with the search on (default {SEARCH_BUDGET})",
+    )
     args = parser.parse_args(argv)
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8")
@@ -423,7 +466,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     provider = FakeProvider()
     provider.start()
     with tempfile.TemporaryDirectory(prefix="polgate-eval-", ignore_cleanup_errors=True) as tmp:
-        _configure(Path(tmp), provider.url, secrets.token_urlsafe(16))
+        budget = None if args.no_search else args.attachment_budget
+        _configure(Path(tmp), provider.url, secrets.token_urlsafe(16), budget)
         try:
             results = run(conversations, provider)
         finally:
@@ -434,6 +478,10 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     judge = os.environ["JUDGE_BACKEND"]
     print(report(results, conversations, judge))
+    texts = sum(len(batch) for batch in provider.embedded)
+    search = "off" if args.no_search else f"on, attachment budget {args.attachment_budget}"
+    requests = len(provider.embedded)
+    print(f"search in attachments {search}: {requests} embedding requests, {texts} texts")
     if args.off_list:
         for r in results:
             if r.masked_off_list:

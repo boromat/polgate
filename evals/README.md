@@ -17,6 +17,12 @@ provider is a small HTTP server on localhost that records every request and answ
 masked message back in three-character pieces, so tokens arrive split and the restored answer has to
 equal what the employee typed. No paid API is called and nothing leaves the machine.
 
+The same server answers `/embeddings` with a stand-in model ([`bag_of_words.py`](bag_of_words.py)),
+and the attachment budget is set to 120 characters, so every attachment goes through the search in
+attachments: its passages, and each question about it, go to the embeddings endpoint, and whatever
+reached that endpoint counts as received, exactly like the chat. `--no-search` plays the
+conversations with the search off, the way the hub runs until `EMBEDDING_MODEL` is set.
+
 It counts:
 
 - **leaked**: a listed value found in anything the provider received, as a word of its own; **in
@@ -37,6 +43,7 @@ python evals/run.py                         # mock judge, about a minute
 JUDGE_BACKEND=ollama python evals/run.py    # the local Ollama judge, if one is running
 python evals/run.py --check                 # exit 1 on a finding known_gaps.json does not list
 python evals/run.py --off-list --json out.json
+python evals/run.py --no-search             # attachments cut to the budget, no embeddings
 ```
 
 CI runs `--check` with the mock judge after the tests. [`known_gaps.json`](known_gaps.json) lists
@@ -74,6 +81,11 @@ It also masked "Płatnik", the name of ZUS's payroll program, and "ZUS" itself, 
 company names; 0.3.3 put both on its list of well-known names. What is still masked off the list is
 a company name and a city on its own, which the lists leave out on purpose.
 
+With the search in attachments, on 13 November 2026 with polanon 0.3.3, the numbers are the same:
+0 of 125 values leaked, whole or in part, 0 phrases masked anyway, no turn refused and 60 of 60
+answers restored exactly. The check covered 15 requests to the embeddings endpoint with 28 texts,
+passages of the four attachments and the questions about them, as well as the chat.
+
 Having found no leak in conversations its author wrote says little about conversations nobody has
 written yet. Each new miss belongs in `conversations.json`, and in `known_gaps.json` until polanon
 fixes it.
@@ -97,6 +109,62 @@ says, and the other numbers were those of the mock judge.
   tokens coming back, not the grammar of a model's answer.
 - **A leak is counted as written.** A value is looked for as a word of its own in the form it has in
   the conversation; the same value in another spelling reaching the provider would not be counted.
+
+## Search in attachments: does the answer reach the model?
+
+A file longer than the attachment budget used to be cut to its first characters on every turn.
+[`retrieval.json`](retrieval.json) holds four long documents (work rules, an office lease, an IT
+security policy and a quarterly sales report), masked the way the hub stores an attachment, and 16
+questions whose answer lies past the budget. [`retrieval.py`](retrieval.py) cuts each document into
+passages and ranks them for each question with the hub's own code, in three ways: by words in
+common, by vectors, and by both, as the hub does. It counts how often the passage holding the
+answer comes first (hit@1) or among the first three (hit@3), and whether the answer is in the text
+a turn would send: the best `top_k` passages that fit the budget. The file cut to the budget is
+scored on that last count alone.
+
+13 November 2026, budget 1 500 characters, passages of 400, top_k 6, stand-in vectors:
+
+| | hit@1 | hit@3 | reaches the model |
+|---|---|---|---|
+| cut to the budget, as before | | | **0 of 16** |
+| search: words only | 14 of 16 | 15 of 16 | 15 of 16 |
+| search: vectors only | 9 of 16 | 13 of 16 | 15 of 16 |
+| search: both, as the hub ranks | 16 of 16 | 16 of 16 | **16 of 16** |
+
+The vector row says little: the stand-in model counts words without telling rare ones from common
+ones, which a real embedding model does far better. The two ways fail on different questions,
+which is why the hub adds them. Words alone never find "Jak długo trzymane są backupy?", since the
+document says "kopie zapasowe", while the vectors put that passage first; vectors alone miss "Gdzie
+i kiedy można zastać `<OSOBA_3>`?", while words find it through the token, matched exactly. A real
+model should do better on the first kind of question, which is what the LM Studio run below is for.
+
+### Measuring a real embedding model with LM Studio
+
+1. In LM Studio, download `bge-m3` (a multilingual model that reads Polish well) and load it.
+2. Start the local server (Developer, Start Server); it listens on `http://localhost:1234` by
+   default. Note the model's name in the list of loaded models, for example `text-embedding-bge-m3`.
+3. From the repository root:
+
+   ```bash
+   python evals/retrieval.py --embeddings-url http://localhost:1234/v1 --embeddings-model text-embedding-bge-m3
+   ```
+
+Nothing leaves the machine: LM Studio computes the vectors locally. The same two settings in
+`.env`, `EMBEDDING_BASE_URL=http://localhost:1234/v1` and `EMBEDDING_MODEL=text-embedding-bge-m3`,
+make the hub itself use it.
+
+### What these numbers do not show
+
+- **The author wrote the documents and the questions**, and placed every answer past the budget on
+  purpose, so the cut file scores nothing by construction. Sixteen questions are few.
+- **The documents are masked already.** They are written with tokens in place of names, the way the
+  hub stores them, rather than masked by polanon on the way in.
+- **The budget is scaled down.** The hub's default is 60 000 characters with passages of 1 200;
+  here it is 1 500 with passages of 400, so that a short document is long enough to need the search.
+  The ratio of passages sent to passages in the file is close, but a real file of hundreds of pages
+  has many more passages to choose from.
+- **Reaching the model is not answering.** The count stops at the text the model receives; whether a
+  given model then answers correctly is not measured.
 
 ## Adding a conversation
 

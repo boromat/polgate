@@ -52,6 +52,11 @@ jobs:
           JUDGE_BACKEND: mock
         run: python evals/run.py --check
 
+      # Whether the passage holding the answer reaches the model, searched or cut, with stand-in
+      # vectors: no network, a few seconds. It fails if the dataset or the ranking code breaks.
+      - name: Search in attachments evaluation
+        run: python evals/retrieval.py
+
   package:
     name: Built wheel installs and runs
     runs-on: ubuntu-latest

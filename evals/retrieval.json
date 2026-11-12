@@ -1,0 +1,99 @@
+{
+  "budget_chars": 1500,
+  "chunk_chars": 400,
+  "top_k": 6,
+  "documents": [
+    {
+      "id": "regulamin-pracy",
+      "heading": "regulamin_pracy_<FIRMA_1>.pdf",
+      "paragraphs": [
+        "Regulamin pracy obowiązuje wszystkich pracowników zatrudnionych na podstawie umowy o pracę w siedzibie spółki i w jej oddziałach. Regulamin określa organizację i porządek w procesie pracy oraz związane z tym prawa i obowiązki pracodawcy i pracowników. Za jego aktualizację odpowiada dział kadr, który publikuje każdą zmianę w intranecie z dwutygodniowym wyprzedzeniem.",
+        "Pracownik jest obowiązany przestrzegać czasu pracy ustalonego w zakładzie, regulaminu pracy i ustalonego porządku, przepisów oraz zasad bezpieczeństwa i higieny pracy, a także przepisów przeciwpożarowych. Pracownik dba o dobro zakładu pracy, chroni jego mienie oraz zachowuje w tajemnicy informacje, których ujawnienie mogłoby narazić pracodawcę na szkodę.",
+        "Czas pracy nie może przekraczać 8 godzin na dobę i przeciętnie 40 godzin w przeciętnie pięciodniowym tygodniu pracy w przyjętym okresie rozliczeniowym. Okres rozliczeniowy wynosi jeden miesiąc kalendarzowy. Praca w godzinach nadliczbowych jest dopuszczalna wyłącznie na polecenie przełożonego wydane na piśmie lub w systemie kadrowym.",
+        "Pracownicy biurowi rozpoczynają pracę między godziną 7:00 a 9:00 i kończą ją po przepracowaniu ośmiu godzin. Obecność potwierdza się kartą przy wejściu do budynku. Spóźnienie należy zgłosić przełożonemu niezwłocznie, najpóźniej w ciągu godziny od planowanego rozpoczęcia pracy, wiadomością w komunikatorze firmowym.",
+        "Praca zdalna jest możliwa do ośmiu dni w miesiącu po uzgodnieniu z przełożonym w systemie kadrowym co najmniej dzień wcześniej. Pracownik pracujący zdalnie otrzymuje ryczałt w wysokości 120 zł miesięcznie na pokrycie kosztów energii elektrycznej i łącza internetowego, wypłacany razem z wynagrodzeniem za miesiąc następny.",
+        "Urlop wypoczynkowy udzielany jest zgodnie z planem urlopów ustalanym do końca stycznia każdego roku. Wniosek o urlop poza planem składa się w systemie kadrowym najpóźniej siedem dni przed jego rozpoczęciem. Urlop na żądanie zgłasza się telefonicznie przełożonemu najpóźniej w dniu jego rozpoczęcia, przed godziną 9:00.",
+        "Wyjazd służbowy wymaga polecenia wyjazdu podpisanego przez kierownika działu. Dieta krajowa wynosi tyle, ile przewiduje rozporządzenie dla pracowników administracji publicznej. Rozliczenie delegacji wraz z biletami i fakturami za nocleg należy złożyć w dziale księgowości w ciągu 14 dni od powrotu, w przeciwnym razie zaliczka zostaje potrącona z wynagrodzenia.",
+        "Sprzęt służbowy, w tym laptop i telefon, wydaje dział IT za pokwitowaniem. Za sprzęt odpowiada pracownik, który go pokwitował. Zgubienie lub kradzież sprzętu zgłasza się do działu IT w ciągu 24 godzin, a w przypadku kradzieży także na policji. Przy zakończeniu zatrudnienia sprzęt zwraca się najpóźniej w ostatnim dniu pracy.",
+        "Nagrodę roczną przyznaje zarząd na wniosek kierownika działu. Jej wysokość nie przekracza jednego miesięcznego wynagrodzenia zasadniczego pracownika i zależy od oceny okresowej. Nagrody wypłaca się w marcu, za rok poprzedni, pracownikom zatrudnionym w dniu wypłaty, którzy nie mają nieusprawiedliwionych nieobecności.",
+        "Za nieprzestrzeganie porządku i dyscypliny pracy pracodawca może zastosować karę upomnienia lub nagany. Karę stosuje się po uprzednim wysłuchaniu pracownika. Pracownik może w ciągu siedmiu dni od zawiadomienia wnieść sprzeciw, który rozpatruje <OSOBA_2>, kierownik działu kadr, po zasięgnięciu opinii przedstawiciela pracowników.",
+        "Sprawy bezpieczeństwa i higieny pracy prowadzi <OSOBA_3>, specjalista do spraw BHP, dostępny w pokoju 214 we wtorki i czwartki. Szkolenie okresowe z BHP odbywa się co trzy lata dla pracowników biurowych i co roku dla pracowników magazynu. Wypadek przy pracy zgłasza się niezwłocznie przełożonemu i specjaliście do spraw BHP."
+      ],
+      "questions": [
+        {"question": "Ile dostaje miesięcznie osoba pracująca z domu na prąd i internet?", "answer": "120 zł miesięcznie"},
+        {"question": "W jakim terminie trzeba rozliczyć delegację?", "answer": "w ciągu 14 dni od powrotu"},
+        {"question": "Kto rozpatruje sprzeciw od nałożonej kary?", "answer": "<OSOBA_2>, kierownik działu kadr"},
+        {"question": "Gdzie i kiedy można zastać <OSOBA_3>?", "answer": "w pokoju 214 we wtorki i czwartki"}
+      ]
+    },
+    {
+      "id": "umowa-najmu-biura",
+      "heading": "umowa_najmu_<ADRES_1>.docx",
+      "paragraphs": [
+        "Umowa najmu lokalu użytkowego zawarta pomiędzy <FIRMA_2> jako wynajmującym, reprezentowanym przez <OSOBA_4>, a <FIRMA_1> jako najemcą, reprezentowanym przez <OSOBA_5>. Strony oświadczają, że posiadają pełną zdolność do zawarcia umowy i że umowa nie narusza żadnych wcześniejszych zobowiązań którejkolwiek z nich.",
+        "Przedmiotem najmu jest lokal biurowy położony na trzecim piętrze budynku pod adresem <ADRES_1>, o powierzchni 412 metrów kwadratowych, wraz z pomieszczeniem socjalnym i dwiema salami konferencyjnymi. Wynajmujący oświadcza, że jest jedynym właścicielem lokalu i że lokal nie jest obciążony prawami osób trzecich.",
+        "Lokal zostaje wydany najemcy na podstawie protokołu zdawczo-odbiorczego, sporządzonego w dniu podpisania umowy, z opisem stanu technicznego, wyposażenia i stanów liczników. Najemca może używać lokalu wyłącznie na cele biurowe i nie może bez zgody wynajmującego zmienić jego przeznaczenia ani oddać go w podnajem.",
+        "Czynsz najmu wynosi 28 840 zł netto miesięcznie, powiększony o podatek VAT według obowiązującej stawki. Czynsz płatny jest z góry do dziesiątego dnia każdego miesiąca na rachunek bankowy wynajmującego wskazany na fakturze. Czynsz będzie corocznie waloryzowany o wskaźnik wzrostu cen towarów i usług konsumpcyjnych ogłaszany przez GUS.",
+        "Opłaty za media, w tym energię elektryczną, ogrzewanie, wodę i wywóz odpadów, najemca ponosi według wskazań podliczników, na podstawie faktur wystawianych przez wynajmującego co miesiąc. Opłata eksploatacyjna za części wspólne budynku wynosi 9 zł netto za metr kwadratowy miesięcznie i obejmuje sprzątanie, ochronę oraz konserwację wind.",
+        "Tytułem zabezpieczenia roszczeń wynajmującego najemca wpłaca kaucję w wysokości trzykrotności miesięcznego czynszu brutto w terminie siedmiu dni od podpisania umowy. Kaucja podlega zwrotowi w terminie 30 dni od dnia zwrotu lokalu, po potrąceniu ewentualnych należności wynajmującego, bez odsetek.",
+        "Najemca może dokonywać zmian w aranżacji lokalu wyłącznie za pisemną zgodą wynajmującego. Nakłady poniesione przez najemcę nie podlegają zwrotowi, chyba że strony postanowią inaczej na piśmie. Drobne naprawy i bieżącą konserwację lokalu najemca wykonuje na własny koszt, a naprawy instalacji budynku należą do wynajmującego.",
+        "Najemca zobowiązuje się zawrzeć umowę ubezpieczenia od odpowiedzialności cywilnej z sumą gwarancyjną nie niższą niż 1 000 000 zł i utrzymywać ją przez cały okres najmu. Kopię polisy najemca przekazuje wynajmującemu w ciągu 14 dni od wydania lokalu oraz po każdym jej odnowieniu.",
+        "Najemcy przysługuje prawo do korzystania z ośmiu miejsc postojowych w garażu podziemnym budynku za opłatą 350 zł netto miesięcznie za każde miejsce. Dodatkowe miejsca wynajmujący udostępnia w miarę możliwości na podstawie odrębnego zamówienia złożonego przez najemcę z miesięcznym wyprzedzeniem.",
+        "Umowa zostaje zawarta na czas oznaczony pięciu lat. Każda ze stron może ją wypowiedzieć z zachowaniem dziewięciomiesięcznego okresu wypowiedzenia ze skutkiem na koniec miesiąca kalendarzowego, jeżeli druga strona narusza istotne postanowienia umowy i nie usuwa naruszenia w terminie 30 dni od wezwania.",
+        "W razie opóźnienia w zwrocie lokalu po zakończeniu najmu najemca zapłaci karę umowną w wysokości 1 500 zł za każdy dzień opóźnienia. Wynajmujący może dochodzić odszkodowania przewyższającego karę umowną na zasadach ogólnych. Sprawy sporne rozstrzyga sąd właściwy dla siedziby wynajmującego."
+      ],
+      "questions": [
+        {"question": "Ile kosztuje miejsce w garażu?", "answer": "350 zł netto miesięcznie"},
+        {"question": "Kiedy oddadzą nam pieniądze z zabezpieczenia po wyprowadzce?", "answer": "w terminie 30 dni od dnia zwrotu lokalu"},
+        {"question": "Jaki jest okres wypowiedzenia umowy?", "answer": "dziewięciomiesięcznego okresu wypowiedzenia"},
+        {"question": "Ile zapłacimy za każdy dzień spóźnienia z oddaniem biura?", "answer": "1 500 zł za każdy dzień opóźnienia"}
+      ]
+    },
+    {
+      "id": "polityka-bezpieczenstwa",
+      "heading": "polityka_bezpieczenstwa_IT.pdf",
+      "paragraphs": [
+        "Polityka bezpieczeństwa informacji określa zasady ochrony danych przetwarzanych w systemach informatycznych spółki. Dotyczy wszystkich pracowników, współpracowników i podwykonawców, którzy mają dostęp do tych systemów. Właścicielem polityki jest <OSOBA_6>, pełniący funkcję kierownika działu IT, który przegląda ją co najmniej raz w roku.",
+        "Każdy użytkownik otrzymuje indywidualne konto i nie może udostępniać go innym osobom. Uprawnienia przyznaje się według zasady minimalnych uprawnień, na wniosek przełożonego złożony w systemie zgłoszeń. Konta osób, które zakończyły współpracę ze spółką, blokuje się w dniu zakończenia współpracy, a dane z nich archiwizuje.",
+        "Hasło do konta firmowego musi mieć co najmniej 14 znaków i nie może zawierać imienia, nazwiska ani nazwy firmy. Hasła nie zmienia się okresowo, lecz natychmiast po podejrzeniu, że ktoś mógł je poznać. Do poczty, systemu kadrowego i dostępu zdalnego wymagane jest uwierzytelnianie dwuskładnikowe za pomocą aplikacji w telefonie służbowym.",
+        "Dostęp do zasobów firmowych spoza biura odbywa się wyłącznie przez sieć VPN z użyciem certyfikatu zainstalowanego przez dział IT. Zabronione jest łączenie się z systemami firmowymi z publicznych komputerów, na przykład w hotelach lub kawiarenkach internetowych, nawet przez przeglądarkę.",
+        "Dyski wszystkich laptopów służbowych są szyfrowane. Pracownik nie może wyłączać szyfrowania ani programu antywirusowego. Nośniki przenośne, takie jak pendrive, są dopuszczalne wyłącznie w wersji szyfrowanej wydanej przez dział IT, a dane osobowe wolno na nich przechowywać jedynie przez czas potrzebny do przekazania.",
+        "Kopie zapasowe serwerów plików i baz danych wykonywane są codziennie o godzinie 23:00 i przechowywane przez 35 dni w drugiej lokalizacji, w osobnym centrum danych. Raz na kwartał dział IT sprawdza, czy z kopii da się odtworzyć wybrane dane, i sporządza z tego protokół podpisywany przez kierownika działu.",
+        "Instalowanie oprogramowania na komputerach służbowych jest dozwolone wyłącznie z katalogu zatwierdzonych aplikacji. O dodanie programu do katalogu wnioskuje przełożony w systemie zgłoszeń, a dział IT ocenia licencję, bezpieczeństwo i zgodność z polityką. Korzystanie z prywatnych kont w usługach chmurowych do danych firmowych jest zabronione.",
+        "Incydent bezpieczeństwa, taki jak zgubienie laptopa, podejrzana wiadomość z prośbą o hasło lub nieuprawniony dostęp do danych, należy zgłosić do <OSOBA_7>, inspektora ochrony danych, w ciągu 24 godzin od jego wykrycia, pod adresem <EMAIL_1> albo telefonicznie. Zgłaszający nie ponosi konsekwencji za samo zgłoszenie.",
+        "Inspektor ochrony danych ocenia, czy incydent jest naruszeniem ochrony danych osobowych, i w razie potrzeby zgłasza je organowi nadzorczemu w ciągu 72 godzin. Każdy incydent wpisuje się do rejestru incydentów, nawet jeśli nie wymagał zgłoszenia, razem z opisem skutków i podjętych działań.",
+        "Urządzenia prywatne, takie jak własny telefon, mogą służyć do odbierania poczty firmowej wyłącznie po zarejestrowaniu w systemie zarządzania urządzeniami mobilnymi. Dział IT może zdalnie usunąć dane firmowe z takiego urządzenia, ale nie ma dostępu do danych prywatnych jego właściciela.",
+        "Szkolenie z bezpieczeństwa informacji przechodzi każdy nowy pracownik w pierwszym tygodniu pracy, a następnie wszyscy pracownicy raz w roku. Szkolenie kończy się testem, który trzeba zdać z wynikiem co najmniej 80 procent; osoba, która go nie zdała, powtarza szkolenie w ciągu miesiąca."
+      ],
+      "questions": [
+        {"question": "Do kogo zgłosić, że zginął mi laptop?", "answer": "<OSOBA_7>, inspektora ochrony danych, w ciągu 24 godzin"},
+        {"question": "Jak długo trzymane są backupy?", "answer": "przechowywane przez 35 dni"},
+        {"question": "Ile procent trzeba mieć na teście ze szkolenia?", "answer": "co najmniej 80 procent"},
+        {"question": "Czy mogę czytać firmowe maile na swoim telefonie?", "answer": "po zarejestrowaniu w systemie zarządzania urządzeniami mobilnymi"}
+      ]
+    },
+    {
+      "id": "raport-sprzedazy",
+      "heading": "raport_sprzedazy_Q3.xlsx",
+      "paragraphs": [
+        "Raport przedstawia wyniki sprzedaży spółki w trzecim kwartale roku na tle kwartału poprzedniego i planu rocznego. Dane pochodzą z systemu sprzedażowego i zostały uzgodnione z księgowością. Wszystkie kwoty podano w tysiącach złotych netto, o ile nie zaznaczono inaczej.",
+        "Łączna sprzedaż w kwartale wyniosła 18 420 tysięcy złotych, o 7 procent więcej niż w drugim kwartale i o 3 procent mniej, niż zakładał plan. Marża brutto spadła do 31,2 procent z powodu wyższych kosztów transportu i rabatów udzielonych dwóm największym klientom w zamian za dłuższe umowy.",
+        "Region północny zwiększył sprzedaż o 12 procent dzięki nowym umowom z sieciami handlowymi. Region południowy utrzymał wynik z poprzedniego kwartału. Region zachodni sprzedał o 9 procent mniej, ponieważ <FIRMA_3> przesunęła duże zamówienie na czwarty kwartał, co dział sprzedaży uznaje za ryzyko jednorazowe.",
+        "Kluczowi klienci odpowiadali za 46 procent sprzedaży. Największym klientem pozostała <FIRMA_4>, której zamówienia wyniosły 3 150 tysięcy złotych. Umowę z <FIRMA_5> przedłużono o trzy lata z możliwością rozszerzenia o nowe kategorie produktów od przyszłego roku.",
+        "Sprzedaż przez sklep internetowy wzrosła o 21 procent i stanowi już 14 procent całej sprzedaży. Średnia wartość zamówienia internetowego wyniosła 612 złotych. Odsetek zwrotów utrzymał się na poziomie 4 procent, przy czym najczęstszą przyczyną zwrotu był niewłaściwie dobrany rozmiar produktu.",
+        "Budżet marketingowy w kwartale wyniósł 940 tysięcy złotych, z czego 60 procent przeznaczono na kampanie w internecie. Kampania jesienna przyniosła 4 800 nowych klientów sklepu internetowego przy koszcie pozyskania klienta 74 złote, czyli o 11 złotych mniej niż w kampanii wiosennej.",
+        "Dział sprzedaży zatrudnia 38 osób. W kwartale zatrudniono trzech przedstawicieli handlowych w regionie północnym, a dwie osoby odeszły. Wskaźnik rotacji wyniósł 5 procent kwartalnie. Za rekrutację w dziale odpowiada <OSOBA_8>, który planuje zatrudnić jeszcze dwie osoby do obsługi sklepu internetowego.",
+        "Należności przeterminowane powyżej 60 dni wzrosły do 1 230 tysięcy złotych. Największą pozycją jest zadłużenie <FIRMA_6>, wobec której wstrzymano dostawy do czasu spłaty. Dział windykacji przygotował harmonogram spłat, który klient ma zaakceptować do końca października.",
+        "Na czwarty kwartał zaplanowano sprzedaż na poziomie 21 000 tysięcy złotych, co pozwoliłoby zbliżyć się do planu rocznego. Plan zakłada realizację przesuniętego zamówienia <FIRMA_3>, sezonowy wzrost sprzedaży internetowej oraz wprowadzenie dwóch nowych linii produktów w listopadzie.",
+        "Główne ryzyka to dalszy wzrost kosztów transportu, opóźnienia dostaw od producenta z Azji oraz utrata płynności przez część mniejszych klientów. Zarząd zdecydował o renegocjacji umowy przewozowej przed końcem roku i o zwiększeniu zapasów najlepiej sprzedających się produktów o 15 procent.",
+        "Raport przygotowała <OSOBA_9>, analityk działu controllingu. Pytania dotyczące danych należy kierować do niej do końca tygodnia następującego po publikacji raportu; po tym terminie dane kwartału zostaną zamknięte i przekazane do sprawozdania rocznego."
+      ],
+      "questions": [
+        {"question": "Ile wynosił koszt pozyskania klienta w kampanii jesiennej?", "answer": "74 złote"},
+        {"question": "Ile wynoszą zaległe płatności klientów powyżej dwóch miesięcy?", "answer": "1 230 tysięcy złotych"},
+        {"question": "Kto zajmuje się rekrutacją w dziale sprzedaży?", "answer": "<OSOBA_8>"},
+        {"question": "O ile procent zwiększymy zapasy?", "answer": "o 15 procent"}
+      ]
+    }
+  ]
+}
