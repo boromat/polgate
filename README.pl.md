@@ -86,11 +86,13 @@ wyniki dla każdego typu danych i opisują, co zostaje pominięte i dlaczego.
 
 To, co dociera do dostawcy, hub mierzy we własnej [ewaluacji wycieków](evals/README.md): 27
 zmyślonych rozmów, 60 tur i cztery załączone pliki, przepuszczonych przez działający hub do atrapy
-dostawcy, która zapisuje każde żądanie. Z polanon 0.2.2 do dostawcy dotarły 4 ze 125 wartości, które
-miały zostać w firmie, 2 z 76 zwykłych zwrotów zostały niepotrzebnie zamaskowane, żadna tura nie
-została odrzucona, a każda z 60 odpowiedzi wróciła dokładnie w tej postaci, w jakiej wpisano
-wiadomość. Te rozmowy też napisał autor huba, a notatki do ewaluacji opisują każde pominięcie
-(po angielsku).
+dostawcy, która zapisuje każde żądanie. Pierwszy przebieg, na polanon 0.2.2, wykazał, że do
+dostawcy dociera 4 ze 125 wartości, które miały zostać w firmie, a 2 z 76 zwykłych zwrotów są
+niepotrzebnie maskowane. polanon 0.3.3 poprawiło wszystkie sześć i z nim do dostawcy nie dociera
+żadna wartość z list, nic nie jest maskowane przez pomyłkę, żadna tura nie jest odrzucana, a każda
+z 60 odpowiedzi wraca dokładnie w tej postaci, w jakiej wpisano wiadomość. Te rozmowy też napisał
+autor huba, więc to test regresji, a nie odsetek wycieków, jakiego można się spodziewać w firmie;
+notatki do ewaluacji (po angielsku) opisują każde pominięcie.
 
 ## Funkcje
 

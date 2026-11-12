@@ -40,26 +40,28 @@ python evals/run.py --off-list --json out.json
 ```
 
 CI runs `--check` with the mock judge after the tests. [`known_gaps.json`](known_gaps.json) lists
-the leaks and over-masking below, so the check passes on what is known and fails on anything new, a
-refusal, an answer restored wrong, or a known gap that has gone away and should come off the list.
+the leaks and over-masking polanon is known to produce here, none at the moment, so the check fails
+on anything new, a refusal, an answer restored wrong, or a listed gap that has gone away and should
+come off the list.
 
 ## Results
 
-11 November 2026, polanon 0.2.2, the hub at version 0.1.0 plus the changes on `main`, mock judge:
+Mock judge, the hub at version 0.1.0 plus the changes on `main`:
 
-| | |
-|---|---|
-| values that must not leak | 125 |
-| leaked whole | **4** (3.2%) |
-| leaked in part | 0 |
-| phrases that must reach the provider | 76 |
-| masked anyway | **2** |
-| turns refused before sending | 0 |
-| answers restored exactly | 60 of 60 |
-| values masked off the list | 4 |
+| | polanon 0.2.2 to 0.3.2, 11 November 2026 | polanon 0.3.3, 12 November 2026 |
+|---|---|---|
+| values that must not leak | 125 | 125 |
+| leaked whole | **4** (3.2%) | **0** |
+| leaked in part | 0 | 0 |
+| phrases that must reach the provider | 76 | 76 |
+| masked anyway | **2** | **0** |
+| turns refused before sending | 0 | 0 |
+| answers restored exactly | 60 of 60 | 60 of 60 |
+| values masked off the list | 4 | 2 |
 
-What leaked, all four misses of polanon's detection rather than of the hub, which can only check
-for values polanon masked:
+The first run found four leaks, all misses of polanon's detection rather than of the hub, which can
+only check for values polanon masked. polanon 0.3.3 fixed each of them, with a test, and the hub
+requires it:
 
 | Conversation | Value | Why |
 |---|---|---|
@@ -68,13 +70,18 @@ for values polanon masked:
 | `pesel-correction` | "Bielskiej", a turn after "Natalia Bielska" | a feminine surname in another case, with no "pani" before it |
 | `courier-pickup` | "Długiej 17" | a street with neither "ul." nor a postcode |
 
-What was masked anyway: "Płatnik", the name of ZUS's payroll program, and "ZUS" itself, both taken
-for company names. The values masked off the list were these two, a company name and a city.
+It also masked "Płatnik", the name of ZUS's payroll program, and "ZUS" itself, both taken for
+company names; 0.3.3 put both on its list of well-known names. What is still masked off the list is
+a company name and a city on its own, which the lists leave out on purpose.
+
+Having found no leak in conversations its author wrote says little about conversations nobody has
+written yet. Each new miss belongs in `conversations.json`, and in `known_gaps.json` until polanon
+fixes it.
 
 The local Ollama judge was not measured: Ollama is not installed on the machine these numbers were
-taken on. With `JUDGE_BACKEND=ollama` and nothing listening, the report counts 60 judge failures in
-60 turns: the hub falls back to stage 1 on every one, as its default policy says, and the other
-numbers are those above.
+taken on. With `JUDGE_BACKEND=ollama` and nothing listening, on polanon 0.2.2, the report counted
+60 judge failures in 60 turns: the hub falls back to stage 1 on every one, as its default policy
+says, and the other numbers were those of the mock judge.
 
 ## What these numbers do not show
 

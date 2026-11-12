@@ -15,13 +15,20 @@ All notable changes to this project are recorded here. The format follows
 - **A leak evaluation** in `evals/`: 27 made-up conversations, with attachments, surnames in
   another case and a mistyped PESEL, played through the running hub against a local provider that
   records every request. It counts the listed values that reach the provider, ordinary phrases
-  masked when they should not be, refused turns and answers not restored exactly. With polanon
-  0.2.2: 4 of 125 values leak, all of them detection gaps listed in `evals/README.md`. CI runs it
-  with the mock judge and fails on any finding `evals/known_gaps.json` does not list.
+  masked when they should not be, refused turns and answers not restored exactly. Its first run,
+  on polanon 0.2.2, found 4 of 125 values leaking and 2 phrases masked by mistake, all detection
+  gaps that polanon 0.3.3 fixed; with it, nothing leaks. CI runs it with the mock judge and fails
+  on any finding `evals/known_gaps.json` does not list.
 
 ### Changed
 
-- **polanon 0.2.2 or later is required.** Its output sweep no longer reports a restored name the
+- **polanon 0.3.3 or later is required.** It fixes the four leaks and two words masked by mistake
+  that the leak evaluation found: a password after "Hasło administratora:", a PESEL with a typo
+  after its label, a feminine surname in another case after the full name ("Bielskiej"), a street
+  with neither "ul." nor a postcode, and "ZUS" and "Płatnik" taken for company names (0.3.3). It
+  also keeps a known value whole where a new detection only partly overlaps it (0.3.1), and its
+  `NerModelUnavailableError` is still a `ModuleNotFoundError`, so the hub handles a missing spaCy
+  model as before (0.3.0). From the earlier releases: its output sweep no longer reports a restored name the
   model inflected, such as "Jan Kowalskia", as new personal data, and it masks phone numbers
   written with a bare 48 prefix and e-mail addresses with Polish letters (0.2.1). It also masks
   links to a person's profile as a new type, `LINK`, which the admin panel lists and an existing

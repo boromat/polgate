@@ -81,10 +81,12 @@ give the numbers per entity type and say what is missed and why.
 
 The hub measures what reaches the provider in its own [leak evaluation](evals/README.md): 27
 made-up conversations, 60 turns and four attached files, played through the running hub against a
-stand-in provider that records every request. With polanon 0.2.2, 4 of the 125 values that must stay
-inside reached the provider, 2 of 76 ordinary phrases were masked when they should not have been, no
-turn was refused and all 60 answers came back exactly as typed. The hub's author wrote those
-conversations as well, and the evaluation's notes list each miss.
+stand-in provider that records every request. Its first run, on polanon 0.2.2, found 4 of the 125
+values that must stay inside reaching the provider and 2 of 76 ordinary phrases masked when they
+should not have been. polanon 0.3.3 fixed all six, and with it nothing on the lists reaches the
+provider, nothing is masked by mistake, no turn is refused and all 60 answers come back exactly as
+typed. The hub's author wrote those conversations as well, so this is a regression check rather
+than a leak rate to expect; the evaluation's notes say what each miss was.
 
 ## Features
 

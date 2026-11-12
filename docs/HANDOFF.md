@@ -2,10 +2,11 @@
 
 Status: steps 1-12 are done and tested. The masking engine that steps 3-5 and 12 built lived here as
 `piianon/` and is now a library of its own, [polanon](https://github.com/boromat/polanon), which the
-hub installs from PyPI, now at 0.2.2 or later. Version 0.1.0 was released on 2026-11-03: the
+hub installs from PyPI, now at 0.3.3 or later. Version 0.1.0 was released on 2026-11-03: the
 repository is public and the image is on GitHub Container Registry. Since then, unreleased on
-`main`: `start.bat` runs the hub on Windows, and the hub requires polanon 0.2.2, whose lone-surname
-masking needed one fix in the pre-send check (see *Since 0.1.0*). What is left is under *Known
+`main`: `start.bat` runs the hub on Windows, a leak evaluation measures what reaches the provider,
+and the hub requires polanon 0.3.3, which fixed every leak that evaluation found (see *Since
+0.1.0*). What is left is under *Known
 detection gaps* and *After MVP*.
 
 Read `CLAUDE.md` (rules) and `docs/ARCHITECTURE.md` (data flow) first. Run `/env-check` at the start
@@ -168,28 +169,19 @@ moved to polanon and has grown since; the current numbers are in its
       nothing is refused and every answer is restored exactly. CI runs it with `--check`, which
       accepts the misses in `evals/known_gaps.json` and fails on a new one; take a miss off that
       list when a polanon release fixes it. Ollama has not been measured yet.
+- [x] polanon 0.3.3 as the lower bound. It fixed the four leaks and the two words masked by
+      mistake, so `evals/known_gaps.json` is empty: nothing on the lists reaches the provider.
 - [ ] Release 0.2.0 of the hub with the above, following the steps for a later release.
 
 ### Known detection gaps worth an issue each
 All but the last are polanon's and belong in
 [its issue tracker](https://github.com/boromat/polanon/issues); the last is the hub's. Each was
-checked against polanon 0.2.2, the ones the leak evaluation found with `pl_core_news_md` loaded.
-- A PESEL with a typo after its label: "pesel 78059938421" goes out whole, because the number fails
-  the date check (day 99). A number written right after the word "PESEL" is someone's identifier
-  even when it is mistyped.
-  The same with a valid date and a wrong check digit: "PESEL: 15501416181" (the leak evaluation's
-  `pesel-correction`).
-- A street without "ul." and without a postcode: "Adres: Japczaka 17." goes out whole; 0.2.2 reads
-  such a street only before a postcode. The leak evaluation finds it as "z Długiej 17".
-- A password after a label polanon does not know: "Hasło administratora: Zima2025!Lod" goes out,
-  while "Hasło:" and "Hasło do serwera:" are masked (`it-support`).
-- A feminine surname in another case, without "pani" before it, a turn after the full name was
-  masked: "Natalia Bielska", then "Bielskiej potrzebne jest..." goes out; "pani Bielskiej" and the
-  masculine "Kamińskiemu" are masked (`pesel-correction`).
-- Over-masking, not a leak: "Płatnik" (ZUS's payroll program) and "ZUS" itself are masked as company
-  names. Both could join the well-known names in `polanon.allowlist`.
+checked again against polanon 0.3.3, which fixed the PESEL with a typo after its label, the street
+without "ul." or a postcode, the password after "Hasło administratora:", the feminine surname in
+another case and the over-masking of "ZUS" and "Płatnik".
 - The login part of an e-mail address on its own: after "jan.nowak@example.com" is masked, "jan.nowak"
-  later in the text comes out as "<OSOBA_1>.nowak", so the surname leaves.
+  later in the text comes out as "<OSOBA_1>.nowak" without the language model, so the surname
+  leaves. With `pl_core_news_md` loaded the whole login is masked.
 - A first name that is also a common word, in lowercase, before a surname that does not decline:
   "ani nowak" is not masked, while "Ani Nowak" and "jana kowalskiego" are. The rule has nothing to
   hold on to; the language model is the intended net, and it leans on capitals.

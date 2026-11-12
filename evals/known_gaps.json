@@ -1,11 +1,4 @@
 {
-  "leaked": {
-    "it-support": ["Zima2025!Lod"],
-    "pesel-correction": ["15501416181", "Bielskiej"],
-    "courier-pickup": ["Długiej 17"]
-  },
-  "over_masked": {
-    "cv-attachment": ["Płatnik"],
-    "sick-leave": ["ZUS"]
-  }
+  "leaked": {},
+  "over_masked": {}
 }
