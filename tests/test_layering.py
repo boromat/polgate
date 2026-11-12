@@ -26,11 +26,13 @@ def test_the_library_is_where_these_tests_look():
 FORBIDDEN = ("polgate", "fastapi", "sqlmodel", "sqlalchemy", "starlette", "jinja2")
 
 #: Modules allowed to import a third-party package at module level, and what they may import.
-#: The judges that talk to a server need an HTTP client; nothing else does, and `polanon/__init__`
-#: never imports them, so `import polanon` stays dependency-free.
+#: The judges that talk to a server need an HTTP client, and the Haystack components need Haystack,
+#: which its own extra installs. `polanon/__init__` never imports any of them, so `import polanon`
+#: stays dependency-free.
 ALLOWED_EXTERNAL = {
     ("judge/ollama.py", "httpx"),
     ("judge/remote.py", "httpx"),
+    ("integrations/haystack.py", "haystack"),
 }
 
 
@@ -85,16 +87,17 @@ def test_importing_the_library_pulls_in_nothing_but_the_standard_library():
     assert not offenders, "\n".join(offenders)
 
 
-def test_the_public_facade_does_not_reach_the_optional_judges():
+def test_the_public_facade_does_not_reach_the_optional_modules():
     """The allowance above is only safe while `polanon/__init__` leaves those modules alone."""
     tree = ast.parse((LIBRARY / "__init__.py").read_text(encoding="utf-8"))
     # Module level only: the same file imports NerGuard inside default_guards, which is the point.
     imported = {
         node.module for node in tree.body if isinstance(node, ast.ImportFrom) and node.module
     }
-    assert "polanon.judge.ollama" not in imported
-    assert "polanon.judge.remote" not in imported
-    assert "polanon.guards.ner" not in imported
+    optional = {
+        "polanon." + path.removesuffix(".py").replace("/", ".") for path, _ in ALLOWED_EXTERNAL
+    }
+    assert not imported & (optional | {"polanon.guards.ner"})
 
 
 def test_the_heavy_guard_is_loaded_only_when_it_is_asked_for():
