@@ -39,6 +39,13 @@ All notable changes to this project are recorded here. The format follows
 
 ### Fixed
 
+- **An existing installation gets the well-known names a polanon release adds.** A policy copies
+  polanon's `WELL_KNOWN_NAMES` into its list of names never to mask when it is created, so "ZUS",
+  "Płatnik" and the other names polanon 0.3.3 added would have reached new installations only and
+  stayed masked as company names everywhere else. The policy now records which names it has been
+  offered, the way it records entity types, and a name added since joins the list on the next
+  start; one the administrator deleted stays deleted, and the audit trail records how many were
+  added. The new column is added at startup like any other.
 - **A short surname masked on its own no longer refuses an unrelated message.** polanon 0.2.2
   masks a surname such as "Lis" wherever it stands alone, and the check before every provider call
   then found it inside "Lista" or "Kotłownia" and refused to send. A one-word value shorter than

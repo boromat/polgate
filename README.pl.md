@@ -228,7 +228,9 @@ którą dodał nowszy model danych, hub dokłada przy starcie i wypełnia warto�
 istniejąca baza danych działa dalej. Gdy schemat wymaga decyzji, której skrypt nie powinien
 podejmować sam, `run.sh` zatrzymuje się, zamiast uruchamiać hub, i wypisuje, co należy uruchomić.
 Typ danych wykrywany przez nowsze wydanie zostaje włączony w istniejącej polityce, chyba że
-maskowanie jest wyłączone; dziennik audytu odnotowuje tę zmianę.
+maskowanie jest wyłączone, a nazwa, którą nowsze polanon dopisało do znanych nazw, trafia na listę
+nazw, których nigdy się nie maskuje, chyba że administrator ją wcześniej usunął; dziennik audytu
+odnotowuje obie zmiany.
 
 ```bash
 .venv/bin/python -m polgate.schema     # dodaje to, czego wymaga nowszy model danych, i zgłasza resztę

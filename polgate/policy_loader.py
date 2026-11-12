@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from polanon.allowlist import WELL_KNOWN_NAMES
 from polanon.policy import ENTITY_TYPES, enabled_entities
 from sqlmodel import Session, select
 
@@ -38,6 +39,28 @@ TYPES_BEFORE_TRACKING = frozenset(
 )
 
 
+#: The well-known names a policy saved before `Policy.well_known_names_known` existed had been
+#: offered: polanon's list from 0.2.0, the oldest release the hub has required, to 0.3.2. Like the
+#: types above it describes the past, so a release that adds a name leaves it as it is. One string
+#: split on "|", because the list literal ruff asks for takes a line per name.
+NAMES_BEFORE_TRACKING = frozenset(
+    (  # noqa: SIM905
+        "Adobe|Ahrefs|AliExpress|Allegro|Amazon|Android|Anthropic|Apple|Asana|Bing|Brevo|"
+        "Calendly|Canva|CapCut|Ceneo|ChatGPT|Chrome|ClickUp|Confluence|Copilot|DALL-E|DeepL|"
+        "Discord|Dropbox|eBay|Excel|Facebook|Figma|Gemini|GetResponse|Gmail|Google|Google Ads|"
+        "Google Analytics|Google Business Profile|Google Docs|Google Drive|Google Maps|"
+        "Google Meet|Google Merchant Center|Google Search Console|Google Sheets|"
+        "Google Tag Manager|Hotjar|HubSpot|Instagram|iPhone|Jira|Lightroom|LinkedIn|"
+        "Looker Studio|Mailchimp|Messenger|Meta|Meta Ads|Meta Business Suite|Microsoft|"
+        "Microsoft Ads|Microsoft Teams|Midjourney|Monday.com|Notion|OLX|OneDrive|OpenAI|Outlook|"
+        "Perplexity|Photoshop|Pinterest|Pipedrive|PowerPoint|Premiere Pro|PrestaShop|Reddit|"
+        "Salesforce|Search Console|Semrush|Senuto|SharePoint|Shopify|Slack|Snapchat|Squarespace|"
+        "Stable Diffusion|Telegram|Temu|Threads|TikTok|Trello|Twitter|WhatsApp|Windows|Wix|"
+        "WooCommerce|WordPress|YouTube|Zapier|Zoom"
+    ).split("|")
+)
+
+
 def masking_is_off(policy: Policy) -> bool:
     """Return whether this policy leaves nothing to mask.
 
@@ -52,7 +75,8 @@ def get_policy(session: Session) -> Policy:
     """Return the policy, creating the default row on first use.
 
     Entity types added by a release since the policy was last reconciled are switched on on the way,
-    see :func:`switch_on_new_entity_types`.
+    see :func:`switch_on_new_entity_types`, and well-known names it added join the allowlist, see
+    :func:`allow_new_well_known_names`.
     """
     policy = session.exec(select(Policy)).first()
     if policy is None:
@@ -61,6 +85,7 @@ def get_policy(session: Session) -> Policy:
         session.commit()
         session.refresh(policy)
     switch_on_new_entity_types(session, policy)
+    allow_new_well_known_names(session, policy)
     return policy
 
 
@@ -103,3 +128,44 @@ def switch_on_new_entity_types(session: Session, policy: Policy) -> set[str]:
             detail=f"fields=enabled_entities new_entity_types={','.join(sorted(switched_on))}",
         )
     return switched_on
+
+
+def allow_new_well_known_names(session: Session, policy: Policy) -> set[str]:
+    """Add the well-known names the library gained after this policy was last reconciled.
+
+    A new policy starts with polanon's `WELL_KNOWN_NAMES` as its allowlist, so a name a release
+    adds, such as "ZUS", would otherwise reach new installations only and stay masked on every
+    existing one. A name the administrator has been offered and deleted stays deleted, because it is
+    recorded in `well_known_names_known`, and a name already on the allowlist is not added twice.
+
+    Args:
+        session: open database session; this function commits when it changes anything.
+        policy: the policy row to reconcile.
+
+    Returns:
+        The names added to the allowlist, usually none.
+    """
+    known = {name for name in policy.well_known_names_known.splitlines() if name}
+    added_to_code = set(WELL_KNOWN_NAMES) - (known or NAMES_BEFORE_TRACKING)
+    if not added_to_code:
+        return set()
+
+    allowlist = [line for line in policy.allowlist.splitlines() if line.strip()]
+    present = {line.strip().casefold() for line in allowlist}
+    added = {name for name in added_to_code if name.casefold() not in present}
+    if added:
+        policy.allowlist = "\n".join([*allowlist, *sorted(added, key=str.casefold)])
+    policy.well_known_names_known = "\n".join(sorted(WELL_KNOWN_NAMES, key=str.casefold))
+    session.add(policy)
+    session.commit()
+    session.refresh(policy)
+
+    if added:
+        # Public names, not personal data, but the count is all the audit trail needs: the
+        # allowlist itself shows which.
+        audit.log(
+            session,
+            event="policy_changed",
+            detail=f"fields=allowlist new_well_known_names={len(added)}",
+        )
+    return added

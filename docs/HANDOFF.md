@@ -171,6 +171,11 @@ moved to polanon and has grown since; the current numbers are in its
       list when a polanon release fixes it. Ollama has not been measured yet.
 - [x] polanon 0.3.3 as the lower bound. It fixed the four leaks and the two words masked by
       mistake, so `evals/known_gaps.json` is empty: nothing on the lists reaches the provider.
+- [x] An existing policy gets the well-known names a polanon release adds, such as "ZUS" in
+      0.3.3: `Policy.well_known_names_known` records what was offered, the way
+      `entity_types_known` does for types, and a name the administrator deleted stays deleted. A
+      policy saved before the column existed is taken to have been offered polanon's list as it was
+      from 0.2.0 to 0.3.2 (`NAMES_BEFORE_TRACKING`).
 - [ ] Release 0.2.0 of the hub with the above, following the steps for a later release.
 
 ### Known detection gaps worth an issue each

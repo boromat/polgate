@@ -194,4 +194,8 @@ class Policy(SQLModel, table=True):
     # newline-separated public names (platforms, tools) left unmasked when a guard or the judge
     # flags them as a name; see polanon.allowlist. Identifiers and the denylist are never affected.
     allowlist: str = "\n".join(WELL_KNOWN_NAMES)
+    # Newline-separated names of polanon's WELL_KNOWN_NAMES this policy has been offered, so a name
+    # a later release adds joins the allowlist without bringing back one the admin removed. Empty on
+    # a policy saved before the field existed; see policy_loader.get_policy.
+    well_known_names_known: str = ""
     updated_at: datetime = Field(default_factory=utcnow)

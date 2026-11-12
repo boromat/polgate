@@ -211,7 +211,9 @@ since, polanon included, is installed. A column a newer model added is
 applied at startup and backfilled with its default, so an existing database keeps working.
 `run.sh` stops instead of starting the hub when the schema needs a decision it should not make on
 its own, and prints what to run. An entity type a newer release detects is switched on in an
-existing policy, unless masking is off, and the audit trail records it.
+existing policy, unless masking is off, and a name a newer polanon adds to its well-known names
+joins the list of names never to mask, unless the administrator had deleted it; the audit trail
+records both.
 
 ```bash
 .venv/bin/python -m polgate.schema     # add what a newer model needs, report anything else
