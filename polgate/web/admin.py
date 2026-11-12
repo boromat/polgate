@@ -17,6 +17,7 @@ from polgate.auth.bootstrap import uses_bootstrap_password
 from polgate.auth.deps import require_admin
 from polgate.auth.passwords import MIN_LENGTH, hash_password, password_problem
 from polgate.auth.session import end_all_sessions
+from polgate.config import get_settings
 from polgate.db import get_session
 from polgate.models import MAX_TTL_DAYS, AuditEvent, HilMode, Message, Role, User, utcnow
 from polgate.policy_loader import get_policy, masking_is_off
@@ -27,6 +28,8 @@ router = APIRouter(prefix="/admin")
 
 #: Rows per page in the audit table.
 PAGE_SIZE = 50
+#: Most passages the search may send per file and turn; they also have to fit the budget.
+TOP_K_MAX = 20
 
 
 @router.get("")
@@ -174,6 +177,8 @@ def policy_form(
         all_entities=sorted(ENTITY_TYPES),
         selected={e.strip() for e in policy.enabled_entities.split(",")},
         masking_off=masking_is_off(policy),
+        search_configured=bool(get_settings().embedding_model),
+        top_k_max=TOP_K_MAX,
     )
 
 
@@ -207,6 +212,8 @@ async def update_policy(
     _set("enabled_entities", ",".join(sorted(entities)))
     _set("denylist", str(form.get("denylist", "")).strip())
     _set("allowlist", str(form.get("allowlist", "")).strip())
+    _set("attachment_retrieval", form.get("attachment_retrieval") is not None)
+    _set("retrieval_top_k", _top_k(form.get("retrieval_top_k"), policy.retrieval_top_k))
     policy.updated_at = utcnow()
     if "vault_ttl_days" in changed:
         vault.apply_ttl(session, policy.vault_ttl_days)
@@ -262,6 +269,15 @@ def _choice[Choice: StrEnum](kind: type[Choice], value: object) -> Choice:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail=f"unknown {kind.__name__}"
         ) from None
+
+
+def _top_k(value: object, current: int) -> int:
+    """Parse the passages per file, kept between 1 and `TOP_K_MAX`; unreadable keeps the old one."""
+    try:
+        parsed = int(str(value or "").strip())
+    except ValueError:
+        return current
+    return min(max(parsed, 1), TOP_K_MAX)
 
 
 def _ttl_days(value: object, current: int | None) -> int | None:

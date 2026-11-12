@@ -71,6 +71,23 @@
   </fieldset>
 
   <fieldset>
+    <legend>{{ t("policy.search") }}</legend>
+    {% if not search_configured %}
+      <p class="alert warn spaced-below">{{ t("policy.search_unconfigured") }}</p>
+    {% endif %}
+    <div class="row">
+      <label class="inline grow">
+        <input type="checkbox" name="attachment_retrieval" {{ 'checked' if policy.attachment_retrieval }}>
+        {{ t("policy.search_enabled") }}
+      </label>
+      <label class="grow">{{ t("policy.search_top_k") }}
+        <input name="retrieval_top_k" type="number" min="1" max="{{ top_k_max }}" value="{{ policy.retrieval_top_k }}">
+      </label>
+    </div>
+    <p class="small subtle">{{ t("policy.search_hint") }}</p>
+  </fieldset>
+
+  <fieldset>
     <legend>{{ t("policy.names") }}</legend>
     <div class="row name-lists">
       <div class="grow">
