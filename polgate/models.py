@@ -15,7 +15,7 @@ from enum import StrEnum
 from polanon.allowlist import WELL_KNOWN_NAMES
 from polanon.policy import ENTITY_TYPES
 from polanon.types import JudgeFallback
-from sqlmodel import Field, SQLModel
+from sqlmodel import Field, SQLModel, UniqueConstraint
 
 
 def utcnow() -> datetime:
@@ -104,6 +104,28 @@ class FileAsset(SQLModel, table=True):
     text_original_enc: str = ""  # extracted text, encrypted
     text_sent: str = ""  # tokenized text attached to the LLM context
     status: FileStatus = FileStatus.PENDING_REVIEW
+    created_at: datetime = Field(default_factory=utcnow)
+
+
+class AttachmentChunk(SQLModel, table=True):
+    """One passage of an approved attachment and its embedding, for searching a long file.
+
+    The text is a slice of `FileAsset.text_sent`, masked like it, and the vector is computed from
+    that slice, so neither holds more than the masked text beside it: they are stored in plaintext
+    like `text_sent` (docs/THREAT_MODEL.md). A file is indexed once per embedding model, because
+    vectors from two models cannot be compared, and the unique key lets two turns that index the
+    same file at once insert each passage only once.
+    """
+
+    __table_args__ = (UniqueConstraint("file_id", "position", "embedding_model"),)
+
+    id: int | None = Field(default=None, primary_key=True)
+    file_id: int = Field(foreign_key="fileasset.id", index=True)
+    conversation_id: int = Field(foreign_key="conversation.id", index=True)
+    position: int  # order of the passage in the file, from 0
+    text_sent: str  # tokenized, like FileAsset.text_sent
+    vector: bytes  # float32, unit length
+    embedding_model: str
     created_at: datetime = Field(default_factory=utcnow)
 
 

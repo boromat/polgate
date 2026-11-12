@@ -28,6 +28,7 @@ dependencies = [
     "python-docx>=1.1",
     "openpyxl>=3.1",
     "sse-starlette>=2.1",
+    "numpy>=2",                     # ranks the passages of a long attachment
 ]
 
 [project.optional-dependencies]
