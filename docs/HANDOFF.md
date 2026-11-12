@@ -3,11 +3,10 @@
 Status: steps 1-12 are done and tested. The masking engine that steps 3-5 and 12 built lived here as
 `piianon/` and is now a library of its own, [polanon](https://github.com/boromat/polanon), which the
 hub installs from PyPI, now at 0.3.3 or later. Version 0.1.0 was released on 2026-11-03: the
-repository is public and the image is on GitHub Container Registry. Since then, unreleased on
-`main`: `start.bat` runs the hub on Windows, a leak evaluation measures what reaches the provider,
-and the hub requires polanon 0.3.3, which fixed every leak that evaluation found (see *Since
-0.1.0*). What is left is under *Known
-detection gaps* and *After MVP*.
+repository is public and the image is on GitHub Container Registry. Version 0.2.0, dated
+2026-11-12, adds `start.bat` to run the hub on Windows and a leak evaluation that measures what
+reaches the provider, and requires polanon 0.3.3, which fixed every leak that evaluation found
+(see *0.2.0*). What is left is under *Known detection gaps* and *After MVP*.
 
 Read `CLAUDE.md` (rules) and `docs/ARCHITECTURE.md` (data flow) first. Run `/env-check` at the start
 of a session and `/quality-gate` before every commit, and `/pii-safety-review` as well for anything
@@ -151,7 +150,7 @@ moved to polanon and has grown since; the current numbers are in its
       wait for CI on `main`, then push the tag `vX.Y.Z`. The workflow refuses a tag that differs from
       the package version or a heading still marked `Unreleased`.
 
-### Since 0.1.0 (on `main`, not released yet)
+### 0.2.0 (2026-11-12)
 - [x] `start.bat` for Windows. A double click runs the hub; the first run creates `.venv`, installs
       the hub and the spaCy model and writes `.env` with generated keys. Tested from a clean copy:
       a first run, then a second one that starts in seconds.
@@ -176,7 +175,9 @@ moved to polanon and has grown since; the current numbers are in its
       `entity_types_known` does for types, and a name the administrator deleted stays deleted. A
       policy saved before the column existed is taken to have been offered polanon's list as it was
       from 0.2.0 to 0.3.2 (`NAMES_BEFORE_TRACKING`).
-- [ ] Release 0.2.0 of the hub with the above, following the steps for a later release.
+- [x] `polgate.__version__` 0.2.0 and the dated `CHANGELOG.md` heading, in one commit.
+- [ ] Push the tag `v0.2.0` once CI on `main` is green: the release workflow publishes the image and
+      the GitHub release.
 
 ### Known detection gaps worth an issue each
 All but the last are polanon's and belong in

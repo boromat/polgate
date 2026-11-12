@@ -6,6 +6,11 @@ All notable changes to this project are recorded here. The format follows
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-12
+
+A leak evaluation now measures what reaches the provider, and the polanon it requires, 0.3.3,
+fixes every leak the evaluation found. The hub also runs on Windows with a double click.
+
 ### Added
 
 - **`start.bat` for Windows**: double-click it to run the hub. The first run creates `.venv`,
