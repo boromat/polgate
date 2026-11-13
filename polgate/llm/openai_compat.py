@@ -243,7 +243,24 @@ def _parse_sse_line(line: str) -> str | None:
         return _DONE
     try:
         chunk = json.loads(data)
-        return chunk["choices"][0].get("delta", {}).get("content") or None
-    except (json.JSONDecodeError, KeyError, IndexError):
+    except json.JSONDecodeError:
         logger.debug("skipping unreadable stream line")
         return None
+    if not isinstance(chunk, dict):
+        return None
+    if "error" in chunk:
+        # OpenRouter reports a failure that happens after the answer began inside the stream. Read
+        # as the end of the answer, it stored half an answer as a whole one.
+        raise LLMError("provider reported an error inside the stream", status=_error_code(chunk))
+    choices = chunk.get("choices")
+    first = choices[0] if isinstance(choices, list) and choices else None
+    delta = first.get("delta") if isinstance(first, dict) else None
+    content = delta.get("content") if isinstance(delta, dict) else None
+    return content if isinstance(content, str) and content else None
+
+
+def _error_code(chunk: dict[str, object]) -> int | None:
+    """Return the numeric code of an error reported inside the stream, when it gives one."""
+    error = chunk.get("error")
+    code = error.get("code") if isinstance(error, dict) else None
+    return code if isinstance(code, int) else None

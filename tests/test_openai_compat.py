@@ -197,3 +197,33 @@ async def test_a_malformed_embeddings_url_becomes_an_llm_error():
     with pytest.raises(LLMError, match="embeddings request failed"):
         # A control character in the host: a setting pasted with one, such as a stray NUL.
         await embed(["a"], model="m", base_url="http://loc\x00al/v1", api_key="")
+
+
+@pytest.mark.parametrize(
+    "line",
+    [
+        'data: {"choices": [{"delta": null}]}',
+        'data: {"choices": []}',
+        'data: {"choices": [{"delta": {"content": 5}}]}',
+        "data: [1, 2, 3]",
+        'data: "tekst"',
+    ],
+)
+def test_stream_lines_of_another_shape_are_skipped(line):
+    """A null delta raised AttributeError out of the stream, and the turn died without a word."""
+    from polgate.llm.openai_compat import _parse_sse_line
+
+    assert _parse_sse_line(line) is None
+
+
+async def test_an_error_inside_the_stream_ends_the_answer_as_an_error():
+    """Read as the end of the answer, it stored half an answer as a whole one."""
+    body = (
+        'data: {"choices": [{"delta": {"content": "Połowa"}}]}\n\n'
+        'data: {"error": {"code": 502, "message": "upstream failed"}}\n\n'
+    )
+
+    async with _client(lambda request: httpx.Response(200, content=body.encode())) as client:
+        with pytest.raises(LLMError, match="inside the stream") as raised:
+            await _collect(client)
+    assert raised.value.audit_detail == "status=502"
