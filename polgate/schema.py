@@ -23,6 +23,7 @@ until then it would be a dependency and a workflow for a problem this file solve
 from __future__ import annotations
 
 import argparse
+import enum
 import logging
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
@@ -132,11 +133,20 @@ def drop_orphan_columns(engine: Engine) -> list[str]:
     quote = engine.dialect.identifier_preparer.quote
     dropped: list[str] = []
     for table, columns in orphan_columns(engine).items():
+        indexes = inspect(engine).get_indexes(table)
         for column in columns:
+            # SQLite refuses to drop an indexed column, and a renamed `conversation_id` with
+            # `index=True` is exactly the leftover this command exists for. Its indexes go first.
             # Identifiers come from the database's own catalogue and go through the dialect quoter.
-            statement = f"ALTER TABLE {quote(table)} DROP COLUMN {quote(column)}"
+            statements = [
+                f"DROP INDEX {quote(index['name'])}"
+                for index in indexes
+                if index["name"] and column in index["column_names"]
+            ]
+            statements.append(f"ALTER TABLE {quote(table)} DROP COLUMN {quote(column)}")
             with engine.begin() as connection:
-                connection.execute(text(statement))
+                for statement in statements:
+                    connection.execute(text(statement))
             logger.warning("schema: dropped orphan column %s.%s", table, column)
             dropped.append(f"{table}.{column}")
     return dropped
@@ -163,6 +173,10 @@ def _literal_default(column: Column[object]) -> str | None:
     value = default.arg
     if callable(value) or value is None:
         return None
+    if isinstance(value, enum.Enum):
+        # SQLModel stores an enum by its name ("AUTO"), and reading back a backfilled value such as
+        # "auto" raised LookupError on every query of the table.
+        return "'" + value.name.replace("'", "''") + "'"
     if isinstance(value, bool):
         return "1" if value else "0"
     if isinstance(value, (int, float)):

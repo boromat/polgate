@@ -4,12 +4,20 @@
 first run is a column some database is missing. These tests describe what happens then.
 """
 
+from enum import StrEnum
+
 import pytest
 from sqlalchemy import create_engine, inspect, text
 from sqlmodel import SQLModel
 
 import polgate.models  # noqa: F401  (populates SQLModel.metadata)
 from polgate.schema import drop_orphan_columns, main, orphan_columns, reconcile
+
+
+class _Mode(StrEnum):
+    """An enum whose value and name differ, as polgate's own do."""
+
+    AUTO = "auto"
 
 
 @pytest.fixture
@@ -226,6 +234,7 @@ class TestWhatCanBeAdded:
             ({"server_default": "x"}, "x"),
             ({}, None),
             ({"default": None}, None),
+            ({"default": _Mode.AUTO}, "'AUTO'"),
         ],
     )
     def test_defaults_are_rendered_as_sql_literals(self, kwargs, expected):
@@ -254,3 +263,43 @@ def test_a_nullable_column_with_a_default_keeps_it(engine):
     with engine.begin() as connection:
         connection.execute(text("INSERT INTO proba (id) VALUES (1)"))
         assert connection.execute(text("SELECT notatka FROM proba")).scalar() == "brak"
+
+
+def test_an_indexed_leftover_column_is_dropped_with_its_index(engine):
+    """SQLite refuses DROP COLUMN on an indexed column, the very leftover a rename leaves."""
+    _execute(
+        engine,
+        "CREATE TABLE conversation ("
+        "id INTEGER NOT NULL PRIMARY KEY, user_id INTEGER NOT NULL, title VARCHAR NOT NULL,"
+        "created_at DATETIME NOT NULL, updated_at DATETIME NOT NULL,"
+        "stary_wlasciciel INTEGER NOT NULL)",
+        "CREATE INDEX ix_conversation_stary_wlasciciel ON conversation (stary_wlasciciel)",
+    )
+
+    assert drop_orphan_columns(engine) == ["conversation.stary_wlasciciel"]
+
+    assert orphan_columns(engine) == {}
+    assert inspect(engine).get_indexes("conversation") == []
+
+
+def test_a_backfilled_enum_column_reads_back(engine):
+    """The value went in where SQLModel reads names, and every later query of the table failed."""
+    from sqlmodel import Session, select
+
+    from polgate.models import HilMode, Policy
+
+    SQLModel.metadata.create_all(engine)
+    _execute(engine, "ALTER TABLE policy DROP COLUMN hil_chat")
+    _execute(
+        engine,
+        "INSERT INTO policy (id, hil_files, judge_enabled, judge_fallback, vault_ttl_days,"
+        " enabled_entities, entity_types_known, denylist, allowlist, updated_at,"
+        " well_known_names_known, attachment_retrieval, retrieval_top_k)"
+        " VALUES (1, 'REVIEW', 1, 'SEND_STAGE1', 30, 'PESEL', '', '', '',"
+        " '2026-11-13 00:00:00', '', 1, 6)",
+    )
+
+    assert reconcile(engine).added == ["policy.hil_chat"]
+
+    with Session(engine) as session:
+        assert session.exec(select(Policy)).one().hil_chat is HilMode.AUTO
