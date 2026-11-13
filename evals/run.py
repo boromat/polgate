@@ -193,6 +193,21 @@ def _occurs(value: str, text: str) -> bool:
     return re.search(rf"(?<!\w){re.escape(value)}(?!\w)", text) is not None
 
 
+def _split_by_a_cut(value: str, received: str) -> bool:
+    """Return whether a value of several words reached the provider cut in two by a passage break.
+
+    Passages are cut between words, so an IBAN, an address or a full name can end one passage and
+    begin the next, and neither half is the value as written. Without the whitespace, the two
+    halves of adjacent passages join up again. Only values with a space are looked for this way: a
+    one-word value has no place to be cut, and without word boundaries "Lis" would be found in
+    "Lista".
+    """
+    if not any(char.isspace() for char in value):
+        return False
+    compact = "".join(value.split())
+    return compact in "".join(received.split())
+
+
 def _parts(value: str) -> list[str]:
     """Return the pieces of a value that identify on their own: names, the login of an e-mail."""
     login = re.split(r"\s*(?:@|\[at\])\s*", value, maxsplit=1)
@@ -247,7 +262,9 @@ def _configure(workdir: Path, provider_url: str, password: str, budget: int | No
     os.environ.setdefault("JUDGE_BACKEND", "mock")
 
 
-def run(conversations: Sequence[Conversation], provider: FakeProvider) -> list[Result]:
+def run(
+    conversations: Sequence[Conversation], provider: FakeProvider, *, searching: bool = False
+) -> list[Result]:
     """Play every conversation through the hub and score what the provider received."""
     from fastapi.testclient import TestClient
     from sqlmodel import Session, col, select
@@ -324,6 +341,11 @@ def run(conversations: Sequence[Conversation], provider: FakeProvider) -> list[R
             ]
             embedded = [text for batch in provider.embedded[first_embedding:] for text in batch]
             received = "\n".join([*chat, *embedded])
+            if searching and conversation.attachments and not embedded:
+                # Every attachment here is longer than the budget the search runs with, so none
+                # reaching the embeddings endpoint means the search did not run, and the leaks it
+                # is meant to measure were never looked for.
+                result.errors.append("attachments were not searched")
             with Session(get_engine()) as session:
                 mapping = vault.load_mapping(session, conversation_id)
                 result.judge_failed = sum(
@@ -348,7 +370,7 @@ def _score(
 ) -> None:
     """Fill in the leak, over-masking and off-list counts of one conversation."""
     for value in conversation.must_not_leak:
-        if _occurs(value, received):
+        if _occurs(value, received) or _split_by_a_cut(value, received):
             result.leaked.append(value)
         elif any(_occurs(part, received) for part in _parts(value)):
             result.leaked_in_part.append(value)
@@ -469,7 +491,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         budget = None if args.no_search else args.attachment_budget
         _configure(Path(tmp), provider.url, secrets.token_urlsafe(16), budget)
         try:
-            results = run(conversations, provider)
+            results = run(conversations, provider, searching=budget is not None)
         finally:
             provider.stop()
             from polgate.db import get_engine

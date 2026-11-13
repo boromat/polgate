@@ -21,12 +21,16 @@ The same server answers `/embeddings` with a stand-in model ([`bag_of_words.py`]
 and the attachment budget is set to 120 characters, so every attachment goes through the search in
 attachments: its passages, and each question about it, go to the embeddings endpoint, and whatever
 reached that endpoint counts as received, exactly like the chat. `--no-search` plays the
-conversations with the search off, the way the hub runs until `EMBEDDING_MODEL` is set.
+conversations with the search off, the way the hub runs until `EMBEDDING_MODEL` is set. With the
+search on, a conversation whose attachments never reached the embeddings endpoint is an error: the
+search did not run, so the leaks it is meant to measure were not looked for.
 
 It counts:
 
 - **leaked**: a listed value found in anything the provider received, as a word of its own; **in
-  part** when only a piece of it was, such as the surname of a full name or the login of an e-mail;
+  part** when only a piece of it was, such as the surname of a full name or the login of an e-mail.
+  A value of several words cut in two at a passage break, the end of one passage and the start of
+  the next, counts as leaked whole: an IBAN split that way is no less sent;
 - **masked anyway**: a listed phrase that did not reach the provider as written;
 - **refused**: turns the hub would not send because its last check found an original value;
 - **restored exactly**: answers that came back word for word as the message was typed;
@@ -120,7 +124,8 @@ passages and ranks them for each question with the hub's own code, in three ways
 common, by vectors, and by both, as the hub does. It counts how often the passage holding the
 answer comes first (hit@1) or among the first three (hit@3), and whether the answer is in the text
 a turn would send: the best `top_k` passages that fit the budget. The file cut to the budget is
-scored on that last count alone.
+scored on that last count alone. CI runs it with `--min-hybrid 16`, so the ranking the hub uses
+failing a single one of these questions fails the build.
 
 13 November 2026, budget 1 500 characters, passages of 400, top_k 6, stand-in vectors:
 

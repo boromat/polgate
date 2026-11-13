@@ -20,6 +20,7 @@ at it::
     python evals/retrieval.py                          # stand-in vectors, no network
     python evals/retrieval.py --embeddings-url http://localhost:1234/v1 --embeddings-model bge-m3
     python evals/retrieval.py --json out.json          # also write every question's result
+    python evals/retrieval.py --min-hybrid 16          # exit 1 below that many (CI)
 
 LM Studio lists the exact model name under its loaded models (it may read, for example,
 ``text-embedding-bge-m3``); ``--embeddings-model`` takes that name.
@@ -170,6 +171,12 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--embeddings-model", default="bge-m3", help="model name at that endpoint")
     parser.add_argument("--embeddings-key", default="", help="key for that endpoint, if any")
     parser.add_argument("--json", type=Path, help="also write every result to this file")
+    parser.add_argument(
+        "--min-hybrid",
+        type=int,
+        default=0,
+        help="exit 1 when fewer answers than this reach the model with the hub's ranking (CI)",
+    )
     args = parser.parse_args(argv)
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8")
@@ -183,6 +190,10 @@ def main(argv: Sequence[str] | None = None) -> int:
             json.dumps([asdict(s) for s in scores], ensure_ascii=False, indent=2) + "\n",
             encoding="utf-8",
         )
+    reached = sum(s.reaches_model for s in scores if s.mode == "hybrid")
+    if reached < args.min_hybrid:
+        print(f"\nonly {reached} answers reach the model, below --min-hybrid {args.min_hybrid}")
+        return 1
     return 0
 
 

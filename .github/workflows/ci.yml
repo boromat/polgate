@@ -61,10 +61,11 @@ jobs:
         run: python evals/run.py --check
 
       # Whether the passage holding the answer reaches the model, searched or cut, with stand-in
-      # vectors: no network, a few seconds. It fails if the dataset or the ranking code breaks.
+      # vectors: no network, a few seconds. It fails if the dataset or the ranking code breaks,
+      # and if fewer than all 16 answers reach the model with the hub's ranking.
       - name: Search in attachments evaluation
         if: matrix.python == '3.12'
-        run: python evals/retrieval.py
+        run: python evals/retrieval.py --min-hybrid 16
 
   package:
     name: Built wheel installs and runs
