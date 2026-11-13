@@ -96,7 +96,8 @@ notatki do ewaluacji (po angielsku) opisują każde pominięcie. Z włączonym w
 w załącznikach sprawdzane są też fragmenty i pytania wysyłane do embeddingu, z tym samym wynikiem.
 Druga ewaluacja mierzy samo wyszukiwanie: z 16 pytań, na które odpowiedź leży za limitem na
 załącznik, przy uciętym pliku do modelu nie trafia żadna, a z wyszukiwaniem trafia wszystkie 16,
-mierzone na zastępczych wektorach; notatki opisują, jak zmierzyć prawdziwy model.
+zarówno na zastępczych wektorach, jak i z bge-m3 uruchomionym lokalnie w LM Studio, który sam
+stawia fragment z odpowiedzią na pierwszym miejscu przy każdym pytaniu.
 
 ## Funkcje
 

@@ -127,21 +127,28 @@ a turn would send: the best `top_k` passages that fit the budget. The file cut t
 scored on that last count alone. CI runs it with `--min-hybrid 16`, so the ranking the hub uses
 failing a single one of these questions fails the build.
 
-13 November 2026, budget 1 500 characters, passages of 400, top_k 6, stand-in vectors:
+13 November 2026, budget 1 500 characters, passages of 400, top_k 6. The words row does not depend
+on the vectors, so it is the same in both runs:
 
 | | hit@1 | hit@3 | reaches the model |
 |---|---|---|---|
 | cut to the budget, as before | | | **0 of 16** |
 | search: words only | 14 of 16 | 15 of 16 | 15 of 16 |
-| search: vectors only | 9 of 16 | 13 of 16 | 15 of 16 |
-| search: both, as the hub ranks | 16 of 16 | 16 of 16 | **16 of 16** |
+| search: vectors only, stand-in model | 9 of 16 | 13 of 16 | 15 of 16 |
+| search: both, stand-in model | 16 of 16 | 16 of 16 | 16 of 16 |
+| search: vectors only, **bge-m3** in LM Studio | **16 of 16** | 16 of 16 | 16 of 16 |
+| search: both, **bge-m3**, as the hub ranks | **16 of 16** | 16 of 16 | **16 of 16** |
 
-The vector row says little: the stand-in model counts words without telling rare ones from common
-ones, which a real embedding model does far better. The two ways fail on different questions,
-which is why the hub adds them. Words alone never find "Jak długo trzymane są backupy?", since the
-document says "kopie zapasowe", while the vectors put that passage first; vectors alone miss "Gdzie
-i kiedy można zastać `<OSOBA_3>`?", while words find it through the token, matched exactly. A real
-model should do better on the first kind of question, which is what the LM Studio run below is for.
+With the stand-in model, the two ways fail on different questions, which is why the hub adds them.
+Words alone never find "Jak długo trzymane są backupy?", since the document says "kopie zapasowe",
+while the vectors put that passage first; the stand-in vectors alone miss "Gdzie i kiedy można
+zastać `<OSOBA_3>`?", while words find it through the token, matched exactly. bge-m3, a real
+multilingual embedding model run locally, puts the passage holding the answer first for every one
+of the 16 questions on its own, the token question and the questions asked in other words than
+the document included; ranked as the hub ranks, words and vectors together, it does the same.
+Sixteen questions written by the hub's author cannot tell a good model from a very good one: the
+run shows the search works with a real model on this kind of text, not how often it would miss
+on a company's own documents.
 
 ### Measuring a real embedding model with LM Studio
 

@@ -208,9 +208,10 @@ moved to polanon and has grown since; the current numbers are in its
       - `evals/run.py` sends its attachments through the search and checks what reaches
         `/embeddings`: 0 of 125 values leak. `evals/retrieval.py` scores the ranking: 16 of 16
         answers past the budget reach the model with the search, 0 with the file cut, on stand-in
-        vectors. A run against bge-m3 in LM Studio is still to do; `evals/README.md` has the steps.
-- [ ] Measure the search with a real embedding model (bge-m3 in LM Studio) and record the numbers
-      in `evals/README.md`.
+        vectors, and 16 of 16 with bge-m3 in LM Studio, which alone puts the answer first for all
+        16 questions; `evals/README.md` has both runs and the steps.
+- [x] Measure the search with a real embedding model: bge-m3 in LM Studio, on 13 November 2026,
+      16 of 16 answers past the budget reach the model, and vectors alone put every one first.
 
 ### Next: a company knowledge base on polanon.index (stage B)
 Documents the whole company may ask about, such as regulations and procedures, uploaded once by an

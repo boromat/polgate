@@ -90,7 +90,8 @@ than a leak rate to expect; the evaluation's notes say what each miss was. With 
 attachments on, the passages and questions sent for embedding are checked as well, with the same
 result. A second evaluation measures the search itself: of 16 questions whose answer lies past the
 attachment budget, none reaches the model when the file is cut and all 16 do with the search,
-measured with stand-in vectors; the notes say how to measure a real model.
+measured both with stand-in vectors and with bge-m3 running locally in LM Studio, which on its
+own puts the passage with the answer first for every question.
 
 ## Features
 
