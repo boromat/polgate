@@ -162,6 +162,10 @@ class HilMode(StrEnum):
     REVIEW = "review"  # show mask, require approval before sending
 
 
+#: The longest retention a policy accepts, in days: a hundred years, "practically forever". A date
+#: that far ahead still fits a datetime; 999,999 days did not, and retention raised on every pass.
+MAX_TTL_DAYS = 36_500
+
 #: Entity types a new policy leaves unmasked. Dates are rarely identifying on their own and masking
 #: them degrades answers; an admin who handles birth dates can switch DATE on.
 OFF_BY_DEFAULT = frozenset({"DATE"})

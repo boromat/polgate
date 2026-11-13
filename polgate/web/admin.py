@@ -18,9 +18,10 @@ from polgate.auth.deps import require_admin
 from polgate.auth.passwords import MIN_LENGTH, hash_password, password_problem
 from polgate.auth.session import end_all_sessions
 from polgate.db import get_session
-from polgate.models import AuditEvent, HilMode, Message, Role, User, utcnow
+from polgate.models import MAX_TTL_DAYS, AuditEvent, HilMode, Message, Role, User, utcnow
 from polgate.policy_loader import get_policy, masking_is_off
 from polgate.rendering import render
+from polgate.vault import store as vault
 
 router = APIRouter(prefix="/admin")
 
@@ -200,13 +201,15 @@ async def update_policy(
     _set("hil_files", hil_files)
     _set("judge_enabled", form.get("judge_enabled") is not None)
     _set("judge_fallback", judge_fallback)
-    _set("vault_ttl_days", _optional_int(form.get("vault_ttl_days")))
-    _set("history_ttl_days", _optional_int(form.get("history_ttl_days")))
+    _set("vault_ttl_days", _ttl_days(form.get("vault_ttl_days"), policy.vault_ttl_days))
+    _set("history_ttl_days", _ttl_days(form.get("history_ttl_days"), policy.history_ttl_days))
     entities = [value for value in form.getlist("entities") if isinstance(value, str)]
     _set("enabled_entities", ",".join(sorted(entities)))
     _set("denylist", str(form.get("denylist", "")).strip())
     _set("allowlist", str(form.get("allowlist", "")).strip())
     policy.updated_at = utcnow()
+    if "vault_ttl_days" in changed:
+        vault.apply_ttl(session, policy.vault_ttl_days)
 
     session.add(policy)
     session.commit()
@@ -261,13 +264,19 @@ def _choice[Choice: StrEnum](kind: type[Choice], value: object) -> Choice:
         ) from None
 
 
-def _optional_int(value: object) -> int | None:
-    """Parse a retention field, where an empty value means 'keep forever'."""
+def _ttl_days(value: object, current: int | None) -> int | None:
+    """Parse a retention field: empty means keep forever, anything unreadable keeps what was set.
+
+    A typo, a zero or a negative number used to mean "forever" as well, so a slip of the keyboard
+    switched retention off without a word. A number past `MAX_TTL_DAYS` is cut to it.
+    """
     text = str(value or "").strip()
     if not text:
         return None
     try:
         parsed = int(text)
     except ValueError:
-        return None
-    return parsed if parsed > 0 else None
+        return current
+    if parsed <= 0:
+        return current
+    return min(parsed, MAX_TTL_DAYS)

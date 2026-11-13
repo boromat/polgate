@@ -18,7 +18,7 @@ from sqlmodel import Session, col, delete, select
 
 from polgate.config import get_settings
 from polgate.keys import read_or_create, state_dir
-from polgate.models import VaultEntry, utcnow
+from polgate.models import MAX_TTL_DAYS, VaultEntry, utcnow
 
 logger = logging.getLogger(__name__)
 
@@ -107,7 +107,7 @@ def save_mapping(
         ).all()
         if _is_live(entry, now)
     }
-    expires_at = None if ttl_days is None else utcnow() + timedelta(days=ttl_days)
+    expires_at = _expiry(now, ttl_days)
     for token, value in mapping.items():
         if token in known:
             continue
@@ -121,6 +121,34 @@ def save_mapping(
                 expires_at=expires_at,
             )
         )
+
+
+def apply_ttl(session: Session, ttl_days: int | None) -> int:
+    """Give every stored mapping the expiry a new retention period sets, counted from its creation.
+
+    Expiry is written into each row when it is stored, so without this a shorter period set in the
+    admin panel applied only to mappings stored afterwards, and switching "forever" to 30 days left
+    every existing one forever. The caller commits.
+
+    Returns:
+        How many rows changed.
+    """
+    changed = 0
+    for entry in session.exec(select(VaultEntry)).all():
+        expires_at = _expiry(_as_utc(entry.created_at), ttl_days)
+        current = None if entry.expires_at is None else _as_utc(entry.expires_at)
+        if current != expires_at:
+            entry.expires_at = expires_at
+            session.add(entry)
+            changed += 1
+    return changed
+
+
+def _expiry(start: datetime, ttl_days: int | None) -> datetime | None:
+    """Return when a row stored at ``start`` expires, or None to keep it forever."""
+    if ttl_days is None:
+        return None
+    return start + timedelta(days=min(ttl_days, MAX_TTL_DAYS))
 
 
 def purge_expired(session: Session) -> int:

@@ -365,3 +365,20 @@ def test_an_emptied_conversation_goes_with_its_mapping_and_a_stale_queued_messag
     assert (report.pending_turns, report.conversations) == (1, 1)
     assert db_session.exec(select(Conversation)).all() == []
     assert db_session.exec(select(VaultEntry)).all() == []
+
+
+def test_the_longest_retention_an_admin_can_set_does_not_overflow(db_session):
+    """999,999 days of history put the cutoff before year 1, and every pass raised."""
+    from polgate.models import MAX_TTL_DAYS
+
+    conversation = _conversation(db_session, age_days=1)
+    _message(db_session, conversation, age_days=1)
+    vault.save_mapping(db_session, conversation.id, {"<OSOBA_1>": "Jan"}, {}, 999_999)
+    db_session.commit()
+
+    report = purge(db_session, Policy(history_ttl_days=999_999), get_settings())
+
+    assert report.messages == 0
+    entry = db_session.exec(select(VaultEntry)).one()
+    assert entry.expires_at is not None
+    assert (entry.expires_at.year - utcnow().year) in (MAX_TTL_DAYS // 365, MAX_TTL_DAYS // 365 + 1)

@@ -30,7 +30,16 @@ from pathlib import Path
 from sqlmodel import Session, col, select
 
 from polgate.config import Settings
-from polgate.models import Conversation, FileAsset, Message, PendingTurn, Policy, VaultEntry, utcnow
+from polgate.models import (
+    MAX_TTL_DAYS,
+    Conversation,
+    FileAsset,
+    Message,
+    PendingTurn,
+    Policy,
+    VaultEntry,
+    utcnow,
+)
 from polgate.vault import store as vault
 
 logger = logging.getLogger(__name__)
@@ -121,7 +130,7 @@ def _purge_history(session: Session, now: datetime, ttl_days: int | None) -> tup
     """Delete messages and files past the history TTL, then conversations left with neither."""
     if ttl_days is None:
         return 0, 0, 0
-    cutoff = now - timedelta(days=ttl_days)
+    cutoff = now - timedelta(days=min(ttl_days, MAX_TTL_DAYS))
 
     messages = [
         row for row in session.exec(select(Message)).all() if _as_utc(row.created_at) < cutoff

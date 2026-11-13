@@ -55,6 +55,13 @@ fixes every leak the evaluation found. The hub also runs on Windows with a doubl
   every other upload and turn shares. The declared dimension is now ignored, trailing empty cells
   are dropped, and a workbook is read for at most two million cells, with the usual truncation
   marker after them.
+- **Retention does what the admin panel says.** A typo, a zero or a negative number in a retention
+  field meant "keep forever", so a slip of the keyboard switched retention off; it now keeps the
+  value that was set, and only an empty field means forever. A number such as 999999 made every
+  retention pass fail on a date out of range; periods are now capped at a hundred years. And a
+  shorter mapping retention applied only to mappings stored afterwards, so switching "forever" to
+  30 days kept every existing mapping forever; changing it now sets the expiry of every stored
+  mapping from the day it was stored.
 - **A provider error always reaches the page.** The audit row of a failed provider call held the
   first 200 characters of the provider's answer, and the audit refuses any row that contains a
   masked value. An answer such as "Limit 30000" holds the PIN 3000, so the row was refused inside

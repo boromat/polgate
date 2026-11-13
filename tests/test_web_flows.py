@@ -1090,3 +1090,69 @@ def test_the_review_step_says_so_when_the_judge_is_down_and_the_policy_blocks(
         ).all()
     assert len(events) == 1
     assert "50810112354" not in events[0].detail
+
+
+def _post_ttls(client, vault_ttl: str, history_ttl: str = "") -> Policy:
+    client.post(
+        "/admin/policy",
+        data={
+            "hil_chat": "auto",
+            "hil_files": "review",
+            "entities": ["PERSON", "PESEL"],
+            "vault_ttl_days": vault_ttl,
+            "history_ttl_days": history_ttl,
+        },
+    )
+    with Session(get_engine()) as session:
+        return session.exec(select(Policy)).one()
+
+
+@pytest.mark.parametrize("typed", ["3o", "0", "-5", "dużo"])
+def test_a_mistyped_retention_keeps_what_was_set_rather_than_keeping_forever(admin_client, typed):
+    assert _post_ttls(admin_client, "30", "90").vault_ttl_days == 30
+    policy = _post_ttls(admin_client, typed, typed)
+    assert (policy.vault_ttl_days, policy.history_ttl_days) == (30, 90)
+
+
+def test_an_empty_retention_still_means_forever_and_a_huge_one_is_capped(admin_client):
+    from polgate.models import MAX_TTL_DAYS
+
+    assert _post_ttls(admin_client, "30").vault_ttl_days == 30
+    assert _post_ttls(admin_client, "").vault_ttl_days is None
+    policy = _post_ttls(admin_client, "999999", "999999")
+    assert (policy.vault_ttl_days, policy.history_ttl_days) == (MAX_TTL_DAYS, MAX_TTL_DAYS)
+
+
+def test_a_shorter_mapping_retention_applies_to_mappings_stored_before(admin_client):
+    """Expiry was fixed per row when stored: switching forever to 30 days kept old rows forever."""
+    from datetime import timedelta
+
+    from polgate.models import VaultEntry, utcnow
+    from polgate.vault import store as vault
+
+    admin_client.get("/chat")
+    conversation_id = _conversation_id()
+    _post_ttls(admin_client, "")
+    with Session(get_engine()) as session:
+        for token, age in (("<OSOBA_1>", 90), ("<OSOBA_2>", 1)):
+            session.add(
+                VaultEntry(
+                    conversation_id=conversation_id,
+                    token=token,
+                    entity_type="PERSON",
+                    value_enc=vault.encrypt("Jan Kowalski"),
+                    value_hash=vault.value_hash("Jan Kowalski"),
+                    created_at=utcnow() - timedelta(days=age),
+                )
+            )
+        session.commit()
+
+    _post_ttls(admin_client, "30")
+
+    with Session(get_engine()) as session:
+        assert list(vault.load_mapping(session, conversation_id)) == ["<OSOBA_2>"]
+        assert vault.purge_expired(session) == 1
+
+    _post_ttls(admin_client, "")
+    with Session(get_engine()) as session:
+        assert all(row.expires_at is None for row in session.exec(select(VaultEntry)).all())
