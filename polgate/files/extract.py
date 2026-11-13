@@ -300,6 +300,12 @@ def _dialect_for(raw: str) -> type[csv.Dialect]:
     return dialect
 
 
+#: The longest field the CSV reader accepts: the whole upload. Its default, 131,072 characters,
+#: made one quote left open, as in `1,"Pilne - zadzwonic`, swallow the rest of a longer file into a
+#: single field and refuse the whole file as unreadable. The upload limit bounds the field anyway.
+csv.field_size_limit(MAX_BYTES)
+
+
 def _from_csv(path: Path) -> str:
     raw = _decode(path.read_bytes())
     rows = csv.reader(io.StringIO(raw, newline=""), _dialect_for(raw))

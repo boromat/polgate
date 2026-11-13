@@ -729,3 +729,15 @@ def test_a_picture_with_too_many_pixels_is_refused_before_ocr(tmp_path, monkeypa
 
     with pytest.raises(UnsupportedFileError, match="image_too_large"):
         extract_text(path, "image/png", path.name)
+
+
+def test_a_csv_with_a_quote_left_open_is_still_read(tmp_path):
+    """The quote swallowed the rest of the file into one field, past the reader's default limit."""
+    rows = "\n".join(f"{i},wiersz numer {i},zwykly tekst" for i in range(4000))
+    path = tmp_path / "eksport.csv"
+    path.write_text(f'0,"Pilne - zadzwonic do klienta,x\n{rows}\nPESEL 55831212340\n', "utf-8")
+    assert path.stat().st_size > 131_072
+
+    text = extract_text(path, "text/csv", path.name)
+
+    assert "55831212340" in text
