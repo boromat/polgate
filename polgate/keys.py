@@ -13,6 +13,7 @@ from __future__ import annotations
 import logging
 import os
 import secrets
+import time
 from collections.abc import Callable
 from functools import lru_cache
 from pathlib import Path
@@ -51,11 +52,43 @@ def read_or_create(path: Path, generate: Callable[[], str]) -> tuple[str, bool]:
     try:
         descriptor = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
     except FileExistsError:
-        return path.read_text(encoding="utf-8").strip(), False
+        return _read_existing(path), False
     value = generate()
     with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
         handle.write(value)
+        handle.flush()
+        os.fsync(handle.fileno())
     return value, True
+
+
+def _read_existing(path: Path) -> str:
+    """Read a secret another call created, waiting briefly for it to be written.
+
+    The file exists from the moment it is created and holds its secret a moment later, so a second
+    caller arriving in between, such as two requests on a fresh hub, finds it empty. One that stays
+    empty was left by a process killed in that moment, or by a full disk. Using it would be the
+    worst outcome of all: an empty session key signs a cookie anybody can make, and an empty vault
+    key encrypts nothing. So it is refused, and since nothing was ever written with it, deleting it
+    loses nothing.
+
+    Raises:
+        RuntimeError: when the file is still empty after the wait.
+    """
+    for attempt in range(_EMPTY_READS):
+        value = path.read_text(encoding="utf-8").strip()
+        if value:
+            return value
+        if attempt + 1 < _EMPTY_READS:
+            time.sleep(_EMPTY_READ_PAUSE)
+    raise RuntimeError(
+        f"{path} is empty, so it holds no secret: a start was interrupted while writing it. "
+        "Delete the file and start the hub again; nothing was ever encrypted or signed with it."
+    )
+
+
+#: How long a caller waits, in all, for a secret another call is writing: 20 reads 50 ms apart.
+_EMPTY_READS = 20
+_EMPTY_READ_PAUSE = 0.05
 
 
 def session_secret() -> str:

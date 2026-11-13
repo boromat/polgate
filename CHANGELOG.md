@@ -50,6 +50,11 @@ fixes every leak the evaluation found. The hub also runs on Windows with a doubl
   the provider, which received that text, read it without trouble. The byte-order mark now decides
   the encoding, UTF-16 without one is recognised by its NUL bytes, and text that still holds a NUL
   after decoding is refused as unreadable.
+- **An empty key file is never used as a key.** A generated secret's file exists a moment before
+  its contents, so a second request on a fresh hub could read it empty, and a process killed in
+  that moment left it empty for good. An empty session key signs a cookie anybody can make. A
+  reader now waits briefly for the contents, and a file that stays empty stops the hub with a
+  message saying to delete it; nothing was ever signed or encrypted with it.
 - **An existing installation gets the well-known names a polanon release adds.** A policy copies
   polanon's `WELL_KNOWN_NAMES` into its list of names never to mask when it is created, so "ZUS",
   "Płatnik" and the other names polanon 0.3.3 added would have reached new installations only and

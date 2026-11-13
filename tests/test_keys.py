@@ -86,3 +86,28 @@ def test_the_admin_is_not_warned_once_the_generated_password_is_changed(bare_set
     admin = db_session.exec(select(User)).one()
     admin.password_hash = hash_password("a-password-only-the-admin-knows")
     assert not uses_bootstrap_password(admin)
+
+
+def test_an_empty_secret_file_is_refused_rather_than_used(tmp_path, monkeypatch):
+    """An empty session key would sign cookies anybody can make, the administrator's included."""
+    monkeypatch.setattr(keys, "_EMPTY_READ_PAUSE", 0)
+    path = tmp_path / "session.key"
+    path.write_text("")
+    with pytest.raises(RuntimeError, match="is empty"):
+        keys.read_or_create(path, lambda: "never used")
+    assert path.read_text() == ""
+
+
+def test_a_secret_being_written_by_another_call_is_waited_for(tmp_path, monkeypatch):
+    path = tmp_path / "vault.key"
+    path.write_text("")
+    reads = []
+
+    def written_on_the_third_look(pause):
+        reads.append(pause)
+        if len(reads) == 2:
+            path.write_text("the-real-key")
+
+    monkeypatch.setattr(keys.time, "sleep", written_on_the_third_look)
+    assert keys.read_or_create(path, lambda: "never used") == ("the-real-key", False)
+    assert len(reads) == 2
