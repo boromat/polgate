@@ -84,3 +84,10 @@ def _conversation_id() -> int:
 
     with Session(get_engine()) as session:
         return session.exec(select(Conversation)).first().id
+
+
+def test_the_policy_summary_counts_no_entity_type_when_none_is_on(admin_client):
+    """An empty policy split on commas gave one empty name, and the chip said 1."""
+    _clear_entities(admin_client)
+    page = admin_client.get("/admin/policy").text
+    assert "Maskowane typy danych: 0" in page

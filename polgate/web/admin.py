@@ -175,7 +175,8 @@ def policy_form(
         "admin/policy.html",
         policy=policy,
         all_entities=sorted(ENTITY_TYPES),
-        selected={e.strip() for e in policy.enabled_entities.split(",")},
+        # An empty policy split on commas gives one empty name, and the summary counted it.
+        selected={e.strip() for e in policy.enabled_entities.split(",") if e.strip()},
         masking_off=masking_is_off(policy),
         search_configured=bool(get_settings().embedding_model),
         top_k_max=TOP_K_MAX,
