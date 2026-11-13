@@ -52,6 +52,10 @@ MAX_PARSED_XML_BYTES = 64 * 1024 * 1024
 #: Everything an Office file unpacks to, worksheets included. openpyxl streams those, so this bounds
 #: time rather than memory: a 10 MB export of 400,000 rows unpacks to about 105 MB.
 MAX_UNPACKED_BYTES = 200 * 1024 * 1024
+#: Cells of a workbook walked through, empty ones included, before the rest is left out. A row
+#: that names one cell in column A and one in XFD is still padded in between; this bounds the time
+#: such a file takes, since its size does not. A real export of 200,000 characters has far fewer.
+MAX_XLSX_CELLS = 2_000_000
 
 
 class UnsupportedFileError(ValueError):
@@ -249,11 +253,21 @@ def _from_xlsx(path: Path) -> str:
     workbook = load_workbook(str(path), read_only=True, data_only=True)
 
     def parts() -> Iterator[str]:
+        visited = 0
         for sheet in workbook.worksheets:
             yield f"## Arkusz: {sheet.title}"
+            # The declared dimension pads every row to the widest column the sheet claims: a 5 KB
+            # file with cells in A1 and XFD1048576 made 17 billion empty cells to walk through.
+            sheet.reset_dimensions()
             for row in sheet.iter_rows(values_only=True):
+                visited += len(row)
+                if visited > MAX_XLSX_CELLS:
+                    yield TRUNCATION_MARKER.strip()
+                    return
                 values = ["" if cell is None else str(cell) for cell in row]
-                if any(v.strip() for v in values):
+                while values and not values[-1].strip():
+                    values.pop()
+                if values:
                     yield "\t".join(values)
 
     try:

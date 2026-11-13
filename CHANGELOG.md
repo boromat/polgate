@@ -50,6 +50,11 @@ fixes every leak the evaluation found. The hub also runs on Windows with a doubl
   the provider, which received that text, read it without trouble. The byte-order mark now decides
   the encoding, UTF-16 without one is recognised by its NUL bytes, and text that still holds a NUL
   after decoding is refused as unreadable.
+- **A small XLSX can no longer keep a worker busy for minutes.** A 5 KB workbook with cells in A1
+  and XFD1048576 made the reader pad 17 billion empty cells, about 14 minutes of CPU on a thread
+  every other upload and turn shares. The declared dimension is now ignored, trailing empty cells
+  are dropped, and a workbook is read for at most two million cells, with the usual truncation
+  marker after them.
 - **An empty key file is never used as a key.** A generated secret's file exists a moment before
   its contents, so a second request on a fresh hub could read it empty, and a process killed in
   that moment left it empty for good. An empty session key signs a cookie anybody can make. A

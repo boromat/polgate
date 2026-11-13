@@ -645,3 +645,42 @@ def test_text_that_still_holds_a_nul_is_refused(tmp_path):
     path.write_bytes(b"PESEL 55831212340\x00\x01\x02 to nie jest tekst")
     with pytest.raises(UnsupportedFileError, match="unreadable"):
         extract_text(path, "text/plain", path.name)
+
+
+def test_a_workbook_that_claims_the_whole_sheet_is_read_in_moments(tmp_path):
+    """Cells in A1 and XFD1048576 made openpyxl pad 17 billion empty cells: 14 minutes of CPU."""
+    import time
+
+    from openpyxl import Workbook
+
+    workbook = Workbook()
+    workbook.active["A1"] = "PESEL 55831212340"
+    workbook.active["XFD1048576"] = "koniec"
+    path = tmp_path / "bomba.xlsx"
+    workbook.save(path)
+
+    started = time.monotonic()
+    text = extract_text(path, "application/vnd.ms-excel", path.name)
+
+    assert time.monotonic() - started < 30
+    assert "PESEL 55831212340" in text
+    assert "koniec" in text
+
+
+def test_a_workbook_past_the_cell_budget_is_cut_with_the_marker(tmp_path, monkeypatch):
+    from openpyxl import Workbook
+
+    from polgate.files import extract
+
+    monkeypatch.setattr(extract, "MAX_XLSX_CELLS", 50)
+    workbook = Workbook()
+    for row in range(1, 101):
+        workbook.active.append([f"wiersz {row}", "x"])
+    path = tmp_path / "duzy.xlsx"
+    workbook.save(path)
+
+    text = extract_text(path, "application/vnd.ms-excel", path.name)
+
+    assert "wiersz 1\tx" in text
+    assert "wiersz 100" not in text
+    assert text.endswith(extract.TRUNCATION_MARKER.strip())

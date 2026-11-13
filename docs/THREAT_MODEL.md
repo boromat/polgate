@@ -124,7 +124,9 @@ used on its own; this one covers the hub, the library's detection limits include
 - **Denial of service.** There is no rate limit on chat, uploads or the provider budget. One employee can
   spend the whole API quota. A single upload is bounded: 10 MB on the wire, 200,000 characters of
   text, and for DOCX and XLSX the size the archive unpacks to, so a compressed file cannot make the
-  hub hold gigabytes; extraction runs in a thread, off the requests of everybody else.
+  hub hold gigabytes, and for XLSX the cells walked through, two million, so a sheet that claims
+  every row and column cannot keep a worker busy for minutes; extraction runs in a thread, off the
+  requests of everybody else.
 - **An administrator who switches masking off.** Clearing every entity type in the panel turns the hub
   into a plain proxy. That is a supported setting, so nothing prevents it; the interface refuses to
   keep claiming protection afterwards and the audit row says `masking_disabled`, but a company whose
