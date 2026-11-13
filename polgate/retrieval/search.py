@@ -13,6 +13,7 @@ question alike, is checked with :func:`~polgate.llm.openai_compat.assert_no_raw_
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from collections.abc import Iterator, Mapping, Sequence
 from dataclasses import dataclass, field
@@ -24,7 +25,7 @@ from sqlmodel import Session
 
 from polgate.config import Settings
 from polgate.llm.openai_compat import LLMError, assert_no_raw_values, embed
-from polgate.models import AttachmentChunk, FileAsset, Policy
+from polgate.models import AttachmentChunk, FileAsset, FileStatus, Policy
 from polgate.retrieval import store
 from polgate.retrieval.select import (
     Passage,
@@ -40,6 +41,9 @@ from polgate.retrieval.select import (
 )
 
 logger = logging.getLogger(__name__)
+
+#: Bytes per number in a stored vector, float32.
+_FLOAT_BYTES = 4
 
 
 class SearchUnavailableError(RuntimeError):
@@ -128,21 +132,29 @@ class AttachmentSearch:
                 still holds an original value.
         """
         result = SearchResult()
-        for document in documents:
-            await self._index(session, document)
+        # The question first: its length tells the vectors this endpoint makes from those stored
+        # under the same model name by another, which cannot be compared with them.
         question_vector = (await self._embed([question]))[0]
+        dimensions = len(question_vector)
         for document in documents:
-            result.texts[document.file_id] = self._choose(
+            if not await self._index(session, document, dimensions):
+                continue
+            result.texts[document.file_id] = await self._choose(
                 session, document, question, question_vector, result
             )
             result.capped += document.capped_at is not None
         return result
 
-    async def _index(self, session: Session, document: _Document) -> None:
-        """Embed and store the passages of one file that have no vector yet, in batches."""
+    async def _index(self, session: Session, document: _Document, dimensions: int) -> bool:
+        """Embed and store the passages of one file that have no vector yet, in batches.
+
+        Returns:
+            False when the file was rejected while it was being indexed: its passages are deleted
+            again and it is not searched.
+        """
         model = self.settings.embedding_model
         rows = store.load(session, document.file_id, model)
-        current = self._current(session, document, rows)
+        current = self._current(session, document, rows, dimensions)
         kept = {row.id for row in current}
         outdated = [row.id for row in rows if row.id not in kept and row.id is not None]
         if outdated:
@@ -151,6 +163,8 @@ class AttachmentSearch:
         known = {row.position for row in current}
         missing = [(i, text) for i, text in enumerate(document.passages) if i not in known]
         for batch in _batched(missing, self.settings.embedding_batch_size):
+            if not _still_approved(session, document.asset):
+                break
             vectors = await self._embed([text for _, text in batch])
             store.add(
                 session,
@@ -166,8 +180,15 @@ class AttachmentSearch:
                     for (position, text), vector in zip(batch, vectors, strict=True)
                 ],
             )
+        if _still_approved(session, document.asset):
+            return True
+        # Rejected in another tab while this turn was indexing it: the rejection deleted the
+        # passages it found, and the batches stored since must go the same way.
+        store.delete_for_files(session, [document.file_id])
+        session.commit()
+        return False
 
-    def _choose(
+    async def _choose(
         self,
         session: Session,
         document: _Document,
@@ -176,14 +197,14 @@ class AttachmentSearch:
         result: SearchResult,
     ) -> str:
         """Rank one file's current passages and write the best ones for the model."""
-        rows = self._current(session, document)
+        rows = self._current(session, document, dimensions=len(question_vector))
         candidates = [
             Passage(row.position, row.text_sent, from_blob(row.vector))
             for row in rows
             if not has_stale_token(row.text_sent, self.mapping)
         ]
         result.stale += len(rows) - len(candidates)
-        order = rank(question, question_vector, candidates)
+        order = await asyncio.to_thread(rank, question, question_vector, candidates)
         chosen = choose(
             candidates,
             order,
@@ -198,11 +219,13 @@ class AttachmentSearch:
         session: Session,
         document: _Document,
         rows: Sequence[AttachmentChunk] | None = None,
+        dimensions: int | None = None,
     ) -> list[AttachmentChunk]:
         """Return the stored passages that still match the file as it is cut now.
 
-        A passage stored before the passage length was changed holds other text at its position;
-        it is replaced rather than searched.
+        A passage stored before the passage length was changed holds other text at its position,
+        and one whose vector has another length came from another model under the same name; both
+        are replaced rather than searched.
         """
         if rows is None:
             rows = store.load(session, document.file_id, self.settings.embedding_model)
@@ -210,16 +233,15 @@ class AttachmentSearch:
         return [
             row
             for row in rows
-            if row.position < len(passages) and row.text_sent == passages[row.position]
+            if row.position < len(passages)
+            and row.text_sent == passages[row.position]
+            and (dimensions is None or len(row.vector) == dimensions * _FLOAT_BYTES)
         ]
 
     async def _embed(self, texts: list[str]) -> list[Vector]:
         """Mask what the turn knows, check, and embed; any failure is the search's failure."""
-        inputs = [mask_known_values(text, dict(self.mapping)) for text in texts]
-        try:
-            assert_no_raw_values([{"content": text} for text in inputs], self.mapping)
-        except LLMError as exc:
-            raise SearchUnavailableError("refused") from exc
+        # CPU work over every passage, so off the event loop, like the router's own masking.
+        inputs = await asyncio.to_thread(self._checked, texts)
         base_url, api_key = self.settings.embedding_endpoint()
         try:
             vectors = await embed(
@@ -232,6 +254,21 @@ class AttachmentSearch:
         except LLMError as exc:
             raise SearchUnavailableError("endpoint") from exc
         return [unit(vector) for vector in vectors]
+
+    def _checked(self, texts: list[str]) -> list[str]:
+        """Mask the values the turn knows in each text and refuse one that still holds any."""
+        inputs = [mask_known_values(text, dict(self.mapping)) for text in texts]
+        try:
+            assert_no_raw_values([{"content": text} for text in inputs], self.mapping)
+        except LLMError as exc:
+            raise SearchUnavailableError("refused") from exc
+        return inputs
+
+
+def _still_approved(session: Session, asset: FileAsset) -> bool:
+    """Read the file's row again: whether it is still approved and still holds its text."""
+    session.refresh(asset)
+    return asset.status is FileStatus.APPROVED and bool(asset.text_sent)
 
 
 def _batched[T](items: Sequence[T], size: int) -> Iterator[list[T]]:

@@ -108,7 +108,10 @@ def _attachment_messages(
     model is told, in the same words the extractor uses, rather than left to guess; passages chosen
     by the search say so the same way.
     """
-    texts = [searched.get(f.id or 0) or _trim(f.text_sent, budget_chars) for f in files]
+    # A file rejected while this turn indexed it has lost its text by now, and is left out.
+    texts = [
+        searched.get(f.id or 0) or _trim(f.text_sent, budget_chars) for f in files if f.text_sent
+    ]
     return [{"role": "system", "content": f"Załączony plik:\n{text}"} for text in texts]
 
 
@@ -126,7 +129,9 @@ async def _search_attachments(
     When the search cannot run, ``found`` stays empty, so every file is cut to the budget as before
     the search existed, and the audit trail records why in a word and how many files, nothing more.
     """
-    documents = search.documents([f for f in files if search.applies_to(f)])
+    documents = await asyncio.to_thread(
+        search.documents, [f for f in files if search.applies_to(f)]
+    )
     if not documents:
         return
     indexing = search.needs_indexing(session, documents)

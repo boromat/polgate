@@ -188,3 +188,12 @@ def test_the_chat_key_never_travels_to_another_embeddings_host():
         embedding_base_url="http://localhost:1234/v1",
     )
     assert local.embedding_endpoint() == ("http://localhost:1234/v1", "")
+
+
+async def test_a_malformed_embeddings_url_becomes_an_llm_error():
+    """httpx.InvalidURL is no httpx.HTTPError: it went past the fallback and lost the turn."""
+    from polgate.llm.openai_compat import embed
+
+    with pytest.raises(LLMError, match="embeddings request failed"):
+        # A control character in the host: a setting pasted with one, such as a stray NUL.
+        await embed(["a"], model="m", base_url="http://loc\x00al/v1", api_key="")

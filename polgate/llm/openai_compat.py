@@ -200,7 +200,7 @@ async def embed(
             json={"model": model, "input": texts},
             headers=_headers(api_key),
         )
-    except httpx.HTTPError as exc:
+    except (httpx.HTTPError, httpx.InvalidURL) as exc:
         raise LLMError(f"embeddings request failed: {exc}") from exc
     finally:
         if owns_client:

@@ -165,7 +165,7 @@ async def test_a_policy_with_the_search_off_cuts_the_file(setup, settings):
 async def test_passages_are_indexed_once_in_batches(setup, settings):
     provider = Provider()
     await _turn(setup, settings, provider, "Ile wynosi kaucja?")
-    *index_batches, question = provider.embedded
+    question, *index_batches = provider.embedded
     assert [len(batch) for batch in index_batches] == [4, 4, 1]
     assert question == ["Ile wynosi kaucja?"]
 
@@ -270,3 +270,51 @@ async def test_a_file_within_the_budget_is_sent_whole_and_not_indexed(setup, set
 
 def session_rows(session) -> int:
     return len(session.exec(select(AttachmentChunk)).all())
+
+
+async def test_a_file_rejected_while_it_is_indexed_leaves_no_passage_behind(
+    setup, settings, monkeypatch
+):
+    """The rejection deleted the passages it found; later batches of the running turn stayed."""
+    session, *_ = setup
+    asset = session.exec(select(FileAsset)).one()
+    provider = Provider()
+    original = provider.handler
+
+    def reject_after_first_batch(request):
+        response = original(request)
+        if request.url.path.endswith("/embeddings") and len(provider.embedded) == 2:
+            from sqlmodel import Session as Fresh
+
+            from polgate.db import get_engine
+
+            with Fresh(get_engine()) as other:
+                row = other.get(FileAsset, asset.id)
+                row.status = FileStatus.REJECTED
+                row.text_sent = ""
+                other.add(row)
+                other.commit()
+        return response
+
+    provider.handler = reject_after_first_batch
+    await _turn(setup, settings, provider, "Ile wynosi kaucja?")
+
+    assert session_rows(session) == 0
+    assert not [m for m in provider.chats[-1]["messages"] if "Załączony plik" in m["content"]]
+
+
+async def test_vectors_of_another_length_are_indexed_again(setup, settings):
+    """A new endpoint under the same model name made vectors that numpy could not compare."""
+    session, *_ = setup
+    await _turn(setup, settings, Provider(), "Ile wynosi kaucja?")
+    for row in session.exec(select(AttachmentChunk)).all():
+        row.vector = row.vector[:16]
+        session.add(row)
+    session.commit()
+
+    provider = Provider()
+    events = await _turn(setup, settings, provider, "Ile wynosi kaucja za klucze do magazynu?")
+
+    assert events[-1].type == "done"
+    assert ANSWER in provider.attachment()
+    assert all(len(row.vector) == 64 * 4 for row in session.exec(select(AttachmentChunk)).all())
