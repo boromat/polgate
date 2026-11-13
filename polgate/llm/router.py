@@ -106,11 +106,6 @@ def _attachment_messages(
     ]
 
 
-def _originals(mapping: dict[str, str]) -> list[str]:
-    """Return the values a mapping hides; a placeholder the user typed stands for itself."""
-    return [value for token, value in mapping.items() if value != token]
-
-
 def _mask_replay(messages: list[dict[str, str]], mapping: dict[str, str]) -> list[dict[str, str]]:
     """Mask every value the conversation now has a token for in messages that are sent again."""
     return [
@@ -212,8 +207,7 @@ async def run_turn(
             event="turn_refused_unmasked",
             user_id=user.id,
             conversation_id=conversation.id,
-            detail=str(exc)[:200],
-            forbidden_values=_originals(result.mapping),
+            detail=exc.audit_detail,
         )
         yield TurnEvent("error", detail="refused_unmasked")
         return
@@ -266,8 +260,10 @@ async def run_turn(
             conversation_id=conversation.id,
             provider=settings.llm_base_url,
             model=settings.llm_model,
-            detail=str(exc)[:200],
-            forbidden_values=_originals(result.mapping),
+            # A token, a status code or "transport", never the provider's own words: an answer
+            # that quoted a number equal to a masked PIN made the audit refuse the row, and the
+            # stream died without an error event.
+            detail=exc.audit_detail,
         )
         yield TurnEvent("error", detail="provider_error")
         return

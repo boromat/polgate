@@ -34,7 +34,29 @@ _CASE_ENDING = "owie|ach|ami|owi|em|om|ie|ów|[aeiuyąę]"
 
 
 class LLMError(RuntimeError):
-    """Raised when the provider returns an error or an unreadable stream."""
+    """Raised when the provider returns an error or an unreadable stream, or a payload is refused.
+
+    The message is for the log and may quote the provider's answer. The audit trail takes
+    :attr:`audit_detail` instead, built only from the status code or the token, so a provider that
+    echoes a number such as "Limit 30000" cannot make the audit refuse its own row.
+    """
+
+    def __init__(
+        self, message: str, *, status: int | None = None, token: str | None = None
+    ) -> None:
+        """Keep the provider's status code, or the token a refused payload held."""
+        super().__init__(message)
+        self.status = status
+        self.token = token
+
+    @property
+    def audit_detail(self) -> str:
+        """Describe the failure without the provider's words: a token, a status or neither."""
+        if self.token is not None:
+            return f"token={self.token}"
+        if self.status is not None:
+            return f"status={self.status}"
+        return "transport"
 
 
 def assert_no_raw_values(messages: Iterable[Mapping[str, str]], mapping: Mapping[str, str]) -> None:
@@ -69,7 +91,9 @@ def assert_no_raw_values(messages: Iterable[Mapping[str, str]], mapping: Mapping
         else:
             present = any(value in text for text in stripped)
         if present:
-            raise LLMError(f"refusing to send: original value for {token} present in the payload")
+            raise LLMError(
+                f"refusing to send: original value for {token} present in the payload", token=token
+            )
 
 
 def _short_word(value: str) -> re.Pattern[str]:
@@ -126,7 +150,10 @@ async def stream_chat(
         ) as response:
             if response.status_code >= 400:
                 body = (await response.aread()).decode(errors="replace")
-                raise LLMError(f"provider returned {response.status_code}: {body[:300]}")
+                raise LLMError(
+                    f"provider returned {response.status_code}: {body[:300]}",
+                    status=response.status_code,
+                )
             async for line in response.aiter_lines():
                 delta = _parse_sse_line(line)
                 if delta is _DONE:

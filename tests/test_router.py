@@ -441,7 +441,7 @@ async def test_a_turn_that_would_leak_is_refused_before_anything_is_stored_or_se
     from polgate.llm import router
 
     def refuse(messages, mapping):
-        raise LLMError(REFUSAL)
+        raise LLMError(REFUSAL, token="<PESEL_1>")
 
     monkeypatch.setattr(router, "assert_no_raw_values", refuse)
     session, conversation, user, anonymizer, policy = turn_setup
@@ -468,7 +468,7 @@ async def test_a_refused_turn_does_not_poison_the_next_one(turn_setup, monkeypat
     def refuse_once(messages, mapping):
         calls["count"] += 1
         if calls["count"] == 1:
-            raise LLMError(REFUSAL)
+            raise LLMError(REFUSAL, token="<PESEL_1>")
         return real_check(messages, mapping)
 
     monkeypatch.setattr(router, "assert_no_raw_values", refuse_once)
@@ -633,3 +633,40 @@ def test_assert_no_raw_values_reads_a_short_pin_as_the_library_masks_it(content)
             assert_no_raw_values([{"content": content}], mapping)
     else:
         assert_no_raw_values([{"content": content}], mapping)
+
+
+async def test_a_provider_error_quoting_a_masked_number_still_ends_the_turn(turn_setup):
+    """The provider's words went into the audit detail, and "Limit 30000" holds the PIN 3000.
+
+    The audit then refused its own row inside the error handler, and the stream died with no
+    error event for the page.
+    """
+    session, conversation, user, anonymizer, policy = turn_setup
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(429, text="Rate limit: Limit 30000, Used 29854")
+
+    events = []
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        async for event in run_turn(
+            session,
+            conversation,
+            user,
+            "Mój PIN to 3000, zmień go.",
+            policy=policy,
+            anonymizer=anonymizer,
+            settings=get_settings(),
+            client=client,
+        ):
+            events.append(event)
+
+    assert (events[-1].type, events[-1].detail) == ("error", "provider_error")
+    row = session.exec(select(AuditEvent).where(AuditEvent.event == "provider_error")).one()
+    assert row.detail == "status=429"
+
+
+def test_a_refusal_names_the_token_and_nothing_else():
+    with pytest.raises(LLMError) as raised:
+        assert_no_raw_values([{"content": "PESEL 50810112354"}], {"<PESEL_1>": "50810112354"})
+    assert raised.value.audit_detail == "token=<PESEL_1>"
+    assert LLMError("connection reset").audit_detail == "transport"

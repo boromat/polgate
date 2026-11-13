@@ -55,6 +55,11 @@ fixes every leak the evaluation found. The hub also runs on Windows with a doubl
   every other upload and turn shares. The declared dimension is now ignored, trailing empty cells
   are dropped, and a workbook is read for at most two million cells, with the usual truncation
   marker after them.
+- **A provider error always reaches the page.** The audit row of a failed provider call held the
+  first 200 characters of the provider's answer, and the audit refuses any row that contains a
+  masked value. An answer such as "Limit 30000" holds the PIN 3000, so the row was refused inside
+  the error handler, and the stream ended without telling the employee anything. The row now holds
+  the status code ("status=429"), and a refused payload's row the token it held.
 - **The review step says when the judge is down.** With approval before sending switched on, a
   stage-2 judge that failed while the policy said to block ended the preview in a server error, with
   nothing in the audit trail. It now gives the same message as the answer stream, "nothing was
