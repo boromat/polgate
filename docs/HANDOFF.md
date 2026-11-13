@@ -244,9 +244,11 @@ Most severe first; each was confirmed by reading the code, the first by running 
   a replayed token whose value is gone or changed becomes "[dane wygasłe / expired data]", and a
   passage holding one is skipped. Rows from before carry no fingerprints and are checked only for a
   token that has no value at all.
-- **Two turns at once in one conversation can give one token to two people.** Both load the
-  mapping before either stores it, and `VaultEntry` has no unique key on (conversation, token).
-  Needs a unique key and a retry, or one turn at a time per conversation.
+- [x] **Two turns at once in one conversation could give one token to two people.** Both loaded
+  the mapping before either stored it. Fixed with a lock per conversation
+  (`vault.conversation_lock`) held by a turn and by an upload from reading the mapping to storing
+  it. It is in memory, which covers the hub's single process; running more workers would need the
+  database to arbitrate, with a unique key on (conversation, token) and a retry.
 - **Closing the tab while the answer streams leaves no `message_sent` row,** though the provider
   received the message: the stream is cancelled, and nothing records the turn on the way out.
 - **The answer stream** stops without an error event on a chunk whose `delta` is `null`, and treats

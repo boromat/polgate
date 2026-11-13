@@ -112,3 +112,24 @@ async def test_history_whose_tokens_still_hold_is_replayed_unchanged(conversatio
     assert vault.load_mapping(db_session, item.id) == {"<FIRMA_1>": "Anna Nowak"}
     events = db_session.exec(select(AuditEvent).where(AuditEvent.event == "message_sent")).all()
     assert "expired_tokens" not in events[-1].detail
+
+
+async def test_two_turns_at_once_give_two_people_two_tokens(conversation):
+    """Both read the same empty mapping and named Anna and Piotr <FIRMA_1>; the vault kept Anna."""
+    import asyncio
+
+    db_session, item, user = conversation
+    captured: list[dict] = []
+    await asyncio.gather(
+        _turn(db_session, item, user, "Umowa: Anna Nowak.", captured),
+        _turn(db_session, item, user, "Faktura: Piotr Lis.", captured),
+    )
+
+    mapping = vault.load_mapping(db_session, item.id)
+    assert sorted(mapping.values()) == ["Anna Nowak", "Piotr Lis"]
+    sent = {
+        m.content_sent
+        for m in db_session.exec(select(Message).where(Message.role == MessageRole.USER)).all()
+    }
+    by_value = {value: token for token, value in mapping.items()}
+    assert sent == {f"Umowa: {by_value['Anna Nowak']}.", f"Faktura: {by_value['Piotr Lis']}."}

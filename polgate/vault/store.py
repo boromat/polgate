@@ -7,9 +7,11 @@ own, and they expire according to the admin's retention policy.
 
 from __future__ import annotations
 
+import asyncio
 import hashlib
 import hmac
 import logging
+import weakref
 from datetime import UTC, datetime, timedelta
 from functools import lru_cache
 
@@ -47,6 +49,26 @@ def _vault_key() -> str:
             key_path,
         )
     return key
+
+
+#: One lock per conversation, held while a turn or an upload reads the mapping, masks with it and
+#: stores what it added. Weak values: a lock nobody is waiting on goes with its last reference.
+_CONVERSATION_LOCKS: weakref.WeakValueDictionary[int, asyncio.Lock] = weakref.WeakValueDictionary()
+
+
+def conversation_lock(conversation_id: int) -> asyncio.Lock:
+    """Return the lock that lets one turn or upload at a time allocate tokens in a conversation.
+
+    Two at once both read the same mapping, both handed the next free number to a different
+    person, and the second to store found the token taken and skipped it, so its text said
+    ``<OSOBA_4>`` for one person while the vault said another. The hub runs one process, so a lock
+    in memory covers it; more workers would need the database to arbitrate.
+    """
+    lock = _CONVERSATION_LOCKS.get(conversation_id)
+    if lock is None:
+        lock = asyncio.Lock()
+        _CONVERSATION_LOCKS[conversation_id] = lock
+    return lock
 
 
 def encrypt(value: str) -> str:

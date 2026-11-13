@@ -182,36 +182,40 @@ async def _ingest(
 
     policy = get_policy(session)
     anonymizer = build_anonymizer(session)
-    mapping = vault.load_mapping(session, conversation_id)
-    result = await anonymizer.anonymize(f"{filename}\n\n{text}", mapping)
+    # The same lock as a chat turn: both read the conversation's mapping and store it again.
+    async with vault.conversation_lock(conversation_id):
+        mapping = vault.load_mapping(session, conversation_id)
+        result = await anonymizer.anonymize(f"{filename}\n\n{text}", mapping)
 
-    vault.save_mapping(
-        session,
-        conversation_id,
-        result.mapping,
-        {token: entity_type_for_token(token) for token in result.mapping},
-        policy.vault_ttl_days,
-    )
-    asset = FileAsset(
-        conversation_id=conversation_id,
-        user_id=_require_user_id(user),
-        # The upload name is often the most personal part of a file ("CV Jan Kowalski.pdf"). The
-        # masked name is the first line of the masked text, which begins with the file name.
-        filename=result.anonymized.split("\n", 1)[0],
-        filename_enc=vault.encrypt(filename),
-        mime_type=upload_file.content_type or "application/octet-stream",
-        size_bytes=stored.stat().st_size,
-        storage_path=str(stored),
-        text_original_enc=vault.encrypt(text),
-        text_sent=result.anonymized,
-        token_fingerprints=fingerprints.record(result.anonymized, result.mapping),
-        status=(
-            FileStatus.PENDING_REVIEW if policy.hil_files is HilMode.REVIEW else FileStatus.APPROVED
-        ),
-    )
-    session.add(asset)
-    session.commit()
-    session.refresh(asset)
+        vault.save_mapping(
+            session,
+            conversation_id,
+            result.mapping,
+            {token: entity_type_for_token(token) for token in result.mapping},
+            policy.vault_ttl_days,
+        )
+        asset = FileAsset(
+            conversation_id=conversation_id,
+            user_id=_require_user_id(user),
+            # The upload name is often the most personal part of a file ("CV Jan Kowalski.pdf"). The
+            # masked name is the first line of the masked text, which begins with the file name.
+            filename=result.anonymized.split("\n", 1)[0],
+            filename_enc=vault.encrypt(filename),
+            mime_type=upload_file.content_type or "application/octet-stream",
+            size_bytes=stored.stat().st_size,
+            storage_path=str(stored),
+            text_original_enc=vault.encrypt(text),
+            text_sent=result.anonymized,
+            token_fingerprints=fingerprints.record(result.anonymized, result.mapping),
+            status=(
+                FileStatus.PENDING_REVIEW
+                if policy.hil_files is HilMode.REVIEW
+                else FileStatus.APPROVED
+            ),
+        )
+        session.add(asset)
+        session.commit()
+        session.refresh(asset)
     return asset, result
 
 

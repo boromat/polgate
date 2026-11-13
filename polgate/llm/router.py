@@ -249,87 +249,92 @@ async def run_turn(
         A ``preview`` event with the text that will be sent, then ``token`` events, then ``done``.
         Any failure produces a single ``error`` event instead.
     """
-    mapping = vault.load_mapping(session, _require_id(conversation))
-    try:
-        result = await anonymizer.anonymize(text, mapping)
-    except JudgeError as exc:
-        logger.warning("turn blocked: judge unavailable (%s)", exc)
-        audit.log(
-            session,
-            event="turn_blocked_judge",
-            user_id=user.id,
-            conversation_id=conversation.id,
-            detail="stage-2 judge unavailable and policy is 'block'",
-        )
-        yield TurnEvent("error", detail="judge_unavailable")
-        return
+    # From reading the mapping to storing it, one turn or upload at a time per conversation:
+    # two at once both started from the same mapping and could give one token to two people,
+    # and the search's indexing in between made that window seconds long.
+    async with vault.conversation_lock(_require_id(conversation)):
+        mapping = vault.load_mapping(session, _require_id(conversation))
+        try:
+            result = await anonymizer.anonymize(text, mapping)
+        except JudgeError as exc:
+            logger.warning("turn blocked: judge unavailable (%s)", exc)
+            audit.log(
+                session,
+                event="turn_blocked_judge",
+                user_id=user.id,
+                conversation_id=conversation.id,
+                detail="stage-2 judge unavailable and policy is 'block'",
+            )
+            yield TurnEvent("error", detail="judge_unavailable")
+            return
 
-    expired: list[int] = []
-    history = _history_messages(
-        session, conversation, settings.history_budget_chars, result.mapping, expired
-    )
-    files = _approved_files(session, conversation)
-    found = SearchResult()
-    search = AttachmentSearch(settings, policy, result.mapping, client)
-    question = _search_question(result.anonymized, history)
-    async for event in _search_attachments(
-        session, conversation, user, search, files, question, found
-    ):
-        yield event
-    replayed = [
-        *_attachment_messages(
-            files, settings.attachment_budget_chars, found.texts, result.mapping, expired
-        ),
-        *history,
-    ]
-    # Earlier turns are replayed from what was sent at the time, and a value that has a token now
-    # may have gone out in the clear back then: a word the employee only now asked to mask, a
-    # denylist entry added since, masking switched back on. Left alone, the check below finds it in
-    # the replay and refuses this turn and every later one. The stored text is not rewritten: it is
-    # the record of what the provider received, and the preview shows exactly that.
-    replayed = await asyncio.to_thread(_mask_replay, replayed, result.mapping)
-    messages = [
-        {"role": "system", "content": SYSTEM_PROMPT},
-        *replayed,
-        {"role": "user", "content": result.anonymized},
-    ]
-    # The last check before anything leaves, and it runs before anything is stored. `content_sent`
-    # is plaintext and is replayed as history on every later turn, so a message that failed this
-    # check and was saved anyway would make every following turn fail it too.
-    try:
-        assert_no_raw_values(messages, result.mapping)
-    except LLMError as exc:
-        logger.warning("turn refused before sending: %s", exc)
-        audit.log(
-            session,
-            event="turn_refused_unmasked",
-            user_id=user.id,
-            conversation_id=conversation.id,
-            detail=exc.audit_detail,
+        expired: list[int] = []
+        history = _history_messages(
+            session, conversation, settings.history_budget_chars, result.mapping, expired
         )
-        yield TurnEvent("error", detail="refused_unmasked")
-        return
+        files = _approved_files(session, conversation)
+        found = SearchResult()
+        search = AttachmentSearch(settings, policy, result.mapping, client)
+        question = _search_question(result.anonymized, history)
+        async for event in _search_attachments(
+            session, conversation, user, search, files, question, found
+        ):
+            yield event
+        replayed = [
+            *_attachment_messages(
+                files, settings.attachment_budget_chars, found.texts, result.mapping, expired
+            ),
+            *history,
+        ]
+        # Earlier turns are replayed from what was sent at the time, and a value that has a token
+        # now may have gone out in the clear back then: a word the employee only now asked to mask,
+        # a denylist entry added since, masking switched back on. Left alone, the check below finds
+        # it in the replay and refuses this turn and every later one. The stored text is not
+        # rewritten: it is the record of what the provider received, and the preview shows exactly
+        # that.
+        replayed = await asyncio.to_thread(_mask_replay, replayed, result.mapping)
+        messages = [
+            {"role": "system", "content": SYSTEM_PROMPT},
+            *replayed,
+            {"role": "user", "content": result.anonymized},
+        ]
+        # The last check before anything leaves, and it runs before anything is stored.
+        # `content_sent` is plaintext and is replayed as history on every later turn, so a message
+        # that failed this check and was saved anyway would make every following turn fail it too.
+        try:
+            assert_no_raw_values(messages, result.mapping)
+        except LLMError as exc:
+            logger.warning("turn refused before sending: %s", exc)
+            audit.log(
+                session,
+                event="turn_refused_unmasked",
+                user_id=user.id,
+                conversation_id=conversation.id,
+                detail=exc.audit_detail,
+            )
+            yield TurnEvent("error", detail="refused_unmasked")
+            return
 
-    entity_types = {token: entity_type_for_token(token) for token in result.mapping}
-    vault.save_mapping(
-        session, _require_id(conversation), result.mapping, entity_types, policy.vault_ttl_days
-    )
-    user_message = Message(
-        conversation_id=_require_id(conversation),
-        role=MessageRole.USER,
-        content_original_enc=vault.encrypt(text),
-        content_sent=result.anonymized,
-        token_fingerprints=fingerprints.record(result.anonymized, result.mapping),
-        entity_count=sum(result.entity_counts.values()),
-        judge_hits=result.judge_hits,
-    )
-    session.add(user_message)
-    if not conversation.title:
-        conversation.title = _title_from(result.anonymized)
-    conversation.updated_at = utcnow()
-    session.add(conversation)
-    session.commit()
-    session.refresh(user_message)
+        entity_types = {token: entity_type_for_token(token) for token in result.mapping}
+        vault.save_mapping(
+            session, _require_id(conversation), result.mapping, entity_types, policy.vault_ttl_days
+        )
+        user_message = Message(
+            conversation_id=_require_id(conversation),
+            role=MessageRole.USER,
+            content_original_enc=vault.encrypt(text),
+            content_sent=result.anonymized,
+            token_fingerprints=fingerprints.record(result.anonymized, result.mapping),
+            entity_count=sum(result.entity_counts.values()),
+            judge_hits=result.judge_hits,
+        )
+        session.add(user_message)
+        if not conversation.title:
+            conversation.title = _title_from(result.anonymized)
+        conversation.updated_at = utcnow()
+        session.add(conversation)
+        session.commit()
+        session.refresh(user_message)
 
     # The message id lets the page offer the stored preview for a message it has not reloaded.
     yield TurnEvent("preview", text=result.anonymized, detail=str(user_message.id))
