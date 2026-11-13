@@ -13,6 +13,7 @@ from polgate.db import get_session
 from polgate.models import User
 from polgate.rendering import render
 from polgate.security import safe_next
+from polgate.web.chat import ensure_a_conversation
 
 router = APIRouter()
 
@@ -71,6 +72,8 @@ def login_submit(
         )
 
     settle(session, attempt, SUCCESS_EVENT)
+    # The first conversation is made here, by a POST, rather than by opening /chat.
+    ensure_a_conversation(session, user)
     response = RedirectResponse(target, status_code=303)
     login_user(response, user, epoch=epoch)
     return response

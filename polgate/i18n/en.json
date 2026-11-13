@@ -64,6 +64,8 @@
   "chat.masking": "Masking personal data…",
   "chat.more_options": "More options",
   "chat.new": "New conversation",
+  "chat.none_body": "Start a new conversation. Earlier ones may have been deleted under the retention policy.",
+  "chat.none_title": "No conversations yet",
   "chat.nothing_masked": "nothing masked",
   "chat.nothing_masked_hint": "The hub found nothing to mask in this message. Open the preview to see what the model received.",
   "chat.placeholder": "Type a message… personal data is masked before it leaves the company",

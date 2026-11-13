@@ -64,6 +64,8 @@
   "chat.masking": "Maskuję dane osobowe…",
   "chat.more_options": "Więcej opcji",
   "chat.new": "Nowa rozmowa",
+  "chat.none_body": "Zacznij nową rozmowę. Wcześniejsze mogły zostać usunięte zgodnie z polityką przechowywania danych.",
+  "chat.none_title": "Nie masz jeszcze rozmów",
   "chat.nothing_masked": "nic nie zamaskowano",
   "chat.nothing_masked_hint": "Hub nie znalazł w tej wiadomości niczego do zamaskowania. Sprawdź w podglądzie, co zobaczył model.",
   "chat.placeholder": "Napisz wiadomość… dane osobowe zostaną zamaskowane przed wysyłką",

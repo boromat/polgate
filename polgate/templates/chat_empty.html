@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}{{ t("chat.none_title") }} · {{ t("app.name") }}{% endblock %}
+{% block content %}
+{# Shown when the account has no conversation, for instance after retention removed the last one.
+   Opening /chat creates nothing: a GET may be a link followed from another site. #}
+<div class="auth-wrap">
+  <div class="card auth-card">
+    <h2>{{ t("chat.none_title") }}</h2>
+    <p class="muted small">{{ t("chat.none_body") }}</p>
+    <form method="post" action="/chat/new">
+      <button class="btn block" type="submit">{{ t("chat.new") }}</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

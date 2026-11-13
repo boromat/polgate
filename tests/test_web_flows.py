@@ -1182,3 +1182,36 @@ def test_a_shorter_mapping_retention_applies_to_mappings_stored_before(admin_cli
     _post_ttls(admin_client, "")
     with Session(get_engine()) as session:
         assert all(row.expires_at is None for row in session.exec(select(VaultEntry)).all())
+
+
+def test_signing_in_gives_a_new_account_its_first_conversation(app_client):
+    with Session(get_engine()) as session:
+        session.add(User(username="nowy", password_hash=hash_password("dlugie-haslo-x")))
+        session.commit()
+    response = app_client.post(
+        "/login", data={"username": "nowy", "password": "dlugie-haslo-x", "next": "/chat"}
+    )
+    assert response.status_code == 303
+    with Session(get_engine()) as session:
+        owner = session.exec(select(User).where(User.username == "nowy")).one()
+        assert (
+            len(session.exec(select(Conversation).where(Conversation.user_id == owner.id)).all())
+            == 1
+        )
+    assert app_client.get("/chat").status_code == 303
+
+
+def test_opening_the_chat_creates_nothing(admin_client):
+    """A GET carries the session cookie from a link on any site, so it must not change state."""
+    with Session(get_engine()) as session:
+        for conversation in session.exec(select(Conversation)).all():
+            session.delete(conversation)
+        session.commit()
+
+    response = admin_client.get("/chat")
+
+    assert response.status_code == 200
+    assert "Nie masz jeszcze rozmów" in response.text
+    assert 'action="/chat/new"' in response.text
+    with Session(get_engine()) as session:
+        assert session.exec(select(Conversation)).all() == []

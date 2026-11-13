@@ -91,11 +91,24 @@ def chat_home(
     user: User = Depends(current_user),
     session: Session = Depends(get_session),
 ) -> Response:
-    """Open the most recent conversation, creating one when there is none."""
+    """Open the most recent conversation, or offer to start one when there is none.
+
+    Nothing is created here: a GET can be a link followed from another site, and it carries the
+    session cookie. Signing in creates the first conversation instead, see
+    :func:`ensure_a_conversation`.
+    """
     existing = _conversations(session, user)
     if existing:
         return RedirectResponse(f"/chat/{existing[0].id}", status_code=303)
-    return new_conversation(user=user, session=session)
+    return render(request, "chat_empty.html")
+
+
+def ensure_a_conversation(session: Session, user: User) -> None:
+    """Give an account that has no conversation its first one; the caller is a POST."""
+    if _conversations(session, user):
+        return
+    session.add(Conversation(user_id=_require_user_id(user)))
+    session.commit()
 
 
 @router.get("/new")
