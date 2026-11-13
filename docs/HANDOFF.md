@@ -4,7 +4,7 @@ Status: steps 1-12 are done and tested. The masking engine that steps 3-5 and 12
 `piianon/` and is now a library of its own, [polanon](https://github.com/boromat/polanon), which the
 hub installs from PyPI, now at 0.3.3 or later. Version 0.1.0 was released on 2026-11-03: the
 repository is public and the image is on GitHub Container Registry. Version 0.2.0, dated
-2026-11-12, adds `start.bat` to run the hub on Windows and a leak evaluation that measures what
+2026-11-13, adds `start.bat` to run the hub on Windows and a leak evaluation that measures what
 reaches the provider, and requires polanon 0.3.3, which fixed every leak that evaluation found
 (see *0.2.0*). What is left is under *Known detection gaps* and *After MVP*.
 
@@ -150,7 +150,7 @@ moved to polanon and has grown since; the current numbers are in its
       wait for CI on `main`, then push the tag `vX.Y.Z`. The workflow refuses a tag that differs from
       the package version or a heading still marked `Unreleased`.
 
-### 0.2.0 (2026-11-12)
+### 0.2.0 (2026-11-13)
 - [x] `start.bat` for Windows. A double click runs the hub; the first run creates `.venv`, installs
       the hub and the spaCy model and writes `.env` with generated keys. Tested from a clean copy:
       a first run, then a second one that starts in seconds.
@@ -175,9 +175,42 @@ moved to polanon and has grown since; the current numbers are in its
       `entity_types_known` does for types, and a name the administrator deleted stays deleted. A
       policy saved before the column existed is taken to have been offered polanon's list as it was
       from 0.2.0 to 0.3.2 (`NAMES_BEFORE_TRACKING`).
+- [x] A review of the whole project before the release, by area, every finding checked against the
+      code. Fixed, each with a test: a UTF-16 text file read as cp1250 and sent unmasked; an empty
+      generated key file accepted as a key; a 5 KB XLSX keeping a worker busy for minutes; the
+      retention pass failing on a conversation with a message waiting to stream; the review step
+      ending in a server error when the judge is down; a provider error lost because its audit row
+      quoted a masked number; and retention periods that a typo switched off, a large number broke,
+      or a shorter value did not apply to stored mappings.
 - [x] `polgate.__version__` 0.2.0 and the dated `CHANGELOG.md` heading, in one commit.
 - [ ] Push the tag `v0.2.0` once CI on `main` is green: the release workflow publishes the image and
       the GitHub release.
+
+### Found in the review before 0.2.0, still open
+Most severe first; each was confirmed by reading the code, the first by running it.
+- **A token's number is given to somebody else once its vault row expires.** The allocator counts
+  from the live mapping, so after `vault_ttl_days` the next person named becomes `<OSOBA_1>` again,
+  while earlier messages, an attached file or an indexed passage still say `<OSOBA_1>` for the old
+  one. Replayed, they make the answer come back with the new person's name. A fix records, beside
+  each stored text, a fingerprint of what each of its tokens stood for (`vault.value_hash`) and
+  leaves out or re-masks text whose fingerprints no longer match. Until then, a mapping retention
+  well beyond the history retention narrows the window without closing it: a token stored on day 1
+  and used in a message on day 20 expires before that message does. Keeping mappings forever, the
+  default when the field is empty, closes it.
+- **Two turns at once in one conversation can give one token to two people.** Both load the
+  mapping before either stores it, and `VaultEntry` has no unique key on (conversation, token).
+  Needs a unique key and a retry, or one turn at a time per conversation.
+- **Closing the tab while the answer streams leaves no `message_sent` row,** though the provider
+  received the message: the stream is cancelled, and nothing records the turn on the way out.
+- **The answer stream** stops without an error event on a chunk whose `delta` is `null`, and treats
+  an error the provider sends inside the stream as the end of a normal answer.
+- Smaller: OCR checks for tesseract but not its Polish and English data, so a missing language pack
+  reads as "unreadable"; an image of about 170 megapixels still goes to tesseract; one unclosed
+  quote makes a CSV over 128 KB unreadable; a `"` in `ADMIN_PASSWORD` breaks `start.bat`; the policy
+  summary counts one entity type when none are on; `GET /chat` creates a conversation for a user
+  with none; the retention pass runs on the event loop; `polgate/schema.py` would backfill a future
+  enum column with the value where the database stores the name, and `--drop-orphan-columns` cannot
+  drop an indexed column on SQLite.
 
 ### Known detection gaps worth an issue each
 All but the last are polanon's and belong in

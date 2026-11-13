@@ -6,10 +6,12 @@ All notable changes to this project are recorded here. The format follows
 
 ## [Unreleased]
 
-## [0.2.0] - 2026-11-12
+## [0.2.0] - 2026-11-13
 
 A leak evaluation now measures what reaches the provider, and the polanon it requires, 0.3.3,
-fixes every leak the evaluation found. The hub also runs on Windows with a double click.
+fixes every leak the evaluation found. The hub also runs on Windows with a double click. A review
+of the whole project before the release fixed seven faults, among them a text file saved as UTF-16
+reaching the provider unmasked.
 
 ### Added
 
