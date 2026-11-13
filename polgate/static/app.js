@@ -58,11 +58,14 @@
     sink.replaceChildren(note);
   }
 
+  /* Badges add up rather than replace each other: the note that a long attachment was only
+     partly searched arrives before the answer, and a warning or an error after it must not
+     take its place. */
   function showBadge(container, kind, label) {
     var badge = document.createElement("span");
     badge.className = "badge " + kind;
     badge.textContent = label;
-    container.replaceChildren(badge);
+    container.appendChild(badge);
     container.hidden = false;
   }
 
