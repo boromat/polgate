@@ -15,6 +15,7 @@ from polgate.retrieval.select import (
     render,
     split_passages,
     to_blob,
+    tokens_in,
     unit,
     word_scores,
 )
@@ -141,3 +142,21 @@ def test_the_model_is_told_it_reads_passages_and_where_they_skip():
 def test_the_model_is_told_when_only_part_of_the_file_was_searched():
     text = render("plik.txt", [Passage(0, "tekst")], capped_at=500)
     assert text.endswith(CAPPED_MARKER.format(count=500))
+
+
+def test_a_long_row_is_cut_between_words_and_never_inside_a_token():
+    """A table row cut where the target fell gave "<OSO" and "BA_12>", and "120" and "0"."""
+    row = " ".join(f"<OSOBA_{i}> 1200 zł <EMAIL_{i}>" for i in range(1, 40))
+    passages = split_passages(row, target_chars=60)
+    tokens = [t for p in passages for t in tokens_in(p)]
+    assert tokens == tokens_in(row)
+    assert all(len(p) <= 60 for p in passages)
+    assert all("1200" in p.split() or "1200" not in p for p in passages)
+    assert " ".join(passages).split() == row.split()
+
+
+def test_a_cut_that_would_split_a_token_moves_to_its_start():
+    text = "x" * 50 + "<OSOBA_12>" + "y" * 50
+    passages = split_passages(text, target_chars=55)
+    assert "<OSOBA_12>" in "".join(passages)
+    assert all(p.count("<") == p.count(">") for p in passages)

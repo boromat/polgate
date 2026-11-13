@@ -95,14 +95,36 @@ def _fit(paragraph: str, target_chars: int) -> Iterable[str]:
             if current:
                 yield current
                 current = ""
-            yield sentence[:target_chars]
-            sentence = sentence[target_chars:]
+            cut = _cut_point(sentence, target_chars)
+            yield sentence[:cut].rstrip()
+            sentence = sentence[cut:].lstrip()
         if current and len(current) + 1 + len(sentence) > target_chars:
             yield current
             current = ""
         current = f"{current} {sentence}" if current else sentence
     if current:
         yield current
+
+
+def _cut_point(text: str, target_chars: int) -> int:
+    """Return where to cut text longer than the target: between words, and never inside a token.
+
+    A table row extracted with no sentence ends was cut where the target fell, which split
+    "<OSOBA_12>" into "<OSO" and "BA_12>" and "1200" into "120" and "0". Half a token is no token:
+    the stale-token check and the matching of tokens do not see it, and a model given one half may
+    complete it into another, valid token. The last space in the second half of the target wins;
+    without one the cut falls at the target, moved back to the start of a token it would split.
+    """
+    cut = text.rfind(" ", target_chars // 2, target_chars + 1)
+    if cut <= 0:
+        cut = target_chars
+    for match in _TOKEN_RE.finditer(text):
+        if match.start() >= cut:
+            break
+        if match.start() < cut < match.end():
+            cut = match.start() if match.start() > 0 else match.end()
+            break
+    return cut
 
 
 def unit(vector: Sequence[float]) -> Vector:
