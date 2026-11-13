@@ -25,6 +25,7 @@ from polgate.models import (
 )
 from polgate.retrieval import search as search_module
 from polgate.retrieval.select import CAPPED_MARKER, PASSAGES_MARKER
+from polgate.vault import store as vault
 
 FILLER = [
     f"Rozdział {i}. Ogólne postanowienia regulaminu biura dotyczące porządku numer {i}."
@@ -318,3 +319,24 @@ async def test_vectors_of_another_length_are_indexed_again(setup, settings):
     assert events[-1].type == "done"
     assert ANSWER in provider.attachment()
     assert all(len(row.vector) == 64 * 4 for row in session.exec(select(AttachmentChunk)).all())
+
+
+async def test_a_passage_whose_token_now_means_somebody_else_is_skipped(setup, settings):
+    """The file was masked when <OSOBA_7> was one person; after expiry the number is another's."""
+    from polgate.vault import fingerprints
+
+    session, *_ = setup
+    asset = session.exec(select(FileAsset)).one()
+    asset.text_sent = DOCUMENT.replace(ANSWER, "Kaucję za klucze do magazynu wpłaciła <OSOBA_7>.")
+    asset.token_fingerprints = fingerprints.record(asset.text_sent, {"<OSOBA_7>": "Anna Nowak"})
+    session.add(asset)
+    session.commit()
+    conversation = setup[1]
+    vault.save_mapping(session, conversation.id, {"<OSOBA_7>": "Piotr Lis"}, {}, 30)
+    session.commit()
+    provider = Provider()
+
+    await _turn(setup, settings, provider, "Kto wpłacił kaucję za klucze do magazynu?")
+
+    assert "<OSOBA_7>" not in provider.attachment()
+    assert "stale_passages=1" in _audit(session, "message_sent")[0]

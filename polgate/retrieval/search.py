@@ -32,13 +32,13 @@ from polgate.retrieval.select import (
     Vector,
     choose,
     from_blob,
-    has_stale_token,
     rank,
     render,
     split_passages,
     to_blob,
     unit,
 )
+from polgate.vault import fingerprints
 
 logger = logging.getLogger(__name__)
 
@@ -201,7 +201,9 @@ class AttachmentSearch:
         candidates = [
             Passage(row.position, row.text_sent, from_blob(row.vector))
             for row in rows
-            if not has_stale_token(row.text_sent, self.mapping)
+            if not fingerprints.stale_tokens(
+                row.text_sent, document.asset.token_fingerprints, self.mapping
+            )
         ]
         result.stale += len(rows) - len(candidates)
         order = await asyncio.to_thread(rank, question, question_vector, candidates)

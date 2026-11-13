@@ -236,15 +236,14 @@ passages rather than a second search:
 
 ### Found in the review before 0.2.0, still open
 Most severe first; each was confirmed by reading the code, the first by running it.
-- **A token's number is given to somebody else once its vault row expires.** The allocator counts
-  from the live mapping, so after `vault_ttl_days` the next person named becomes `<OSOBA_1>` again,
-  while earlier messages, an attached file or an indexed passage still say `<OSOBA_1>` for the old
-  one. Replayed, they make the answer come back with the new person's name. A fix records, beside
-  each stored text, a fingerprint of what each of its tokens stood for (`vault.value_hash`) and
-  leaves out or re-masks text whose fingerprints no longer match. Until then, a mapping retention
-  well beyond the history retention narrows the window without closing it: a token stored on day 1
-  and used in a message on day 20 expires before that message does. Keeping mappings forever, the
-  default when the field is empty, closes it.
+- [x] **A token's number was given to somebody else once its vault row expired.** The allocator
+  counts from the live mapping, so after `vault_ttl_days` the next person named became `<OSOBA_1>`
+  again, while earlier messages, an attached file or an indexed passage still said `<OSOBA_1>` for
+  the old one, and the answer came back with the new person's name. Fixed: messages and files record
+  a keyed fingerprint of each token's value (`token_fingerprints`, `polgate/vault/fingerprints.py`);
+  a replayed token whose value is gone or changed becomes "[dane wygasłe / expired data]", and a
+  passage holding one is skipped. Rows from before carry no fingerprints and are checked only for a
+  token that has no value at all.
 - **Two turns at once in one conversation can give one token to two people.** Both load the
   mapping before either stores it, and `VaultEntry` has no unique key on (conversation, token).
   Needs a unique key and a retry, or one turn at a time per conversation.

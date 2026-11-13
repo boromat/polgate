@@ -211,6 +211,8 @@ async def test_attached_file_name_is_never_sent_in_raw_form(turn_setup):
             status=FileStatus.APPROVED,
         )
     )
+    # As the upload stores it: the token's value in the vault, beside the masked text.
+    vault.save_mapping(session, conversation.id, {"<OSOBA_1>": "CV Jan Kowalski"}, {}, 30)
     session.commit()
 
     captured: list[dict] = []

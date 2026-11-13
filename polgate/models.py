@@ -77,6 +77,9 @@ class Message(SQLModel, table=True):
     )
     entity_count: int = 0
     judge_hits: int = 0  # how many extra spans stage 2 added on top of stage 1
+    # JSON {token: value fingerprint} for the tokens in the text when it was stored; see
+    # polgate/vault/fingerprints.py. Empty for rows stored before it existed.
+    token_fingerprints: str = ""
     created_at: datetime = Field(default_factory=utcnow)
 
 
@@ -103,6 +106,9 @@ class FileAsset(SQLModel, table=True):
     storage_path: str  # under settings.upload_dir; original bytes, access-controlled
     text_original_enc: str = ""  # extracted text, encrypted
     text_sent: str = ""  # tokenized text attached to the LLM context
+    # JSON {token: value fingerprint} for the tokens in the text when it was stored; see
+    # polgate/vault/fingerprints.py. Empty for rows stored before it existed.
+    token_fingerprints: str = ""
     status: FileStatus = FileStatus.PENDING_REVIEW
     created_at: datetime = Field(default_factory=utcnow)
 

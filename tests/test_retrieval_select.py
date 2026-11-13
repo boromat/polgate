@@ -10,7 +10,6 @@ from polgate.retrieval.select import (
     Passage,
     choose,
     from_blob,
-    has_stale_token,
     rank,
     render,
     split_passages,
@@ -59,13 +58,6 @@ def test_a_vector_survives_the_database_round_trip_at_unit_length():
     assert np.allclose(vector, [0.6, 0.8])
     assert np.allclose(from_blob(to_blob(vector)), vector)
     assert np.allclose(unit([0.0, 0.0]), [0.0, 0.0])
-
-
-def test_a_token_the_mapping_no_longer_has_makes_a_passage_stale():
-    mapping = {"<OSOBA_1>": "Anna Lis", "<FIRMA_1>": "<FIRMA_1>"}
-    assert not has_stale_token("Umowę podpisała <OSOBA_1> dla <FIRMA_1>.", mapping)
-    assert has_stale_token("Umowę podpisała <OSOBA_2>.", mapping)
-    assert not has_stale_token("Bez tokenów.", {})
 
 
 def test_a_token_in_the_question_outweighs_words_in_common():

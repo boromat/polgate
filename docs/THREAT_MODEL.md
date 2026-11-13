@@ -62,10 +62,13 @@ used on its own; this one covers the hub, the library's detection limits include
   decryption per passage on every turn. **The caveat:** this holds only while `text_sent` is stored
   in plaintext and only masked text is embedded. If either changes, the vectors must be encrypted
   with it, because a vector of an original text gives that text back in part.
-- **A passage whose token has expired is not sent.** When a vault row expires before the file, its
-  token's number can be given to another value; a passage still holding it is skipped by the
-  search, and counted in the audit row, so an answer is not restored with somebody else's name.
-  A file short enough to be sent whole is not filtered this way, as before the search existed.
+- **A token whose number went to somebody else is not sent again.** When a vault row expires, the
+  allocator can give its number to the next value it meets, while earlier messages and attached
+  files still use it for the old one. Each stored text records a keyed fingerprint of what each of
+  its tokens stood for (`polgate/vault/fingerprints.py`); before it is replayed, a token that has
+  lost its value or now has another is replaced with "[dane wygasłe / expired data]", and a passage
+  of a long file holding one is left out of the search. The audit row counts both. Texts stored
+  before 0.2.0 carry no fingerprints, so for them only a token that has no value at all is caught.
 - **The employee's browser session.** The Content-Security-Policy admits scripts and styles only from
   the hub's own origin (they are all served from `/static`) and allows neither `unsafe-inline` nor
   `unsafe-eval`, so an injected `<script>` does not run; there is no inline script or handler in any

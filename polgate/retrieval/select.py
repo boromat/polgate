@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import math
 import re
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from typing import Literal
 
@@ -147,16 +147,6 @@ def from_blob(blob: bytes) -> Vector:
 def tokens_in(text: str) -> list[str]:
     """Return every token in the text, whole: the pattern has groups, so `findall` would not."""
     return [match.group(0) for match in _TOKEN_RE.finditer(text)]
-
-
-def has_stale_token(text: str, mapping: Mapping[str, str]) -> bool:
-    """Return whether the text holds a token the conversation's mapping no longer has.
-
-    A token whose vault row has expired may already stand for somebody else: the allocator hands
-    its number to the next value it meets. A passage that still says ``<OSOBA_1>`` for the old
-    person would have the answer restored with the new person's name, so it is not sent at all.
-    """
-    return any(token not in mapping for token in tokens_in(text))
 
 
 def rank(

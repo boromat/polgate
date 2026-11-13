@@ -35,6 +35,7 @@ from polgate.models import (
     utcnow,
 )
 from polgate.retrieval.search import AttachmentSearch, SearchResult, SearchUnavailableError
+from polgate.vault import fingerprints
 from polgate.vault import store as vault
 
 logger = logging.getLogger(__name__)
@@ -56,13 +57,20 @@ class TurnEvent:
 
 
 def _history_messages(
-    session: Session, conversation: Conversation, budget_chars: int
+    session: Session,
+    conversation: Conversation,
+    budget_chars: int,
+    mapping: dict[str, str],
+    expired: list[int],
 ) -> list[dict[str, str]]:
     """Rebuild the provider-side conversation from what was sent before, never from originals.
 
     Only the most recent turns that fit inside ``budget_chars`` are replayed. Without a ceiling the
     request grows with every message until the provider rejects it, and the employee sees a failure
     whose cause is fifty messages back. The newest turn is always included, even alone.
+
+    A token that stands for somebody else now than when the message was sent is replaced, see
+    :mod:`polgate.vault.fingerprints`; how many places changed is added to ``expired``.
     """
     previous = session.exec(
         select(Message)
@@ -78,7 +86,11 @@ def _history_messages(
         used += len(message.content_sent)
         if used > budget_chars and kept:
             break
-        kept.append({"role": message.role.value, "content": message.content_sent})
+        content, count = fingerprints.expire(
+            message.content_sent, message.token_fingerprints, mapping
+        )
+        expired.append(count)
+        kept.append({"role": message.role.value, "content": content})
     kept.reverse()
     return kept
 
@@ -95,7 +107,11 @@ def _approved_files(session: Session, conversation: Conversation) -> list[FileAs
 
 
 def _attachment_messages(
-    files: list[FileAsset], budget_chars: int, searched: dict[int, str]
+    files: list[FileAsset],
+    budget_chars: int,
+    searched: dict[int, str],
+    mapping: dict[str, str],
+    expired: list[int],
 ) -> list[dict[str, str]]:
     """Return each approved file's text: the passages found for it, or the file cut to the budget.
 
@@ -109,9 +125,18 @@ def _attachment_messages(
     by the search say so the same way.
     """
     # A file rejected while this turn indexed it has lost its text by now, and is left out.
-    texts = [
-        searched.get(f.id or 0) or _trim(f.text_sent, budget_chars) for f in files if f.text_sent
-    ]
+    texts = []
+    for f in files:
+        if not f.text_sent:
+            continue
+        searched_text = searched.get(f.id or 0)
+        if searched_text:
+            # Passages with a stale token were left out by the search already.
+            texts.append(searched_text)
+            continue
+        text, count = fingerprints.expire(f.text_sent, f.token_fingerprints, mapping)
+        expired.append(count)
+        texts.append(_trim(text, budget_chars))
     return [{"role": "system", "content": f"Załączony plik:\n{text}"} for text in texts]
 
 
@@ -239,7 +264,10 @@ async def run_turn(
         yield TurnEvent("error", detail="judge_unavailable")
         return
 
-    history = _history_messages(session, conversation, settings.history_budget_chars)
+    expired: list[int] = []
+    history = _history_messages(
+        session, conversation, settings.history_budget_chars, result.mapping, expired
+    )
     files = _approved_files(session, conversation)
     found = SearchResult()
     search = AttachmentSearch(settings, policy, result.mapping, client)
@@ -249,7 +277,9 @@ async def run_turn(
     ):
         yield event
     replayed = [
-        *_attachment_messages(files, settings.attachment_budget_chars, found.texts),
+        *_attachment_messages(
+            files, settings.attachment_budget_chars, found.texts, result.mapping, expired
+        ),
         *history,
     ]
     # Earlier turns are replayed from what was sent at the time, and a value that has a token now
@@ -289,6 +319,7 @@ async def run_turn(
         role=MessageRole.USER,
         content_original_enc=vault.encrypt(text),
         content_sent=result.anonymized,
+        token_fingerprints=fingerprints.record(result.anonymized, result.mapping),
         entity_count=sum(result.entity_counts.values()),
         judge_hits=result.judge_hits,
     )
@@ -351,6 +382,7 @@ async def run_turn(
             role=MessageRole.ASSISTANT,
             content_original_enc=vault.encrypt(restored),
             content_sent="".join(raw_parts),
+            token_fingerprints=fingerprints.record("".join(raw_parts), result.mapping),
         )
     )
     session.commit()
@@ -366,7 +398,9 @@ async def run_turn(
         stage2_hits=result.judge_hits,
         # The backend is recorded because it answers a compliance question the counts cannot:
         # with `remote`, the stage-1 masked text left the network as well as the final prompt.
-        detail=_judge_detail(policy, settings, failed=result.judge_failed) + _search_detail(found),
+        detail=_judge_detail(policy, settings, failed=result.judge_failed)
+        + _search_detail(found)
+        + (f" expired_tokens={sum(expired)}" if sum(expired) else ""),
     )
     if not report.is_clean:
         audit.log(

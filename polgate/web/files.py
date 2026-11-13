@@ -30,6 +30,7 @@ from polgate.models import Conversation, FileAsset, FileStatus, HilMode, User
 from polgate.policy_loader import get_policy
 from polgate.rendering import render
 from polgate.retrieval import store as passages
+from polgate.vault import fingerprints
 from polgate.vault import store as vault
 from polgate.web.chat import build_anonymizer
 
@@ -203,6 +204,7 @@ async def _ingest(
         storage_path=str(stored),
         text_original_enc=vault.encrypt(text),
         text_sent=result.anonymized,
+        token_fingerprints=fingerprints.record(result.anonymized, result.mapping),
         status=(
             FileStatus.PENDING_REVIEW if policy.hil_files is HilMode.REVIEW else FileStatus.APPROVED
         ),
