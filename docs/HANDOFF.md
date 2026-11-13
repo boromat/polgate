@@ -186,6 +186,53 @@ moved to polanon and has grown since; the current numbers are in its
 - [ ] Push the tag `v0.2.0` once CI on `main` is green: the release workflow publishes the image and
       the GitHub release.
 
+### Since 0.2.0 (on `feat/rag-attachments`, not released yet)
+- [x] Search in long attachments, stage A: the files of one conversation. A file over the
+      attachment budget is indexed on the first turn that needs it, in passages of
+      `RETRIEVAL_CHUNK_CHARS`, embedded in batches of `EMBEDDING_BATCH_SIZE` through an
+      OpenAI-compatible `/embeddings` endpoint, and stored in `AttachmentChunk`, unique per file,
+      position and model. Each turn ranks the passages for this message and the previous one, by
+      cosine and words in common with tokens matched exactly, and sends the best `retrieval_top_k`
+      that fit the budget. The page says when it indexes and when a file is longer than
+      `RETRIEVAL_MAX_CHUNKS_PER_FILE` passages. No new data flow until `EMBEDDING_MODEL` is set.
+      - The passages are masked with the turn's mapping and checked by `assert_no_raw_values` before
+        they are embedded, and so is the question. The conversation's vault mapping is what makes
+        the tokens of a file and of a question meet, so polanon's stable pseudonyms are not needed
+        here; they are for stage B, where documents and conversations do not share a mapping.
+      - A passage with a token the mapping no longer has is skipped and counted (`stale_passages`
+        on `message_sent`); an endpoint that fails or a refused text falls back to the file cut as
+        before, audited as `attachment_search_failed` with the reason and the number of files.
+      - Vectors are stored in plaintext, with the reasoning and its caveat in `docs/THREAT_MODEL.md`.
+      - The admin policy page has the switch and the passages per file; retention and rejection
+        delete the passages; the retention report counts them apart.
+      - `evals/run.py` sends its attachments through the search and checks what reaches
+        `/embeddings`: 0 of 125 values leak. `evals/retrieval.py` scores the ranking: 16 of 16
+        answers past the budget reach the model with the search, 0 with the file cut, on stand-in
+        vectors. A run against bge-m3 in LM Studio is still to do; `evals/README.md` has the steps.
+- [ ] Measure the search with a real embedding model (bge-m3 in LM Studio) and record the numbers
+      in `evals/README.md`.
+
+### Next: a company knowledge base on polanon.index (stage B)
+Documents the whole company may ask about, such as regulations and procedures, uploaded once by an
+administrator rather than into one conversation. Stage A was built so that this adds a source of
+passages rather than a second search:
+- **Masking.** A knowledge base has no conversation mapping to share, so its documents are masked
+  with stable tokens: an `Anonymizer` built with `polanon.Pseudonyms(key)`, the key kept beside the
+  vault key, so the same person gets the same token in every document. The passages are cut with
+  `split_passages` and masked by `polanon.index.index_chunks`, which puts what each token stands for
+  into a `MappingStore` (its `add` and `get`), implemented over an encrypted table like `VaultEntry`,
+  never into the passages.
+- **Questions.** `polanon.index.mask_query` masks a question with the conversation's mapping and the
+  same pseudonyms, so a person named in the chat and in a document meets as one token; the tokens it
+  adds join the conversation's vault mapping, so the answer is restored as usual.
+- **Storage.** A table of its own, `KnowledgeChunk` (document, position, masked text, vector, model),
+  rather than a nullable `file_id` on `AttachmentChunk`: making a column nullable is not an additive
+  change, and `polgate/schema.py` would refuse it on an existing installation.
+- **Ranking and the rest.** `polgate/retrieval/select.py` as it is; the turn adds the knowledge
+  base's best passages beside the attachments', checked by `assert_no_raw_values` like them. Still to
+  decide: who may see which documents, how a document is withdrawn (its passages and its share of
+  the mapping store go with it), and whether one index for the company still fits in memory.
+
 ### Found in the review before 0.2.0, still open
 Most severe first; each was confirmed by reading the code, the first by running it.
 - **A token's number is given to somebody else once its vault row expires.** The allocator counts

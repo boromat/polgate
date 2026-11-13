@@ -23,6 +23,8 @@ used on its own; this one covers the hub, the library's detection limits include
 | LLM provider | only tokenized text | **no**, this is the boundary the project exists for |
 | Stage-2 judge on Ollama | stage-1 masked text, stays on the hub host | yes, it never leaves the network |
 | Stage-2 judge on `remote` | stage-1 masked text sent to the cloud | **no**, testing aid only |
+| Embeddings endpoint on the hub host (LM Studio, Ollama) | masked passages of long attachments and masked questions | yes, it never leaves the network |
+| Embeddings endpoint elsewhere (the chat provider, a cloud API) | the same, sent out | **no**, the same boundary as the LLM provider |
 
 ## What is protected
 
@@ -38,7 +40,8 @@ used on its own; this one covers the hub, the library's detection limits include
   spaces. A company with neither a legal form in its name nor an entry on the denylist depends on
   the model.
 - **The outbound path itself.** `assert_no_raw_values` runs before every chat request to the provider
-  (the `remote` stage-2 judge, a testing aid, sends stage-1 text without it) and raises if any
+  and before every request to the embeddings endpoint, passages and question alike (the `remote`
+  stage-2 judge, a testing aid, sends stage-1 text without it), and raises if any
   known original value appears in the payload letter for letter, outside the conversation's tokens.
   A short number such as a PIN counts only where the library masks it, which leaves a date that holds
   its digits alone (see below). The check is independent of how the library masked, so it catches
@@ -51,6 +54,18 @@ used on its own; this one covers the hub, the library's detection limits include
   retention job really deletes: mappings, messages, uploaded files with their bytes on disk,
   conversations left empty, queued turns nobody streamed, and stored uploads no row refers to. A
   failed upload removes its own bytes at once.
+- **Passages and vectors of the search in attachments are stored in plaintext, on purpose.** A
+  passage is a slice of a file's `text_sent`, which is masked and stored in plaintext already, and
+  its vector is computed from that slice. Inverting an embedding can recover an approximation of the
+  text it came from, but here that text is masked and sits in the same row, so encrypting the
+  vector would hide nothing an attacker with the database does not already read, and would cost a
+  decryption per passage on every turn. **The caveat:** this holds only while `text_sent` is stored
+  in plaintext and only masked text is embedded. If either changes, the vectors must be encrypted
+  with it, because a vector of an original text gives that text back in part.
+- **A passage whose token has expired is not sent.** When a vault row expires before the file, its
+  token's number can be given to another value; a passage still holding it is skipped by the
+  search, and counted in the audit row, so an answer is not restored with somebody else's name.
+  A file short enough to be sent whole is not filtered this way, as before the search existed.
 - **The employee's browser session.** The Content-Security-Policy admits scripts and styles only from
   the hub's own origin (they are all served from `/static`) and allows neither `unsafe-inline` nor
   `unsafe-eval`, so an injected `<script>` does not run; there is no inline script or handler in any
@@ -104,6 +119,12 @@ used on its own; this one covers the hub, the library's detection limits include
   tokens exactly, so the suffix survives and the sentence reads oddly. It does not leak anything.
 - **Images and scans without OCR.** If tesseract is not installed, image uploads are rejected rather than
   silently sent. With OCR enabled, recognition errors become detection gaps.
+- **More of a long attachment goes to the embeddings endpoint.** With the search on, the whole
+  masked text of a file over the budget is sent for embedding once, passage by passage, where before
+  only its first `ATTACHMENT_BUDGET_CHARS` reached the provider. It is masked and checked like
+  everything else, but more masked text is more context for somebody who wants to work out who it
+  is about. With a local endpoint it stays on the server; with a remote one, that endpoint is a
+  provider like the chat's, and the embeddings settings are what make it one.
 - **File metadata.** Only extracted text is anonymized. Author fields, revision history and EXIF data in
   the stored original are not scrubbed; the original file never leaves the hub, but it stays on disk.
 - **A compromised hub host.** The vault key, the database and the uploads live there. Anyone with root on

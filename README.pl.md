@@ -92,7 +92,11 @@ niepotrzebnie maskowane. polanon 0.3.3 poprawiło wszystkie sześć i z nim do d
 żadna wartość z list, nic nie jest maskowane przez pomyłkę, żadna tura nie jest odrzucana, a każda
 z 60 odpowiedzi wraca dokładnie w tej postaci, w jakiej wpisano wiadomość. Te rozmowy też napisał
 autor huba, więc to test regresji, a nie odsetek wycieków, jakiego można się spodziewać w firmie;
-notatki do ewaluacji (po angielsku) opisują każde pominięcie.
+notatki do ewaluacji (po angielsku) opisują każde pominięcie. Z włączonym wyszukiwaniem
+w załącznikach sprawdzane są też fragmenty i pytania wysyłane do embeddingu, z tym samym wynikiem.
+Druga ewaluacja mierzy samo wyszukiwanie: z 16 pytań, na które odpowiedź leży za limitem na
+załącznik, przy uciętym pliku do modelu nie trafia żadna, a z wyszukiwaniem trafia wszystkie 16,
+mierzone na zastępczych wektorach; notatki opisują, jak zmierzyć prawdziwy model.
 
 ## Funkcje
 
@@ -101,6 +105,10 @@ notatki do ewaluacji (po angielsku) opisują każde pominięcie.
 - **Wgrywanie plików**: PDF, DOCX, XLSX, CSV, JSON, TXT, a gdy zainstalowany jest tesseract, także
   obrazy i zeskanowane PDF-y. Pliki mogą wymagać zatwierdzenia, zanim ich zamaskowana treść zostanie
   dołączona.
+- **Wyszukiwanie w długich załącznikach**: plik dłuższy niż limit na załącznik wysyła przy każdym
+  pytaniu pasujące fragmenty, a nie tylko swój początek. Potrzebny jest model embeddingów, a dla
+  firmy zalecany jest lokalny: z LM Studio albo Ollamą uruchomionymi z bge-m3 na tym samym serwerze
+  zamaskowany dokument go nie opuszcza. Wyłączone, dopóki nie ustawisz `EMBEDDING_MODEL`.
 - **Stabilne tokeny**: ta sama osoba pozostaje `<OSOBA_1>` tak długo, jak sejf przechowuje
   mapowanie (domyślnie 30 dni), więc model może się do niej odnosić w kolejnych turach rozmowy.
 - **Zaszyfrowany sejf** na mapowanie tokenów i **retencja, która naprawdę usuwa**: mapowania,
@@ -250,10 +258,13 @@ odnotowuje obie zmiany.
 | `LOGIN_MAX_ATTEMPTS`, `LOGIN_LOCKOUT_MINUTES` | ograniczanie prób logowania |
 | `PENDING_TURN_TTL_MINUTES` | jak długo wiadomość w kolejce czeka na swój strumień |
 | `HISTORY_BUDGET_CHARS`, `ATTACHMENT_BUDGET_CHARS` | ile rozmowy i ile z każdego dołączonego dokumentu trafia ponownie do modelu w każdej turze |
+| `EMBEDDING_MODEL`, `EMBEDDING_BASE_URL`, `EMBEDDING_API_KEY` | model embeddingów do wyszukiwania w długich załącznikach; pusty model wyłącza wyszukiwanie. Najlepiej lokalny endpoint, np. LM Studio pod `http://localhost:1234/v1`. Bez własnego adresu używany jest dostawca czatu z jego kluczem; z własnym adresem klucz czatu nigdy tam nie trafia |
+| `EMBEDDING_BATCH_SIZE`, `RETRIEVAL_CHUNK_CHARS`, `RETRIEVAL_MAX_CHUNKS_PER_FILE` | fragmentów na jedno zapytanie o embeddingi, długość fragmentu i liczba fragmentów indeksowanych z jednego pliku |
 | `SPACY_MODEL`, `DEFAULT_LANGUAGE` | model NER i język interfejsu, który widzi nowy odwiedzający |
 
-Retencję, tryb zatwierdzania, maskowane typy danych oraz nazwy, które zawsze albo nigdy nie mają być
-maskowane, ustawia się w panelu administracyjnym, a nie w `.env`, bo to kwestia polityki, a nie
+Retencję, tryb zatwierdzania, maskowane typy danych, nazwy, które zawsze albo nigdy nie mają być
+maskowane, oraz to, czy długie załączniki są przeszukiwane i ile fragmentów może z nich trafić do
+modelu, ustawia się w panelu administracyjnym, a nie w `.env`, bo to kwestia polityki, a nie
 wdrożenia.
 
 ## Czym to nie jest

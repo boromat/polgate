@@ -86,7 +86,11 @@ values that must stay inside reaching the provider and 2 of 76 ordinary phrases 
 should not have been. polanon 0.3.3 fixed all six, and with it nothing on the lists reaches the
 provider, nothing is masked by mistake, no turn is refused and all 60 answers come back exactly as
 typed. The hub's author wrote those conversations as well, so this is a regression check rather
-than a leak rate to expect; the evaluation's notes say what each miss was.
+than a leak rate to expect; the evaluation's notes say what each miss was. With the search in
+attachments on, the passages and questions sent for embedding are checked as well, with the same
+result. A second evaluation measures the search itself: of 16 questions whose answer lies past the
+attachment budget, none reaches the model when the file is cut and all 16 do with the search,
+measured with stand-in vectors; the notes say how to measure a real model.
 
 ## Features
 
@@ -94,6 +98,10 @@ than a leak rate to expect; the evaluation's notes say what each miss was.
 - **"What the model saw"** next to every message, so nobody has to trust the masking blindly.
 - **File uploads**: PDF, DOCX, XLSX, CSV, JSON, TXT, and images and scanned PDFs when tesseract is
   installed. Files can require approval before their masked text is attached.
+- **Search in long attachments**: a file longer than the attachment budget sends the passages that
+  match each question, not only its beginning. It needs an embedding model, and a local one is the
+  recommended choice for a company: with LM Studio or Ollama running bge-m3 on the same server, the
+  masked document never leaves it. Off until `EMBEDDING_MODEL` is set.
 - **Stable tokens**: the same person is `<OSOBA_1>` for as long as the vault keeps the mapping (30 days
   by default), so the model can reason about them across turns.
 - **Encrypted vault** for the token mapping, and **retention that actually deletes**: mappings, message
@@ -233,10 +241,13 @@ records both.
 | `LOGIN_MAX_ATTEMPTS`, `LOGIN_LOCKOUT_MINUTES` | sign-in throttling |
 | `PENDING_TURN_TTL_MINUTES` | how long a queued message waits for its stream |
 | `HISTORY_BUDGET_CHARS`, `ATTACHMENT_BUDGET_CHARS` | how much conversation and how much of each attached document is replayed per turn |
+| `EMBEDDING_MODEL`, `EMBEDDING_BASE_URL`, `EMBEDDING_API_KEY` | the embedding model for the search in long attachments; empty model, search off. Prefer a local endpoint, such as LM Studio at `http://localhost:1234/v1`. With no URL of its own the chat provider is used, with its key; with one, the chat key is never sent there |
+| `EMBEDDING_BATCH_SIZE`, `RETRIEVAL_CHUNK_CHARS`, `RETRIEVAL_MAX_CHUNKS_PER_FILE` | passages per embeddings request, passage length, and passages indexed per file |
 | `SPACY_MODEL`, `DEFAULT_LANGUAGE` | NER model and the UI language a new visitor gets |
 
-Retention, approval mode, the entity types to mask, and the names to always or never mask are set
-in the admin panel rather than in `.env`, because they are policy rather than deployment.
+Retention, approval mode, the entity types to mask, the names to always or never mask, and whether
+long attachments are searched and how many passages each may send are set in the admin panel rather
+than in `.env`, because they are policy rather than deployment.
 
 ## What this is not
 

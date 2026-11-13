@@ -39,6 +39,13 @@ employee browser ── HTMX/SSE ──> FastAPI hub
                     ├──────────────────────────────┐
                     │ Vault: token→original, Fernet-encrypted, TTL per Policy
                     ├──────────────────────────────┐
+                    │ Search in attachments (polgate/retrieval), only with EMBEDDING_MODEL set:
+                    │   an approved file over the budget → its masked text in passages → /embeddings
+                    │   (local endpoint recommended) → AttachmentChunk, once per file and model
+                    │   each turn: masked question → /embeddings → rank by cosine + words, tokens
+                    │   exact → best top_k that fit the budget; endpoint down → file cut as before
+                    │   every text bound for /embeddings passes assert_no_raw_values first
+                    ├──────────────────────────────┐
                     │ LLM router: OpenAI-compatible client (OpenRouter / OpenAI / Ollama)
                     │   provider receives tokens only; SYSTEM_PROMPT says "copy tokens verbatim"
                     ├──────────────────────────────┐
@@ -70,6 +77,18 @@ outside the winner under its own type.
 ## Storage
 SQLite (`data/polgate.db`). `Message.content_original_enc` and `VaultEntry.value_enc` are Fernet-encrypted;
 `content_sent` / `text_sent` hold tokenized text and are safe in plaintext.
+
+`AttachmentChunk` holds the passages the search in attachments indexed: a slice of a file's
+`text_sent` and a float32 vector computed from it, unique per file, position and embedding model.
+Both are in plaintext, like `text_sent` itself; `docs/THREAT_MODEL.md` says why and when that would
+have to change. They are deleted before their file, by retention or rejection, and with their
+conversation. Ranking runs in memory with numpy: a conversation's attachments hold few enough
+passages that a vector database would add a service and no speed.
+
+`polgate/retrieval/select.py` is pure: cutting, ranking and choosing passages take masked text and
+vectors and nothing else, so a later source of passages, such as a company knowledge base
+(`docs/HANDOFF.md`), can reuse it unchanged. `search.py` binds it to a turn: what to index, the
+embeddings calls and the fallback. `store.py` is the table.
 
 Every SQLite connection is opened in WAL mode with a busy timeout and `foreign_keys=ON`: readers keep
 working while somebody writes, a moment of overlap waits instead of failing, and the references

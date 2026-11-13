@@ -22,7 +22,7 @@ about `<OSOBA_1>` is not useful to the employee.
 
 | Concern | What the hub provides |
 |---|---|
-| Data minimisation, Art. 5(1)(c) | Detected values leave the network only as tokens, enforced in code and tests; what detection misses is not covered (`docs/THREAT_MODEL.md`) |
+| Data minimisation, Art. 5(1)(c) | Detected values leave the network only as tokens, enforced in code and tests; what detection misses is not covered (`docs/THREAT_MODEL.md`). The search in long attachments sends each turn only the passages that match the question rather than a fixed part of the file |
 | Security of processing, Art. 32 | Fernet encryption at rest, per-account access, argon2id passwords |
 | Storage limitation, Art. 5(1)(e) | Admin-set retention for both the vault mapping and the message and file history, applied by an hourly job that deletes rows and the stored bytes |
 | Accountability, Art. 5(2) | Audit trail of what was masked, when, by whom, to which provider |
@@ -35,6 +35,11 @@ about `<OSOBA_1>` is not useful to the employee.
 - **The provider relationship.** A processor agreement under Article 28 is still needed, along with a
   transfer mechanism under Chapter V when the provider is outside the EEA. Pseudonymised data crossing
   the border is still a transfer.
+- **The embeddings endpoint, when it is not local.** The search in long attachments sends masked
+  passages of every long file and masked questions to `EMBEDDING_BASE_URL`, or to the chat provider
+  when that is empty. A local endpoint on the hub's server is no new recipient. A remote one is a
+  processor in its own right, with the same Article 28 agreement and Chapter V questions as the chat
+  provider, and it receives the whole masked text of a long file rather than its first part.
 - **DPIA.** Article 35 may require an assessment. The threat model in `docs/THREAT_MODEL.md` is useful
   input, not a substitute.
 - **Data subject rights.** Erasure and access requests must reach the hub's history and vault as well as

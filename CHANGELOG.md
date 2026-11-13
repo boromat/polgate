@@ -6,6 +6,38 @@ All notable changes to this project are recorded here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- **Search in long attachments.** A file longer than `ATTACHMENT_BUDGET_CHARS` used to be cut to its
+  first characters on every turn, so the model never saw the rest. With `EMBEDDING_MODEL` set, the
+  first turn that needs such a file indexes its masked text in passages, embedded in batches through
+  an OpenAI-compatible `/embeddings` endpoint, and every turn sends the passages that match the
+  question, ranked by vectors and by words in common, tokens matched exactly. The model is told it
+  reads passages, not the whole file. Off until `EMBEDDING_MODEL` is set, so no text goes to an
+  embeddings endpoint before somebody chooses one; a local one, such as LM Studio or Ollama with
+  bge-m3, keeps the document on the server and is the recommended choice.
+  - Everything sent for embedding is masked with the turn's mapping and checked by
+    `assert_no_raw_values` first. A passage holding a token the conversation's mapping no longer
+    has is skipped, since its number may already stand for somebody else.
+  - When the endpoint fails, the turn goes on with the file cut as before, and the audit trail
+    records the reason and the number of files.
+  - The page says "indexing the attachment" the first time a file is indexed, and warns when a file
+    is longer than `RETRIEVAL_MAX_CHUNKS_PER_FILE` passages, beyond which it is not searched.
+  - The admin policy page switches the search on or off and sets the passages per file and turn.
+  - Passages and their vectors are deleted with their file, by retention or rejection, and with
+    their conversation; the retention report counts them apart.
+- **An evaluation of the search** in `evals/retrieval.py`: of 16 questions whose answer lies past
+  the budget, none reaches the model with the file cut and all 16 with the search, with stand-in
+  vectors; it can measure a real model, such as bge-m3 in LM Studio. The leak evaluation now sends
+  its attachments through the search too and counts what reaches the embeddings endpoint: still 0
+  of 125 values leak.
+
+### Changed
+
+- **numpy is a declared dependency**: the search ranks passages with it. It was already installed
+  with spaCy.
+- **CI tests on Python 3.14** as well as 3.12.
+
 ## [0.2.0] - 2026-11-13
 
 A leak evaluation now measures what reaches the provider, and the polanon it requires, 0.3.3,
