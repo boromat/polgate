@@ -3,16 +3,18 @@
 from __future__ import annotations
 
 import json
+import logging
 from collections.abc import AsyncIterator
 from dataclasses import dataclass
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request, status
 from fastapi.responses import RedirectResponse, Response
-from polanon import Allowlist, Anonymizer, DenylistGuard, default_guards
+from polanon import Allowlist, Anonymizer, DenylistGuard, JudgeError, default_guards
 from polanon.policy import enabled_entities
 from sqlmodel import Session, col, desc, select
 from sse_starlette.sse import EventSourceResponse
 
+from polgate import audit
 from polgate.auth.deps import current_user
 from polgate.config import get_settings
 from polgate.db import get_session
@@ -31,6 +33,8 @@ from polgate.policy_loader import get_policy, masking_is_off
 from polgate.rendering import render
 from polgate.security import is_same_origin
 from polgate.vault import store as vault
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/chat")
 
@@ -184,7 +188,22 @@ async def send_message(
         anonymizer.guards = [*anonymizer.guards, _manual_guard(extra_terms)]
 
     if policy.hil_chat is HilMode.REVIEW and not approved:
-        preview = await anonymizer.anonymize(text, vault.load_mapping(session, conversation_id))
+        try:
+            preview = await anonymizer.anonymize(text, vault.load_mapping(session, conversation_id))
+        except JudgeError as exc:
+            # The same refusal the answer stream gives when the policy blocks on a failed judge;
+            # without it the review step ended in a server error and nothing in the audit trail.
+            logger.warning("preview blocked: judge unavailable (%s)", type(exc).__name__)
+            audit.log(
+                session,
+                event="turn_blocked_judge",
+                user_id=user.id,
+                conversation_id=conversation.id,
+                detail="stage-2 judge unavailable and policy is 'block'",
+            )
+            return render(
+                request, "partials/notice.html", reason="chat.error_judge", status_code=503
+            )
         return render(
             request,
             "partials/send_review.html",

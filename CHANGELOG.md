@@ -55,6 +55,10 @@ fixes every leak the evaluation found. The hub also runs on Windows with a doubl
   every other upload and turn shares. The declared dimension is now ignored, trailing empty cells
   are dropped, and a workbook is read for at most two million cells, with the usual truncation
   marker after them.
+- **The review step says when the judge is down.** With approval before sending switched on, a
+  stage-2 judge that failed while the policy said to block ended the preview in a server error, with
+  nothing in the audit trail. It now gives the same message as the answer stream, "nothing was
+  sent", and records `turn_blocked_judge`.
 - **The retention pass no longer fails on a conversation somebody is writing in.** An old
   conversation whose messages had all expired counted as empty even with a new message waiting to
   stream, and its delete could reach the database before the rows that refer to it, which the

@@ -1052,3 +1052,41 @@ def test_a_refused_policy_form_sets_no_field_even_in_memory(admin_client, monkey
 
     assert response.status_code == 400
     assert loaded[-1].hil_chat is HilMode.AUTO
+
+
+def test_the_review_step_says_so_when_the_judge_is_down_and_the_policy_blocks(
+    admin_client, monkeypatch
+):
+    """It ended in a server error, with nothing in the audit trail and nothing said to the user."""
+    from polanon import JudgeError
+
+    from polgate.models import AuditEvent
+    from polgate.web import chat as chat_web
+
+    with Session(get_engine()) as session:
+        policy = session.exec(select(Policy)).first() or Policy()
+        policy.hil_chat = HilMode.REVIEW
+        session.add(policy)
+        session.commit()
+
+    class _JudgeDown:
+        guards: tuple = ()
+
+        async def anonymize(self, text, mapping):
+            raise JudgeError("judge unreachable")
+
+    monkeypatch.setattr(chat_web, "build_anonymizer", lambda session: _JudgeDown())
+    admin_client.get("/chat")
+    response = admin_client.post(
+        f"/chat/{_conversation_id()}/send",
+        data={"text": "Jan Kowalski, PESEL 50810112354", "extra_terms": ""},
+    )
+
+    assert response.status_code == 503
+    assert "Nic nie zostało wysłane" in response.text
+    with Session(get_engine()) as session:
+        events = session.exec(
+            select(AuditEvent).where(AuditEvent.event == "turn_blocked_judge")
+        ).all()
+    assert len(events) == 1
+    assert "50810112354" not in events[0].detail
