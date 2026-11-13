@@ -113,10 +113,14 @@ if not defined LLM_KEY (
   echo Note: LLM_API_KEY is empty. Masking, uploads and the admin panel work;
   echo       a provider that needs a key refuses messages until you set one in .env.
 )
-if "%ADMIN_PW%"=="admin" (
+rem Delayed expansion: the password is read after the line is parsed, so a quote, a "&" or a ")"
+rem in it cannot break the line, as %ADMIN_PW% did.
+setlocal EnableDelayedExpansion
+if "!ADMIN_PW!"=="admin" (
   echo Note: ADMIN_PASSWORD is still 'admin'. Change it in .env, or from the account page
   echo       once you have signed in, before this machine is reachable by anyone else.
 )
+endlocal
 if /i "%JUDGE%"=="ollama" (
   where ollama >nul 2>&1 || (
     echo Note: JUDGE_BACKEND=ollama but the ollama command is not installed.
