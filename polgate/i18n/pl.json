@@ -106,6 +106,7 @@
   "files.approved": "dołączony",
   "files.approved_flash": "Plik dołączony do rozmowy.",
   "files.choose": "Wybierz plik",
+  "files.image_too_large": "Obraz ma zbyt wysoką rozdzielczość, żeby go odczytać (limit to 50 milionów pikseli). Zapisz go w mniejszym rozmiarze.",
   "files.judge_unavailable": "Drugi etap sprawdzania jest niedostępny, a polityka każe wtedy wstrzymać pliki. Plik nie został zapisany.",
   "files.ocr_unavailable": "OCR niedostępny: zainstaluj tesseract-ocr.",
   "files.pending": "do sprawdzenia",

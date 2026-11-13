@@ -18,6 +18,7 @@ from polgate.auth.deps import current_user
 from polgate.config import get_settings
 from polgate.db import get_session
 from polgate.files.extract import (
+    IMAGE_TOO_LARGE,
     MAX_BYTES,
     OCR_UNAVAILABLE,
     SUPPORTED_SUFFIXES,
@@ -46,6 +47,7 @@ EXTRACTION_ERRORS = {
     OCR_UNAVAILABLE: "files.ocr_unavailable",
     UNREADABLE: "files.unreadable",
     UNPACKS_TOO_LARGE: "files.unpacks_too_large",
+    IMAGE_TOO_LARGE: "files.image_too_large",
 }
 
 

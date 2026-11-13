@@ -45,6 +45,7 @@ TRUNCATION_MARKER = "\n\n[... dokument skrócony / document truncated ...]"
 OCR_UNAVAILABLE = "ocr_unavailable"
 UNREADABLE = "unreadable"
 UNPACKS_TOO_LARGE = "unpacks_too_large"
+IMAGE_TOO_LARGE = "image_too_large"
 
 #: The XML in an Office file that its parser holds in memory all at once: the whole document of a
 #: DOCX, everything but the worksheets of an XLSX. Generous for any real document.
@@ -86,6 +87,8 @@ def extract_text(path: Path, mime: str, filename: str) -> str:
         text = extractor(path)
     except UnsupportedFileError:
         raise
+    except ocr.ImageTooLargeError:
+        raise UnsupportedFileError(IMAGE_TOO_LARGE) from None
     except Exception as exc:
         # A damaged or password-protected file fails deep inside a parser, with whatever exception
         # that parser uses. Its message can quote the document, so only the type is logged.

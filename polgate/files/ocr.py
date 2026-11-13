@@ -11,21 +11,46 @@ import shutil
 from collections.abc import Iterator
 from functools import lru_cache
 from pathlib import Path
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
 #: Tesseract language packs to use, Polish first.
 LANGUAGES = "pol+eng"
 
+#: The largest picture OCR reads, in pixels: an A4 page scanned at 600 dpi is about 35 million.
+#: Pillow only refuses past 179 million, and a flat-colour PNG of that size fits in 10 MB; tesseract
+#: then worked on it for minutes and gigabytes on a machine with eight.
+MAX_OCR_PIXELS = 50_000_000
+
+
+class ImageTooLargeError(ValueError):
+    """Raised for a picture with more pixels than OCR reads."""
+
 
 @lru_cache
 def is_available() -> bool:
-    """Return True when both pytesseract and the tesseract binary are installed."""
+    """Return True when pytesseract, the tesseract binary and its Polish and English data are there.
+
+    Without the language data every call fails, and an upload was reported as an unreadable file
+    rather than as OCR the server is missing a piece of.
+    """
     try:
-        import pytesseract  # noqa: F401
+        import pytesseract
     except ImportError:
         return False
-    return shutil.which("tesseract") is not None
+    if shutil.which("tesseract") is None:
+        return False
+    try:
+        installed = set(pytesseract.get_languages(config=""))
+    except Exception as exc:  # any failure to ask means OCR cannot be used
+        logger.warning("tesseract did not list its languages (%s)", type(exc).__name__)
+        return False
+    missing = set(LANGUAGES.split("+")) - installed
+    if missing:
+        logger.warning("tesseract lacks language data: %s", ", ".join(sorted(missing)))
+        return False
+    return True
 
 
 def ocr_image(path: Path) -> str:
@@ -40,6 +65,7 @@ def ocr_image(path: Path) -> str:
     from PIL import Image
 
     with Image.open(path) as image:
+        _refuse_if_too_large(image)
         return str(pytesseract.image_to_string(image, lang=LANGUAGES))
 
 
@@ -59,10 +85,18 @@ def ocr_pdf(path: Path) -> Iterator[str]:
     from pypdf import PdfReader
 
     for page in PdfReader(str(path)).pages:
-        yield "\n".join(
-            str(pytesseract.image_to_string(picture.image, lang=LANGUAGES))
-            for picture in page.images
-        )
+        texts = []
+        for picture in page.images:
+            _refuse_if_too_large(picture.image)
+            texts.append(str(pytesseract.image_to_string(picture.image, lang=LANGUAGES)))
+        yield "\n".join(texts)
+
+
+def _refuse_if_too_large(image: Any) -> None:
+    """Refuse a picture with more pixels than :data:`MAX_OCR_PIXELS`, before tesseract sees it."""
+    width, height = image.size
+    if width * height > MAX_OCR_PIXELS:
+        raise ImageTooLargeError(f"{width}x{height} pixels")
 
 
 def _require_available() -> None:

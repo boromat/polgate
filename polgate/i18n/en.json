@@ -106,6 +106,7 @@
   "files.approved": "attached",
   "files.approved_flash": "The file is attached to the conversation.",
   "files.choose": "Choose a file",
+  "files.image_too_large": "The picture has too many pixels to read (the limit is 50 million). Save it at a smaller size.",
   "files.judge_unavailable": "The second-stage review is unavailable and the policy says to hold files when that happens. The file was not kept.",
   "files.ocr_unavailable": "OCR unavailable: install tesseract-ocr.",
   "files.pending": "needs review",

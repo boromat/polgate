@@ -229,8 +229,10 @@ def test_ocr_runs_tesseract_when_both_pieces_are_installed(tmp_path, monkeypatch
     fake_image_module = types.ModuleType("PIL.Image")
 
     class _Image:
+        size = (2480, 3508)  # A4 at 300 dpi
+
         def __enter__(self):
-            return "obraz"
+            return self
 
         def __exit__(self, *_):
             return False
@@ -684,3 +686,46 @@ def test_a_workbook_past_the_cell_budget_is_cut_with_the_marker(tmp_path, monkey
     assert "wiersz 1\tx" in text
     assert "wiersz 100" not in text
     assert text.endswith(extract.TRUNCATION_MARKER.strip())
+
+
+def test_ocr_without_its_polish_data_reports_itself_unavailable(monkeypatch):
+    """Every call failed for want of the language pack, and the upload read as unreadable."""
+    import shutil
+    import sys
+    import types
+
+    from polgate.files import ocr
+
+    fake = types.ModuleType("pytesseract")
+    fake.get_languages = lambda config="": ["eng", "osd"]
+    monkeypatch.setitem(sys.modules, "pytesseract", fake)
+    monkeypatch.setattr(shutil, "which", lambda name: "/usr/bin/tesseract")
+    ocr.is_available.cache_clear()
+    try:
+        assert ocr.is_available() is False
+        fake.get_languages = lambda config="": ["eng", "pol", "osd"]
+        ocr.is_available.cache_clear()
+        assert ocr.is_available() is True
+
+        def broken(config=""):
+            raise RuntimeError("tesseract crashed")
+
+        fake.get_languages = broken
+        ocr.is_available.cache_clear()
+        assert ocr.is_available() is False
+    finally:
+        ocr.is_available.cache_clear()
+
+
+def test_a_picture_with_too_many_pixels_is_refused_before_ocr(tmp_path, monkeypatch):
+    from PIL import Image
+
+    from polgate.files import ocr
+
+    monkeypatch.setattr(ocr, "is_available", lambda: True)
+    monkeypatch.setattr(ocr, "MAX_OCR_PIXELS", 100 * 100)
+    path = tmp_path / "plakat.png"
+    Image.new("L", (200, 200), color=255).save(path)
+
+    with pytest.raises(UnsupportedFileError, match="image_too_large"):
+        extract_text(path, "image/png", path.name)
