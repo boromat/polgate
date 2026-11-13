@@ -53,9 +53,13 @@ def run_retention_pass() -> None:
 
 
 async def _retention_loop() -> None:
-    """Apply the retention policy at startup and once an hour afterwards."""
+    """Apply the retention policy at startup and once an hour afterwards.
+
+    The pass reads whole tables and deletes files, so it runs in a thread: on the event loop it held
+    every request and answer stream of the hub until it finished.
+    """
     while True:
-        run_retention_pass()
+        await asyncio.to_thread(run_retention_pass)
         await asyncio.sleep(PURGE_INTERVAL_SECONDS)
 
 

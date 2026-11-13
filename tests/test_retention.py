@@ -2,6 +2,7 @@
 
 from datetime import timedelta
 
+import pytest
 from sqlmodel import select
 
 from polgate.auth.passwords import hash_password
@@ -441,3 +442,24 @@ def test_an_emptied_conversation_leaves_no_passage_behind(db_session):
 
     assert (report.files, report.passages, report.conversations) == (1, 2, 1)
     assert db_session.exec(select(AttachmentChunk)).all() == []
+
+
+async def test_the_hourly_pass_runs_off_the_event_loop(monkeypatch):
+    """On the loop, a long pass held every request and answer stream until it finished."""
+    import asyncio
+    import threading
+
+    import polgate.main as main
+
+    threads = []
+    monkeypatch.setattr(main, "run_retention_pass", lambda: threads.append(threading.get_ident()))
+
+    async def stop(_seconds):
+        raise asyncio.CancelledError
+
+    monkeypatch.setattr(main.asyncio, "sleep", stop)
+    with pytest.raises(asyncio.CancelledError):
+        await main._retention_loop()
+
+    assert len(threads) == 1
+    assert threads[0] != threading.get_ident()
