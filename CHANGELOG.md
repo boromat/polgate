@@ -6,6 +6,15 @@ All notable changes to this project are recorded here. The format follows
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-13
+
+A file longer than the attachment budget is searched for the passages that answer each question,
+instead of being cut to its beginning. A leak evaluation measures what reaches the provider, and
+the polanon it requires, 0.3.3, fixes every leak the evaluation found. The hub also runs on Windows
+with a double click. A review of the whole project before the release fixed the faults below,
+among them a text file saved as UTF-16 reaching the provider unmasked, and a token whose vault row
+expired coming back in answers with somebody else's name.
+
 ### Added
 
 - **Search in long attachments.** A file longer than `ATTACHMENT_BUDGET_CHARS` used to be cut to its
@@ -31,22 +40,6 @@ All notable changes to this project are recorded here. The format follows
   vectors; it can measure a real model, such as bge-m3 in LM Studio. The leak evaluation now sends
   its attachments through the search too and counts what reaches the embeddings endpoint: still 0
   of 125 values leak.
-
-### Changed
-
-- **numpy is a declared dependency**: the search ranks passages with it. It was already installed
-  with spaCy.
-- **CI tests on Python 3.14** as well as 3.12.
-
-## [0.2.0] - 2026-11-13
-
-A leak evaluation now measures what reaches the provider, and the polanon it requires, 0.3.3,
-fixes every leak the evaluation found. The hub also runs on Windows with a double click. A review
-of the whole project before the release fixed seven faults, among them a text file saved as UTF-16
-reaching the provider unmasked.
-
-### Added
-
 - **`start.bat` for Windows**: double-click it to run the hub. The first run creates `.venv`,
   installs the hub and the spaCy model and writes `.env` with generated keys; every run checks the
   database schema, starts the hub and opens it in the browser. It takes the same arguments as
@@ -61,6 +54,9 @@ reaching the provider unmasked.
 
 ### Changed
 
+- **numpy is a declared dependency**: the search ranks passages with it. It was already installed
+  with spaCy.
+- **CI tests on Python 3.14** as well as 3.12.
 - **polanon 0.3.3 or later is required.** It fixes the four leaks and two words masked by mistake
   that the leak evaluation found: a password after "Hasło administratora:", a PESEL with a typo
   after its label, a feminine surname in another case after the full name ("Bielskiej"), a street
@@ -78,6 +74,28 @@ reaching the provider unmasked.
 
 ### Fixed
 
+- **A token whose vault row expired no longer comes back with somebody else's name.** Once a
+  mapping expired, the next person named got its number, while earlier messages, attached files and
+  indexed passages still used it for the old one, and the answer was restored with the new name.
+  Messages and files now record a keyed fingerprint of each token's value, and a replayed token
+  whose value is gone or changed is sent as "[dane wygasłe / expired data]"; a passage holding one
+  is skipped. The audit row counts them.
+- **Two turns at once in one conversation no longer give one token to two people.** A lock per
+  conversation is held from reading the mapping to storing it, by turns and uploads alike.
+- **A page closed while the answer streams leaves its audit row,** marked `interrupted`: the
+  provider had the message.
+- **An answer stream of another shape no longer ends a turn without a word,** and an error the
+  provider sends inside the stream ends the turn as an error instead of storing half an answer.
+- **OCR without its Polish or English data says OCR is unavailable** instead of calling every scan
+  unreadable, and a picture over 50 million pixels is refused before tesseract spends minutes on it.
+- **A CSV with a quote left open is read**: past 128 KB the whole file used to be refused.
+- **`start.bat` runs with a quote or an ampersand in `ADMIN_PASSWORD`.**
+- **Opening `/chat` creates nothing**: signing in gives a new account its first conversation, and
+  `/chat` offers to start one when retention has removed them all.
+- **The policy summary counts no entity type when none is on**, instead of one.
+- **The hourly retention pass runs in a thread**, so it no longer holds every request and stream.
+- **`polgate.schema` backfills a future enum column by its name** and drops an indexed leftover
+  column, which SQLite otherwise refuses.
 - **A text file saved as UTF-16 is masked.** PowerShell 5.1, Notepad's "Unicode" and Excel's
   "Unicode Text" write UTF-16. The hub read such a `.txt`, `.csv` or `.json` as cp1250, with a NUL
   between every letter, and the guards then missed the PESEL and the e-mail address in it, while

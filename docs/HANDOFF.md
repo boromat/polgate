@@ -4,9 +4,10 @@ Status: steps 1-12 are done and tested. The masking engine that steps 3-5 and 12
 `piianon/` and is now a library of its own, [polanon](https://github.com/boromat/polanon), which the
 hub installs from PyPI, now at 0.3.3 or later. Version 0.1.0 was released on 2026-11-03: the
 repository is public and the image is on GitHub Container Registry. Version 0.2.0, dated
-2026-11-13, adds `start.bat` to run the hub on Windows and a leak evaluation that measures what
-reaches the provider, and requires polanon 0.3.3, which fixed every leak that evaluation found
-(see *0.2.0*). What is left is under *Known detection gaps* and *After MVP*.
+2026-11-13, adds the search in long attachments, `start.bat` to run the hub on Windows and a leak
+evaluation that measures what reaches the provider, requires polanon 0.3.3, which fixed every leak
+that evaluation found, and fixes everything a review of the whole project found (see *0.2.0*).
+What is left is stage B, under *Known detection gaps* and under *After MVP*.
 
 Read `CLAUDE.md` (rules) and `docs/ARCHITECTURE.md` (data flow) first. Run `/env-check` at the start
 of a session and `/quality-gate` before every commit, and `/pii-safety-review` as well for anything
@@ -186,7 +187,7 @@ moved to polanon and has grown since; the current numbers are in its
 - [ ] Push the tag `v0.2.0` once CI on `main` is green: the release workflow publishes the image and
       the GitHub release.
 
-### Since 0.2.0 (on `feat/rag-attachments`, not released yet)
+### Search in long attachments (in 0.2.0)
 - [x] Search in long attachments, stage A: the files of one conversation. A file over the
       attachment budget is indexed on the first turn that needs it, in passages of
       `RETRIEVAL_CHUNK_CHARS`, embedded in batches of `EMBEDDING_BATCH_SIZE` through an
@@ -234,7 +235,7 @@ passages rather than a second search:
   decide: who may see which documents, how a document is withdrawn (its passages and its share of
   the mapping store go with it), and whether one index for the company still fits in memory.
 
-### Found in the review before 0.2.0, still open
+### Found in the review before 0.2.0, all fixed
 Most severe first; each was confirmed by reading the code, the first by running it.
 - [x] **A token's number was given to somebody else once its vault row expired.** The allocator
   counts from the live mapping, so after `vault_ttl_days` the next person named became `<OSOBA_1>`
@@ -254,13 +255,11 @@ Most severe first; each was confirmed by reading the code, the first by running 
 - [x] **The answer stream** stopped without an error event on a chunk whose `delta` is `null`, and
   read an error the provider sends inside the stream as the end of a normal answer. Chunks of
   another shape are skipped now, and an error inside the stream ends the turn as a provider error.
-- Smaller: OCR checks for tesseract but not its Polish and English data, so a missing language pack
-  reads as "unreadable"; an image of about 170 megapixels still goes to tesseract; one unclosed
-  quote makes a CSV over 128 KB unreadable; a `"` in `ADMIN_PASSWORD` breaks `start.bat`; the policy
-  summary counts one entity type when none are on; `GET /chat` creates a conversation for a user
-  with none; the retention pass runs on the event loop; `polgate/schema.py` would backfill a future
-  enum column with the value where the database stores the name, and `--drop-orphan-columns` cannot
-  drop an indexed column on SQLite.
+- [x] Smaller, each with a test: OCR checks for its Polish and English data and refuses a picture
+  over 50 million pixels; a CSV with a quote left open is read; a `"` or `&` in `ADMIN_PASSWORD` no
+  longer stops `start.bat`; the policy summary counts no type when none is on; `GET /chat` creates
+  nothing, and signing in makes the first conversation; the retention pass runs in a thread;
+  `polgate/schema.py` backfills an enum column by name and drops an indexed leftover column.
 
 ### Known detection gaps worth an issue each
 All but the last are polanon's and belong in
