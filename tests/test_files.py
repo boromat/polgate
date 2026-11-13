@@ -613,3 +613,35 @@ def test_a_scan_is_recognised_only_as_far_as_the_limit(tmp_path, monkeypatch, sm
     monkeypatch.setattr(PageObject, "extract_text", lambda self, *args, **kwargs: "")
     extract_text(path, "application/pdf", path.name)
     assert len(recognised) < 10, f"recognised {len(recognised)} of 30 pages"
+
+
+UNICODE_TEXT = "Pracownica Zażółć Gęślą, PESEL 55831212340, mail z.gesla@example.com"
+
+
+@pytest.mark.parametrize(
+    "raw",
+    [
+        UNICODE_TEXT.encode("utf-16"),  # with a mark, as PowerShell 5.1 and Notepad write it
+        UNICODE_TEXT.encode("utf-16-le"),
+        UNICODE_TEXT.encode("utf-16-be"),
+        UNICODE_TEXT.encode("utf-8-sig"),
+        UNICODE_TEXT.encode("utf-32"),
+    ],
+    ids=["utf-16", "utf-16-le-no-mark", "utf-16-be-no-mark", "utf-8-mark", "utf-32"],
+)
+@pytest.mark.parametrize("suffix", [".txt", ".csv", ".json"])
+def test_unicode_files_are_read_as_the_text_they_hold(tmp_path, raw, suffix):
+    """Read as cp1250, UTF-16 had a NUL between every letter, and the PESEL went out unmasked."""
+    path = tmp_path / f"eksport{suffix}"
+    path.write_bytes(raw)
+    text = extract_text(path, "text/plain", path.name)
+    assert "\x00" not in text
+    assert "55831212340" in text
+    assert "Zażółć Gęślą" in text
+
+
+def test_text_that_still_holds_a_nul_is_refused(tmp_path):
+    path = tmp_path / "binarny.txt"
+    path.write_bytes(b"PESEL 55831212340\x00\x01\x02 to nie jest tekst")
+    with pytest.raises(UnsupportedFileError, match="unreadable"):
+        extract_text(path, "text/plain", path.name)

@@ -44,6 +44,12 @@ fixes every leak the evaluation found. The hub also runs on Windows with a doubl
 
 ### Fixed
 
+- **A text file saved as UTF-16 is masked.** PowerShell 5.1, Notepad's "Unicode" and Excel's
+  "Unicode Text" write UTF-16. The hub read such a `.txt`, `.csv` or `.json` as cp1250, with a NUL
+  between every letter, and the guards then missed the PESEL and the e-mail address in it, while
+  the provider, which received that text, read it without trouble. The byte-order mark now decides
+  the encoding, UTF-16 without one is recognised by its NUL bytes, and text that still holds a NUL
+  after decoding is refused as unreadable.
 - **An existing installation gets the well-known names a polanon release adds.** A policy copies
   polanon's `WELL_KNOWN_NAMES` into its list of names never to mask when it is created, so "ZUS",
   "Płatnik" and the other names polanon 0.3.3 added would have reached new installations only and

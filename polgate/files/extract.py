@@ -17,6 +17,7 @@ and a file that would unpack past `MAX_PARSED_XML_BYTES` or `MAX_UNPACKED_BYTES`
 
 from __future__ import annotations
 
+import codecs
 import csv
 import io
 import json
@@ -111,17 +112,68 @@ def _join_capped(parts: Iterable[str], separator: str = "\n") -> str:
 
 
 def _decode(raw: bytes) -> str:
-    """Decode bytes as UTF-8, then as cp1250, the encoding of older Polish files.
+    """Decode bytes as Unicode by their byte-order mark, then UTF-8, then cp1250.
 
-    Anything that is neither is decoded with replacement characters rather than refused: a document
-    with a few unreadable bytes is still worth masking and sending.
+    UTF-16 is what PowerShell 5.1, Notepad's "Unicode" and Excel's "Unicode Text" write. Read as
+    cp1250 it "succeeds" with a NUL between every letter, and the guards, which read words and
+    digit runs, then miss the PESEL and the e-mail address in it while the provider reads it fine.
+    So a byte-order mark decides first, UTF-16 without one is told by its NUL bytes, and text that
+    still holds a NUL after decoding is refused: it is binary, or an encoding the hub did not
+    recognise, and masking cannot be trusted on it.
+
+    Anything else that is neither UTF-8 nor cp1250 is decoded with replacement characters rather
+    than refused: a document with a few unreadable bytes is still worth masking and sending.
+
+    Raises:
+        UnsupportedFileError: with ``UNREADABLE`` when the decoded text holds a NUL character.
     """
+    text = _decode_unchecked(raw)
+    if "\x00" in text:
+        raise UnsupportedFileError(UNREADABLE)
+    return text
+
+
+def _decode_unchecked(raw: bytes) -> str:
+    """Decode by byte-order mark, then as UTF-16 when NUL bytes say so, then UTF-8 or cp1250."""
+    for mark, encoding in _BYTE_ORDER_MARKS:
+        if raw.startswith(mark):
+            return raw[len(mark) :].decode(encoding, errors="replace")
+    utf16 = _utf16_without_mark(raw)
+    if utf16:
+        return raw.decode(utf16, errors="replace")
     for encoding in ("utf-8", "cp1250"):
         try:
             return raw.decode(encoding)
         except UnicodeDecodeError:
             continue
     return raw.decode("utf-8", errors="replace")
+
+
+#: Longest first: the UTF-32 little-endian mark begins with the UTF-16 one.
+_BYTE_ORDER_MARKS = (
+    (codecs.BOM_UTF32_LE, "utf-32-le"),
+    (codecs.BOM_UTF32_BE, "utf-32-be"),
+    (codecs.BOM_UTF8, "utf-8"),
+    (codecs.BOM_UTF16_LE, "utf-16-le"),
+    (codecs.BOM_UTF16_BE, "utf-16-be"),
+)
+
+
+def _utf16_without_mark(raw: bytes) -> str | None:
+    """Return the UTF-16 byte order of text saved without a mark, or None when it is not UTF-16.
+
+    Text in a Latin script saved as UTF-16 has a NUL in every other byte: the odd ones for
+    little-endian, the even ones for big-endian. Text in any 8-bit encoding has almost none.
+    """
+    sample = raw[:4096]
+    pairs = len(sample) // 2
+    if pairs < 2:
+        return None
+    if sample[1::2].count(0) > pairs * 0.3:
+        return "utf-16-le"
+    if sample[0::2].count(0) > pairs * 0.3:
+        return "utf-16-be"
+    return None
 
 
 def _from_plain(path: Path) -> str:

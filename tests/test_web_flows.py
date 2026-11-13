@@ -85,6 +85,20 @@ def test_upload_masks_the_document_before_it_can_be_attached(admin_client):
     assert asset.status is FileStatus.PENDING_REVIEW
 
 
+def test_an_upload_saved_as_utf16_is_masked_like_any_other(admin_client):
+    """PowerShell 5.1 and Notepad save text as UTF-16; it reached the provider unmasked."""
+    admin_client.get("/chat")
+    admin_client.post(
+        f"/files/upload?conversation_id={_conversation_id()}",
+        files={"file": ("eksport.txt", "Jan, PESEL 50810112354".encode("utf-16"), "text/plain")},
+    )
+
+    with Session(get_engine()) as session:
+        asset = session.exec(select(FileAsset)).one()
+    assert "50810112354" not in asset.text_sent
+    assert "<PESEL_1>" in asset.text_sent
+
+
 def test_an_upload_name_is_kept_masked_at_rest_and_shown_whole_to_its_owner(admin_client):
     """A file name is often the most personal part of an upload, so it is stored like the text."""
     from polgate.vault import store as vault
