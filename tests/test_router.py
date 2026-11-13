@@ -672,3 +672,29 @@ def test_a_refusal_names_the_token_and_nothing_else():
         assert_no_raw_values([{"content": "PESEL 50810112354"}], {"<PESEL_1>": "50810112354"})
     assert raised.value.audit_detail == "token=<PESEL_1>"
     assert LLMError("connection reset").audit_detail == "transport"
+
+
+async def test_a_page_closed_while_the_answer_streams_still_leaves_an_audit_row(turn_setup):
+    """The provider had the message, but the turn ended at a yield and recorded nothing."""
+    session, conversation, user, anonymizer, policy = turn_setup
+    captured: list[dict] = []
+    async with _provider(["Dzień ", "dobry, ", "faktura gotowa."], captured) as client:
+        turn = run_turn(
+            session,
+            conversation,
+            user,
+            SECRET_TEXT,
+            policy=policy,
+            anonymizer=anonymizer,
+            settings=get_settings(),
+            client=client,
+        )
+        async for event in turn:
+            if event.type == "token":
+                break
+        await turn.aclose()
+
+    rows = session.exec(select(AuditEvent).where(AuditEvent.event == "message_sent")).all()
+    assert len(rows) == 1
+    assert rows[0].detail.endswith(" interrupted")
+    assert "50810112354" not in rows[0].detail

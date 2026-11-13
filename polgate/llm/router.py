@@ -355,6 +355,22 @@ async def run_turn(
             if visible:
                 restored_parts.append(visible)
                 yield TurnEvent("token", text=visible)
+    except (GeneratorExit, asyncio.CancelledError):
+        # The page went away while the answer streamed: the provider has the message all the same,
+        # so the audit trail records it, as interrupted, before the stream is torn down.
+        audit.log(
+            session,
+            event="message_sent",
+            user_id=user.id,
+            conversation_id=conversation.id,
+            provider=settings.llm_base_url,
+            model=settings.llm_model,
+            entity_counts=result.entity_counts,
+            stage2_hits=result.judge_hits,
+            detail=_sent_detail(policy, settings, result.judge_failed, found, expired)
+            + " interrupted",
+        )
+        raise
     except LLMError as exc:
         logger.warning("provider call failed: %s", exc)
         audit.log(
@@ -403,9 +419,7 @@ async def run_turn(
         stage2_hits=result.judge_hits,
         # The backend is recorded because it answers a compliance question the counts cannot:
         # with `remote`, the stage-1 masked text left the network as well as the final prompt.
-        detail=_judge_detail(policy, settings, failed=result.judge_failed)
-        + _search_detail(found)
-        + (f" expired_tokens={sum(expired)}" if sum(expired) else ""),
+        detail=_sent_detail(policy, settings, result.judge_failed, found, expired),
     )
     if not report.is_clean:
         audit.log(
@@ -418,6 +432,14 @@ async def run_turn(
             ),
         )
     yield TurnEvent("done", detail="sweep_warning" if not report.is_clean else "")
+
+
+def _sent_detail(
+    policy: Policy, settings: Settings, judge_failed: bool, found: SearchResult, expired: list[int]
+) -> str:
+    """Describe a sent message for its audit row: the judge, the search and expired tokens."""
+    detail = _judge_detail(policy, settings, failed=judge_failed) + _search_detail(found)
+    return detail + (f" expired_tokens={sum(expired)}" if sum(expired) else "")
 
 
 def _judge_detail(policy: Policy, settings: Settings, *, failed: bool) -> str:

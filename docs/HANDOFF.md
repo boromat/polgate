@@ -249,10 +249,11 @@ Most severe first; each was confirmed by reading the code, the first by running 
   (`vault.conversation_lock`) held by a turn and by an upload from reading the mapping to storing
   it. It is in memory, which covers the hub's single process; running more workers would need the
   database to arbitrate, with a unique key on (conversation, token) and a retry.
-- **Closing the tab while the answer streams leaves no `message_sent` row,** though the provider
-  received the message: the stream is cancelled, and nothing records the turn on the way out.
-- **The answer stream** stops without an error event on a chunk whose `delta` is `null`, and treats
-  an error the provider sends inside the stream as the end of a normal answer.
+- [x] **Closing the tab while the answer streamed left no `message_sent` row,** though the provider
+  had the message. The turn now records it, marked `interrupted`, on the way out.
+- [x] **The answer stream** stopped without an error event on a chunk whose `delta` is `null`, and
+  read an error the provider sends inside the stream as the end of a normal answer. Chunks of
+  another shape are skipped now, and an error inside the stream ends the turn as a provider error.
 - Smaller: OCR checks for tesseract but not its Polish and English data, so a missing language pack
   reads as "unreadable"; an image of about 170 megapixels still goes to tesseract; one unclosed
   quote makes a CSV over 128 KB unreadable; a `"` in `ADMIN_PASSWORD` breaks `start.bat`; the policy
