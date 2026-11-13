@@ -175,28 +175,31 @@ def _purge_empty_conversations(session: Session, cutoff: datetime) -> int:
 
 
 def _has_content(session: Session, conversation: Conversation) -> bool:
-    """Return whether a conversation still holds a message or an uploaded file."""
-    has_message = session.exec(
-        select(Message).where(col(Message.conversation_id) == conversation.id).limit(1)
-    ).first()
-    if has_message is not None:
-        return True
-    has_file = session.exec(
-        select(FileAsset).where(col(FileAsset.conversation_id) == conversation.id).limit(1)
-    ).first()
-    return has_file is not None
+    """Return whether a conversation still holds a message, a file or a message waiting to stream.
+
+    A queued message counts: somebody is writing in that conversation right now, even when its last
+    activity was long ago. Queued messages too old to stream were dropped earlier in the same pass.
+    """
+    for kind in (Message, FileAsset, PendingTurn):
+        found = session.exec(
+            select(kind).where(col(kind.conversation_id) == conversation.id).limit(1)
+        ).first()
+        if found is not None:
+            return True
+    return False
 
 
 def _delete_conversation_traces(session: Session, conversation: Conversation) -> None:
-    """Delete the vault mapping and any queued turn belonging to a conversation."""
+    """Delete the vault mapping belonging to a conversation, before the conversation itself.
+
+    The rows are flushed here: left to the end of the pass, the database may be asked to delete the
+    conversation first, and its foreign keys refuse that, which rolled back the whole pass.
+    """
     for entry in session.exec(
         select(VaultEntry).where(col(VaultEntry.conversation_id) == conversation.id)
     ).all():
         session.delete(entry)
-    for pending in session.exec(
-        select(PendingTurn).where(col(PendingTurn.conversation_id) == conversation.id)
-    ).all():
-        session.delete(pending)
+    session.flush()
 
 
 def _as_utc(value: datetime) -> datetime:

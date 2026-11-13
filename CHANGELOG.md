@@ -55,6 +55,12 @@ fixes every leak the evaluation found. The hub also runs on Windows with a doubl
   every other upload and turn shares. The declared dimension is now ignored, trailing empty cells
   are dropped, and a workbook is read for at most two million cells, with the usual truncation
   marker after them.
+- **The retention pass no longer fails on a conversation somebody is writing in.** An old
+  conversation whose messages had all expired counted as empty even with a new message waiting to
+  stream, and its delete could reach the database before the rows that refer to it, which the
+  foreign keys refused. The whole pass rolled back, after the bytes of expired uploads had already
+  been removed. A waiting message now keeps its conversation, and a conversation's vault rows are
+  deleted before it.
 - **An empty key file is never used as a key.** A generated secret's file exists a moment before
   its contents, so a second request on a fresh hub could read it empty, and a process killed in
   that moment left it empty for good. An empty session key signs a cookie anybody can make. A

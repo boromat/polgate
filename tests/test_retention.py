@@ -316,3 +316,52 @@ def test_a_missing_upload_folder_is_not_an_error(db_session, tmp_path, monkeypat
     monkeypatch.setattr(settings, "upload_dir", tmp_path / "never-created")
 
     assert purge(db_session, Policy(history_ttl_days=None), settings).orphan_uploads == 0
+
+
+def test_a_conversation_with_a_message_waiting_to_stream_is_kept(db_session):
+    """Only old messages, so it looked empty, and the database refused to delete it."""
+    conversation = _conversation(db_session, age_days=90)
+    _message(db_session, conversation, age_days=90)
+    db_session.add(
+        PendingTurn(
+            conversation_id=conversation.id,
+            user_id=_owner(db_session).id,
+            text_enc=vault.encrypt("właśnie piszę"),
+        )
+    )
+    db_session.commit()
+
+    report = purge(db_session, Policy(history_ttl_days=30), get_settings())
+
+    assert (report.messages, report.conversations) == (1, 0)
+    assert db_session.exec(select(Conversation)).all()
+    assert len(db_session.exec(select(PendingTurn)).all()) == 1
+
+
+def test_an_emptied_conversation_goes_with_its_mapping_and_a_stale_queued_message(db_session):
+    conversation = _conversation(db_session, age_days=90)
+    _message(db_session, conversation, age_days=90)
+    db_session.add(
+        PendingTurn(
+            conversation_id=conversation.id,
+            user_id=_owner(db_session).id,
+            text_enc=vault.encrypt("porzucone"),
+            created_at=utcnow() - timedelta(days=60),
+        )
+    )
+    db_session.add(
+        VaultEntry(
+            conversation_id=conversation.id,
+            token="<OSOBA_1>",
+            entity_type="PERSON",
+            value_enc=vault.encrypt("Jan Kowalski"),
+            value_hash=vault.value_hash("Jan Kowalski"),
+        )
+    )
+    db_session.commit()
+
+    report = purge(db_session, Policy(history_ttl_days=30), get_settings())
+
+    assert (report.pending_turns, report.conversations) == (1, 1)
+    assert db_session.exec(select(Conversation)).all() == []
+    assert db_session.exec(select(VaultEntry)).all() == []
