@@ -40,6 +40,10 @@ def db_session(tmp_path, monkeypatch):
         yield session
 
 
+async def _no_background_job() -> None:
+    """Stand in for the hourly retention loop in tests that start the app."""
+
+
 @pytest.fixture
 def app_client(tmp_path, monkeypatch):
     """A test client with a fresh database, seeded admin and no background jobs."""
@@ -55,7 +59,9 @@ def app_client(tmp_path, monkeypatch):
     monkeypatch.setattr(settings, "upload_dir", tmp_path / "uploads")
     engine = db.make_engine(f"sqlite:///{tmp_path / 'web.db'}")
     monkeypatch.setattr(db, "_engine", engine)
-    monkeypatch.setattr(main, "PURGE_INTERVAL_SECONDS", 3600)
+    # No retention job: the lifespan would run its first pass in a worker thread, at the same time
+    # as a test that runs a pass of its own, and the two would race over the same rows.
+    monkeypatch.setattr(main, "_retention_loop", _no_background_job)
     import polgate.models  # noqa: F401
 
     SQLModel.metadata.create_all(engine)
