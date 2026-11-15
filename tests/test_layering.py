@@ -26,12 +26,13 @@ def test_the_library_is_where_these_tests_look():
 FORBIDDEN = ("polgate", "fastapi", "sqlmodel", "sqlalchemy", "starlette", "jinja2")
 
 #: Modules allowed to import a third-party package at module level, and what they may import.
-#: The judges that talk to a server need an HTTP client, and the Haystack components need Haystack,
-#: which its own extra installs. `polanon/__init__` never imports any of them, so `import polanon`
-#: stays dependency-free.
+#: The judges that talk to a server and the OpenAI-compatible gateway (polanon[gateway], since
+#: 0.3.6) need an HTTP client, and the Haystack components need Haystack; each comes with its own
+#: extra. `polanon/__init__` never imports any of them, so `import polanon` stays dependency-free.
 ALLOWED_EXTERNAL = {
     ("judge/ollama.py", "httpx"),
     ("judge/remote.py", "httpx"),
+    ("gateway/app.py", "httpx"),
     ("integrations/haystack.py", "haystack"),
 }
 
