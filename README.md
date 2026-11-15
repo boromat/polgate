@@ -22,7 +22,7 @@ installs from [PyPI](https://pypi.org/project/polanon/); this repository holds t
 
 ![A message with a name, a PESEL, a phone number, an e-mail address, an IBAN and a company is sent;
 the answer streams back with the originals in place, and "What the model saw" shows that the provider
-received only tokens such as OSOBA_1 and PESEL_1.](docs/images/demo.gif)
+received only tokens such as OSOBA_1 and PESEL_1.](docs/images/demo.webp)
 
 <sub>Recorded against a stand-in provider on the developer's machine, with synthetic data.</sub>
 

@@ -139,7 +139,8 @@ moved to polanon and has grown since; the current numbers are in its
       3. [x] The hub depends on the published `polanon` instead of its own copy; `piianon/`,
          `packaging/`, `benchmarks/`, `examples/` and the library's tests left this repository.
       4. [x] Create `boromat/polgate`, private until CI is green, and push one commit of its tree.
-- [x] Screenshots and a demo GIF for the README: `docs/images/demo.gif` and `docs/images/audit.png`.
+- [x] Screenshots and a demo for the README: `docs/images/demo.webp` (English UI),
+      `docs/images/demo-pl.webp` (Polish UI) and `docs/images/audit.png`.
 - [x] First release, 2026-11-03. The `0.1.0` heading in `CHANGELOG.md` was dated and CI went green
       on `main`; then the repository was made public, private vulnerability reporting (which
       `SECURITY.md` and the issue templates point to, and which GitHub offers only on a public

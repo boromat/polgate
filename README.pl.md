@@ -25,7 +25,7 @@ niej.
 ![Użytkownik wysyła wiadomość z imieniem i nazwiskiem, numerem PESEL, numerem telefonu, adresem
 e-mail, numerem IBAN i nazwą firmy; odpowiedź spływa strumieniowo z oryginałami na właściwych
 miejscach, a „Co zobaczył model” pokazuje, że dostawca dostał tylko tokeny, takie jak OSOBA_1
-i PESEL_1.](docs/images/demo.gif)
+i PESEL_1.](docs/images/demo-pl.webp)
 
 <sub>Nagrane na komputerze programisty, z atrapą dostawcy i syntetycznymi danymi.</sub>
 
