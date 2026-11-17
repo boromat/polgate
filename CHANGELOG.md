@@ -34,6 +34,12 @@ All notable changes to this project are recorded here. The format follows
 - **Answers are shown as Markdown**: headings, lists, bold text, tables and code from the model
   are rendered instead of shown with their asterisks. Raw HTML in an answer is escaped, and
   pictures are not rendered, since one could carry a restored value to the server it loads from.
+- **A held message can be edited**: the approve-before-send card has "Edit", which puts the
+  message and its extra terms back in the composer, and it names the masked kinds as the policy
+  page does ("People ×1", not "PERSON ×1").
+- **The admin panel says what it did**: saving the policy and setting someone's password show a
+  confirmation, and an account refused for a taken name or a short password comes back with the
+  reason beside the form and its fields still filled in, instead of a bare error page.
 
 ### Changed
 
@@ -76,6 +82,17 @@ All notable changes to this project are recorded here. The format follows
   answer. The output sweep reads the answer with each name in the form the conversation stored.
 - **A conversation's title starts with a word**: a message such as "Odpisz Janowi Kowalskiemu
   (PESEL …), że…" was titled "), że…" once its tokens were cut out.
+- **An abbreviation no longer ends a title's sentence**: the stop of "tel." or "Sp. z o.o." split
+  "Odpisz ▮ (PESEL ▮, tel. ▮, ▮), że…" and the title began "▮, ▮), że…".
+- **Menus close the way menus do**: a click outside or Escape closes the conversation's menu, the
+  account menu and "Also mask…", whose key stays marked while terms are typed in it. A new
+  conversation's menu shows with its first message, without a reload, and a message added live
+  reads like a reloaded one, with the time last and a time under the answer.
+- **Times in the admin panel are local**: the audit log and the knowledge base printed UTC while
+  the chat showed local time, an hour apart in Warsaw in winter.
+- **Smaller text reads better and prints whole**: the light theme's faint text passes 4.5:1, a
+  wide table in an answer scrolls inside it, a printed conversation keeps its whole title with the
+  note under it, and on a phone the line about masking shows over an empty conversation.
 
 ## [0.3.0] - 2026-11-17
 
