@@ -15,16 +15,29 @@
       <button class="sidebar-link" type="submit">{{ icon.plus(15) }} {{ t("chat.new") }}</button>
     </form>
     <nav class="sidebar-list" aria-label="{{ t('a11y.conversations') }}">
-      <p class="sidebar-label">{{ t("chat.recent") }}</p>
-      <ul class="conversations">
-        {% for c in conversations %}
-          <li class="{{ 'active' if c.id == conversation.id }}">
-            <a href="/chat/{{ c.id }}" {{ 'aria-current=page' if c.id == conversation.id }}>
-              {{ c.title | redacted if c.title else t("chat.untitled") }}
-            </a>
-          </li>
-        {% endfor %}
-      </ul>
+      {# Pinned conversations first, then the rest by their last message; a section with none is
+         left out. Each row has a pin of its own that shows on hover. #}
+      {% set pinned = conversations | selectattr("pinned") | list %}
+      {% set recent = conversations | rejectattr("pinned") | list %}
+      {% for label, rows in [("chat.pinned", pinned), ("chat.recent", recent)] if rows %}
+        <p class="sidebar-label">{{ t(label) }}</p>
+        <ul class="conversations">
+          {% for c in rows %}
+            <li class="{{ 'active' if c.id == conversation.id }}">
+              <a href="/chat/{{ c.id }}" {{ 'aria-current=page' if c.id == conversation.id }}>
+                {{ c.title | redacted if c.title else t("chat.untitled") }}
+              </a>
+              <form method="post" action="/chat/{{ c.id }}/pin" class="row-pin">
+                <input type="hidden" name="pinned" value="{{ 'false' if c.pinned else 'true' }}">
+                <input type="hidden" name="back" value="{{ conversation.id }}">
+                <button class="icon-button" type="submit"
+                        aria-label="{{ t('chat.unpin') if c.pinned else t('chat.pin') }}"
+                        title="{{ t('chat.unpin') if c.pinned else t('chat.pin') }}">{{ icon.pin(14) }}</button>
+              </form>
+            </li>
+          {% endfor %}
+        </ul>
+      {% endfor %}
     </nav>
     <div class="sidebar-foot">
       {% with up=True, in_sidebar=True %}{% include "partials/account_menu.html" %}{% endwith %}
@@ -49,6 +62,10 @@
           <details class="more no-print">
             <summary class="icon-button" aria-label="{{ t('chat.actions') }}" title="{{ t('chat.actions') }}">{{ icon.more(18) }}</summary>
             <div class="menu-panel">
+              <form method="post" action="/chat/{{ conversation.id }}/pin">
+                <input type="hidden" name="pinned" value="{{ 'false' if conversation.pinned else 'true' }}">
+                <button type="submit">{{ t("chat.unpin") if conversation.pinned else t("chat.pin") }}</button>
+              </form>
               <a href="#" data-print>{{ t("chat.print") }}</a>
               <details class="confirm">
                 <summary>{{ t("chat.delete") }}</summary>

@@ -55,6 +55,8 @@ class Conversation(SQLModel, table=True):
     title: str = ""
     created_at: datetime = Field(default_factory=utcnow)
     updated_at: datetime = Field(default_factory=utcnow)
+    #: Kept at the top of the employee's list, above the recent ones. Retention still applies.
+    pinned: bool = False
 
 
 class MessageRole(StrEnum):

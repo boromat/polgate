@@ -530,6 +530,15 @@ legend + * { clear: both; }
 }
 .conversations li a:hover { background: var(--surface-2); color: var(--text); }
 .conversations li.active a { background: var(--surface-2); color: var(--text); }
+.sidebar-list .conversations + .sidebar-label { margin-top: 14px; }
+/* A row's pin waits at its right edge until the pointer or the keyboard reaches the row; a touch
+   screen has no hover, so there the pin lives in the conversation's own menu instead. */
+.conversations li { position: relative; }
+.row-pin { position: absolute; top: 50%; right: 3px; margin: 0; transform: translateY(-50%); opacity: 0; }
+.row-pin .icon-button { width: 26px; height: 26px; }
+.conversations li:hover .row-pin, .row-pin:focus-within { opacity: 1; }
+.conversations li:hover a, .conversations li:focus-within a { padding-right: 32px; }
+@media (hover: none) { .row-pin { display: none; } }
 .sidebar-foot { padding-top: 8px; border-top: 1px solid var(--border); }
 .backdrop { display: none; }
 

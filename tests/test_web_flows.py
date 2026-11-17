@@ -1378,3 +1378,75 @@ def test_the_chat_does_not_invite_more_personal_data_than_needed(admin_client):
 
     assert "Podawaj tylko te, które są potrzebne." in page
     assert "z nazwiskami i numerami" not in page
+
+
+def _pinned(conversation_id: int) -> bool:
+    with Session(get_engine()) as session:
+        return session.get(Conversation, conversation_id).pinned
+
+
+def test_a_pinned_conversation_heads_the_list_until_it_is_unpinned(admin_client, monkeypatch):
+    from polgate.llm import router
+
+    monkeypatch.setattr(router, "stream_chat", _fake_stream(["ok"]))
+    first = _open_conversation(admin_client)
+    admin_client.post(f"/chat/{first}/send", data={"text": "Pierwsza", "extra_terms": ""})
+    admin_client.get(f"/chat/{first}/stream", headers=STREAM)
+    second = int(admin_client.post("/chat/new").headers["location"].rsplit("/", 1)[1])
+
+    response = admin_client.post(f"/chat/{first}/pin", data={"pinned": "true", "back": second})
+
+    assert response.status_code == 303
+    assert response.headers["location"] == f"/chat/{second}"
+    assert _pinned(first)
+    page = admin_client.get(f"/chat/{second}").text
+    pinned_section = page.split("Przypięte", 1)[1].split("Ostatnie", 1)[0]
+    assert f'href="/chat/{first}"' in pinned_section
+    assert f'href="/chat/{second}"' not in pinned_section
+
+    admin_client.post(f"/chat/{first}/pin", data={"pinned": "false"})
+
+    assert not _pinned(first)
+    assert "Przypięte" not in admin_client.get(f"/chat/{first}").text
+
+
+def test_pinning_twice_leaves_a_conversation_pinned(admin_client):
+    """The form says what it wants, so a double click does not flip the pin back."""
+    conversation_id = _open_conversation(admin_client)
+    for _ in range(2):
+        admin_client.post(f"/chat/{conversation_id}/pin", data={"pinned": "true"})
+    assert _pinned(conversation_id)
+
+
+def test_a_conversation_menu_offers_to_pin_or_unpin_it(admin_client, monkeypatch):
+    from polgate.llm import router
+
+    monkeypatch.setattr(router, "stream_chat", _fake_stream(["ok"]))
+    conversation_id = _open_conversation(admin_client)
+    admin_client.post(f"/chat/{conversation_id}/send", data={"text": "Cześć", "extra_terms": ""})
+    admin_client.get(f"/chat/{conversation_id}/stream", headers=STREAM)
+    assert (
+        '<button type="submit">Przypnij</button>'
+        in admin_client.get(f"/chat/{conversation_id}").text
+    )
+
+    admin_client.post(f"/chat/{conversation_id}/pin", data={"pinned": "true"})
+
+    assert (
+        '<button type="submit">Odepnij</button>'
+        in admin_client.get(f"/chat/{conversation_id}").text
+    )
+
+
+def test_nobody_pins_a_conversation_that_is_not_theirs(admin_client):
+    conversation_id = _open_conversation(admin_client)
+    with Session(get_engine()) as session:
+        session.add(User(username="pracownik", password_hash=hash_password("dlugie-haslo-x")))
+        session.commit()
+    admin_client.post("/logout")
+    admin_client.post("/login", data={"username": "pracownik", "password": "dlugie-haslo-x"})
+
+    response = admin_client.post(f"/chat/{conversation_id}/pin", data={"pinned": "true"})
+
+    assert response.status_code == 404
+    assert not _pinned(conversation_id)

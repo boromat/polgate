@@ -136,7 +136,8 @@ def test_dropping_the_leftovers_makes_the_table_usable_again(engine):
     assert drop_orphan_columns(engine) == ["conversation.stara_kolumna"]
 
     assert orphan_columns(engine) == {}
-    assert reconcile(engine).is_clean
+    # Columns the models gained since this table was written are added; nothing blocks an insert.
+    assert not reconcile(engine).needs_attention
 
 
 def test_a_table_the_database_does_not_have_yet_is_left_to_create_all(engine):
@@ -182,8 +183,9 @@ class TestCommandLine:
         _execute(
             self.engine,
             "ALTER TABLE conversation ADD COLUMN stara_kolumna VARCHAR",
-            "INSERT INTO conversation VALUES "
-            "(1, 1, 'x', '2026-09-01 10:00:00', '2026-09-01 10:00:00', 'cos')",
+            "INSERT INTO conversation (id, user_id, title, created_at, updated_at, pinned,"
+            " stara_kolumna) VALUES (1, 1, 'x', '2026-09-01 10:00:00', '2026-09-01 10:00:00',"
+            " 0, 'cos')",
         )
 
         assert main(["--drop-orphan-columns"]) == 0

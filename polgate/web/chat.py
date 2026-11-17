@@ -317,6 +317,26 @@ def delete_conversation(
     return RedirectResponse("/chat", status_code=303)
 
 
+@router.post("/{conversation_id}/pin")
+def pin_conversation(
+    conversation_id: int,
+    pinned: bool = Form(...),
+    back: int | None = Form(None),
+    user: User = Depends(current_user),
+    session: Session = Depends(get_session),
+) -> Response:
+    """Pin one of the employee's conversations to the top of their list, or unpin it.
+
+    The form says which, so a second click on a slow page leaves it as asked instead of flipping it
+    back. The employee returns to the conversation they were reading, which need not be this one.
+    """
+    conversation = _load_conversation(session, conversation_id, user)
+    conversation.pinned = pinned
+    session.add(conversation)
+    session.commit()
+    return RedirectResponse(f"/chat/{back or conversation_id}", status_code=303)
+
+
 @router.get("/{conversation_id}/messages/{message_id}/preview")
 def message_preview(
     request: Request,
