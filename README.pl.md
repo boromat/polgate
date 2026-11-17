@@ -134,6 +134,12 @@ stawia fragment z odpowiedzią na pierwszym miejscu przy każdym pytaniu.
   etapu 2, retencja, maskowane typy danych, nazwy, które trzeba maskować zawsze, i nazwy, których nie
   maskuje się nigdy — Facebook, Google Ads, Canva i inne platformy, o których rozmawia zespół,
   rozpoznawane w każdej formie odmiany.
+- **Żądania osób, których dane dotyczą**: administrator wskazuje osobę numerem PESEL, adresem
+  e-mail albo imieniem i nazwiskiem, a hub znajduje ją w każdej rozmowie, pliku, wiadomości
+  w kolejce i dokumencie bazy wiedzy, imię i nazwisko w każdym przypadku, w jakim je zapisano.
+  Eksport, plik JSON, zawiera tylko tę osobę, a wszyscy inni zostają tokenami; usunięcie zastępuje
+  każdą pisownię i każdy token znacznikiem oraz kasuje wpisy w sejfie, wartości bazy wiedzy
+  i wgrane pliki, które ją zawierały.
 - **Dowolny dostawca zgodny z API OpenAI**: OpenRouter, OpenAI albo w pełni lokalny model w Ollamie.
   Przy pustym `LLM_API_KEY` nagłówek `Authorization` nie jest wysyłany, więc działa też endpoint,
   który nie wymaga klucza.

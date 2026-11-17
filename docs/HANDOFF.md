@@ -197,6 +197,8 @@ moved to polanon and has grown since; the current numbers are in its
 - [x] Names come back in the case the answer needs: polanon's `token_instructions` in the system
       prompt, `<OSOBA_1:wołacz>` restored declined, and `polgate/tokens.py` so the fingerprints,
       the check and the preview read cased tokens.
+- [x] The company knowledge base, stage B: see *Company knowledge base* below.
+- [x] Data subject requests: find, export and erase one person, under Admin, Data subjects.
 
 ### Search in long attachments (in 0.2.0)
 - [x] Search in long attachments, stage A: the files of one conversation. A file over the
@@ -345,7 +347,12 @@ that is also a word typed in lowercase before a common surname.
   prose, which would need the owner's approval to download (`en_core_web_sm`, about 13 MB) and a
   language switch in `NerGuard`.
 - In polanon: surrogate mode (Faker `pl_PL`, declension-aware restore) behind a flag.
-- Per-subject export and deletion, for data-subject requests.
+- [x] Per-subject export and deletion, for data-subject requests: `polgate/subjects.py` and
+  Admin, Data subjects (`polgate/web/subjects.py`), tests in `tests/test_subjects.py`. Found by the
+  stable token of the value, so every case of a name; a lone surname goes with the person only
+  while nobody else in the conversation or the knowledge base bears it. Not found: a form of the
+  name the hub never stored, in a conversation whose mapping expired. Every message and file is
+  decrypted for each request, which is fine for a company's hub and slow for a very large one.
 - Alembic, once the schema starts changing in ways `polgate/schema.py` cannot express. That module
   adds columns and refuses everything else on purpose; a rename, a retype or a data migration still
   needs a real tool. Additive changes need nothing.

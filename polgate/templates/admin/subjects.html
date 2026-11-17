@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block content %}
+{% include "admin/_subnav.html" %}
+<p class="small subtle spaced-below">{{ t("subjects.intro") }}</p>
+{% if error %}<p class="alert error spaced-below">{{ t(error) }}</p>{% endif %}
+{% if erased %}
+  <p class="alert ok spaced-below">{{ t("subjects.erased", messages=erased.messages, files=erased.files, passages=erased.knowledge_passages) }}</p>
+{% endif %}
+
+<div class="card narrow spaced-below">
+  <form method="post" action="/admin/subjects" class="stack">
+    <label>{{ t("subjects.value") }}
+      <input name="value" value="{{ value }}" required minlength="3" autocomplete="off" spellcheck="false">
+    </label>
+    <p class="small subtle">{{ t("subjects.value_hint") }}</p>
+    <button class="btn" type="submit">{{ t("subjects.find") }}</button>
+  </form>
+</div>
+
+{% if report %}
+  {% if report.found %}
+    {% set counts = report.counts() %}
+    <div class="table-wrap spaced-below">
+      <table class="grid">
+        <tbody>
+          <tr><th>{{ t("subjects.conversations") }}</th><td>{{ counts.conversations }}</td></tr>
+          <tr><th>{{ t("subjects.messages") }}</th><td>{{ counts.messages }}</td></tr>
+          <tr><th>{{ t("subjects.files") }}</th><td>{{ counts.files }}</td></tr>
+          <tr><th>{{ t("subjects.vault_entries") }}</th><td>{{ counts.vault_entries }}</td></tr>
+          <tr><th>{{ t("subjects.knowledge_documents") }}</th><td>{{ counts.knowledge_documents }}</td></tr>
+          <tr><th>{{ t("subjects.knowledge_passages") }}</th><td>{{ counts.knowledge_passages }}</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="row-actions">
+      <form method="post" action="/admin/subjects/export">
+        <input type="hidden" name="value" value="{{ value }}">
+        <button class="btn secondary" type="submit">{{ t("subjects.export") }}</button>
+      </form>
+      <form method="post" action="/admin/subjects/erase" class="row-actions compact">
+        <input type="hidden" name="value" value="{{ value }}">
+        <label class="inline">
+          <input type="checkbox" name="confirm" value="yes" required>
+          {{ t("subjects.confirm") }}
+        </label>
+        <button class="btn danger" type="submit">{{ t("subjects.erase") }}</button>
+      </form>
+    </div>
+    <p class="small subtle spaced">{{ t("subjects.erase_hint") }}</p>
+  {% else %}
+    <p class="muted">{{ t("subjects.nothing") }}</p>
+  {% endif %}
+{% endif %}
+{% endblock %}

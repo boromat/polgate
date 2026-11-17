@@ -127,6 +127,17 @@ declares and an older database lacks, backfilling each with the field's default.
 renames or retypes: those are reported, and `python -m polgate.schema` prints the report on demand.
 Keep model changes additive and no installation needs a migration step.
 
+## Data subject requests
+`polgate/subjects.py` finds one person in every shape the hub keeps them: a vault row or a
+knowledge base value that is the requested value however spelled, by polanon's stable token,
+which ignores the case a name stands in; every token that stood for one; and every message, file
+or queued message whose original text holds a spelling found. A lone surname that polanon masked
+beside the full name is the person's too, unless another person of the same conversation or of the
+knowledge base bears it. The export writes the masked texts with only this person's tokens
+restored; erasure replaces each spelling and token with a marker, drops the erased tokens from the
+fingerprints and deletes the vault rows, the knowledge base values and the stored uploads. The
+value travels in a POST body only, and the audit trail records a keyed fingerprint of it.
+
 ## Policies (admin panel, single row)
 - `hil_chat` / `hil_files`: `auto` (send, preview after) or `review` (approve mask before sending).
 - `judge_enabled`, `judge_fallback`: `send_stage1` or `block`.

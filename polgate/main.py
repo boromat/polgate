@@ -28,7 +28,7 @@ from polgate.db import get_engine, init_db
 from polgate.policy_loader import get_policy
 from polgate.rendering import TEMPLATE_DIR
 from polgate.security import SecurityHeadersMiddleware, harden, safe_next
-from polgate.web import account, admin, auth, chat, errors, files, knowledge
+from polgate.web import account, admin, auth, chat, errors, files, knowledge, subjects
 
 logger = logging.getLogger(__name__)
 
@@ -96,7 +96,7 @@ def create_app() -> FastAPI:
     # Added last so it runs first, stamping every response and rejecting cross-site posts before
     # any handler sees them.
     application.add_middleware(SecurityHeadersMiddleware)
-    for module in (auth, account, chat, files, admin, knowledge):
+    for module in (auth, account, chat, files, admin, knowledge, subjects):
         application.include_router(module.router)
 
     @application.exception_handler(LoginRequiredError)

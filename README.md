@@ -126,6 +126,11 @@ own puts the passage with the answer first for every question.
 - **Admin policies**: approval mode per channel, stage-2 behaviour, retention, which entity types to
   mask, names to always mask, and names never to mask — Facebook, Google Ads, Canva and the other
   platforms a team talks about, matched in every Polish case form.
+- **Data subject requests**: an administrator names a person by a PESEL, an e-mail address or a
+  name, and the hub finds them in every conversation, file, queued message and knowledge base
+  document, the name in every case it was written in. The export, a JSON file, writes out this
+  person only, everybody else staying a token; erasure replaces each spelling and token with a
+  marker and deletes the vault entries, the knowledge base values and the uploads that held them.
 - **Any OpenAI-compatible provider**: OpenRouter, OpenAI, or a fully local Ollama model. With
   `LLM_API_KEY` left empty no `Authorization` header is sent, so an endpoint that needs no key works.
 

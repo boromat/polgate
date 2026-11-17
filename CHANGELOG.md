@@ -8,6 +8,14 @@ All notable changes to this project are recorded here. The format follows
 
 ### Added
 
+- **Data subject requests.** Under Admin, Data subjects, an administrator names a person by a
+  PESEL, an e-mail address or a name, and the hub counts what it holds about them in every
+  conversation, file, queued message and knowledge base document, finding a name in every case
+  it was written in. The export, a JSON file, writes out this person only, with everybody else in
+  the same messages left as a token. Erasure replaces every spelling and token of the person with
+  a marker, deletes the vault entries and the knowledge base values, and deletes the uploads that
+  held them, since a file cannot be edited in place. The value travels in the body of the request
+  only, and the audit trail records a keyed fingerprint of it.
 - **A company knowledge base.** Under Admin, Knowledge base, an administrator uploads the
   documents the whole company asks about, such as regulations and procedures, reads them masked
   and publishes them; every employee's turn then gets the passages that answer the question,

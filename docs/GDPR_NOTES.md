@@ -25,6 +25,7 @@ about `<OSOBA_1>` is not useful to the employee.
 | Data minimisation, Art. 5(1)(c) | Detected values leave the network only as tokens, enforced in code and tests; what detection misses is not covered (`docs/THREAT_MODEL.md`). The search in long attachments sends each turn only the passages that match the question rather than a fixed part of the file |
 | Security of processing, Art. 32 | Fernet encryption at rest, per-account access, argon2id passwords |
 | Storage limitation, Art. 5(1)(e) | Admin-set retention for both the vault mapping and the message and file history, applied by an hourly job that deletes rows and the stored bytes |
+| Rights of access and erasure, Arts. 15 and 17 | Admin, Data subjects: one person found by a value in every conversation, file, queued message and knowledge base document, exported with only that person restored, or erased with the vault entries, the knowledge base values and the uploads that held them |
 | Accountability, Art. 5(2) | Audit trail of what was masked, when, by whom, to which provider |
 | Records of processing, Art. 30 | The audit log supplies the factual basis; the register itself is yours |
 
@@ -42,9 +43,12 @@ about `<OSOBA_1>` is not useful to the employee.
   provider, and it receives the whole masked text of a long file rather than its first part.
 - **DPIA.** Article 35 may require an assessment. The threat model in `docs/THREAT_MODEL.md` is useful
   input, not a substitute.
-- **Data subject rights.** Erasure and access requests must reach the hub's history and vault as well as
-  everything else. Retention deletes on a schedule; there is still no built-in per-subject export or
-  deletion, so an individual request means finding the conversations by hand.
+- **Data subject rights.** The hub finds, exports and erases one person (Admin, Data subjects), but
+  whether a request is valid, who the requester is and what else the company holds stay yours. It
+  finds a person by the values it masked and by the spellings it stored; a form of a name it never
+  stored, in a conversation whose mapping has expired, is not found, and the audit trail keeps
+  its rows, which hold a keyed fingerprint of the value and no value. Backups of the database are
+  outside its reach.
 - **The audit trail is personal data too.** It records who did what and when, and a failed sign-in
   records the account it was aimed at, or, for a name that matches no account, only its SHA-256,
   which is necessary for the lockout and for investigating an intrusion. It holds no masked values,
