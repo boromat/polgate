@@ -230,7 +230,7 @@ def _purge_empty_conversations(session: Session, cutoff: datetime) -> int:
     for conversation in session.exec(select(Conversation)).all():
         if _as_utc(conversation.updated_at) >= cutoff:
             continue
-        if _has_content(session, conversation):
+        if has_content(session, conversation):
             continue
         _delete_conversation_traces(session, conversation)
         session.delete(conversation)
@@ -238,7 +238,7 @@ def _purge_empty_conversations(session: Session, cutoff: datetime) -> int:
     return removed
 
 
-def _has_content(session: Session, conversation: Conversation) -> bool:
+def has_content(session: Session, conversation: Conversation) -> bool:
     """Return whether a conversation still holds a message, a file or a message waiting to stream.
 
     A queued message counts: somebody is writing in that conversation right now, even when its last

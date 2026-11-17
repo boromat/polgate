@@ -1,117 +1,131 @@
 {% extends "base.html" %}
 {% block content %}
 {% include "admin/_subnav.html" %}
-<p class="policy-summary">
-  <span>{{ t("policy.hil_chat") }}: <strong>{{ t("policy.manual") if policy.hil_chat.value == "review" else t("policy.auto") }}</strong></span>
-  <span>{{ t("policy.hil_files") }}: <strong>{{ t("policy.manual") if policy.hil_files.value == "review" else t("policy.auto") }}</strong></span>
-  <span>{{ t("policy.judge") }}: <strong>{{ t("admin.yes") if policy.judge_enabled else t("admin.no") }}</strong></span>
-  <span>{{ t("policy.entities") }}: <strong>{{ selected | length }}</strong></span>
-  <span>{{ t("policy.vault_ttl_short", days=policy.vault_ttl_days) if policy.vault_ttl_days else t("policy.forever") }}</span>
-</p>
 {% if masking_off %}
   <p class="alert error spaced-below">{{ t("admin.masking_off") }}</p>
 {% endif %}
-<form class="wide" method="post" action="/admin/policy">
-  <fieldset>
-    <legend>{{ t("policy.review") }}</legend>
-    <div class="row">
-      <label class="grow">{{ t("policy.hil_chat") }}
+{# Each setting is a row: what it decides on the left, in words, and the control on the right, so
+   the page reads down one column of headings instead of a wall of fields. #}
+<form class="settings" method="post" action="/admin/policy">
+  <section class="setting">
+    <div class="setting-info">
+      <h3>{{ t("policy.review") }}</h3>
+      <p>{{ t("policy.review_hint") }}</p>
+    </div>
+    <div class="setting-controls two">
+      <label>{{ t("policy.hil_chat") }}
         <select name="hil_chat">
           <option value="auto" {{ 'selected' if policy.hil_chat.value == 'auto' }}>{{ t("policy.auto") }}</option>
           <option value="review" {{ 'selected' if policy.hil_chat.value == 'review' }}>{{ t("policy.manual") }}</option>
         </select>
       </label>
-      <label class="grow">{{ t("policy.hil_files") }}
+      <label>{{ t("policy.hil_files") }}
         <select name="hil_files">
           <option value="auto" {{ 'selected' if policy.hil_files.value == 'auto' }}>{{ t("policy.auto") }}</option>
           <option value="review" {{ 'selected' if policy.hil_files.value == 'review' }}>{{ t("policy.manual") }}</option>
         </select>
       </label>
     </div>
-  </fieldset>
+  </section>
 
-  <fieldset>
-    <legend>{{ t("policy.judge") }}</legend>
-    <div class="row">
-      <label class="inline grow">
+  <section class="setting">
+    <div class="setting-info">
+      <h3>{{ t("policy.judge") }}</h3>
+      <p>{{ t("policy.judge_hint") }}</p>
+    </div>
+    <div class="setting-controls">
+      <label class="inline">
         <input type="checkbox" name="judge_enabled" {{ 'checked' if policy.judge_enabled }}>
         {{ t("policy.judge_enabled") }}
       </label>
-      <label class="grow">{{ t("policy.judge_fallback") }}
+      <label class="narrow">{{ t("policy.judge_fallback") }}
         <select name="judge_fallback">
           <option value="send_stage1" {{ 'selected' if policy.judge_fallback.value == 'send_stage1' }}>{{ t("policy.fallback_send") }}</option>
           <option value="block" {{ 'selected' if policy.judge_fallback.value == 'block' }}>{{ t("policy.fallback_block") }}</option>
         </select>
       </label>
     </div>
-  </fieldset>
+  </section>
 
-  <fieldset>
-    <legend>{{ t("policy.retention") }}</legend>
-    <div class="row">
-      <label class="grow">{{ t("policy.vault_ttl") }}
-        <input name="vault_ttl_days" type="number" min="1" value="{{ policy.vault_ttl_days or '' }}">
+  <section class="setting">
+    <div class="setting-info">
+      <h3>{{ t("policy.retention") }}</h3>
+      <p>{{ t("policy.retention_hint") }}</p>
+    </div>
+    <div class="setting-controls two">
+      <label>{{ t("policy.vault_ttl") }}
+        <input name="vault_ttl_days" type="number" min="1" value="{{ policy.vault_ttl_days or '' }}" placeholder="∞">
       </label>
-      <label class="grow">{{ t("policy.history_ttl") }}
-        <input name="history_ttl_days" type="number" min="1" value="{{ policy.history_ttl_days or '' }}">
+      <label>{{ t("policy.history_ttl") }}
+        <input name="history_ttl_days" type="number" min="1" value="{{ policy.history_ttl_days or '' }}" placeholder="∞">
       </label>
     </div>
-    <p class="hint">{{ t("policy.retention_hint") }}</p>
-  </fieldset>
+  </section>
 
-  <fieldset>
-    <legend>{{ t("policy.entities") }}</legend>
-    <div class="checks">
-      {% for e in all_entities %}
-        <label class="inline" title="{{ e }}">
-          <input type="checkbox" name="entities" value="{{ e }}" {{ 'checked' if e in selected }}>
-          {{ t(entity_labels[e]) if e in entity_labels else e }}
-        </label>
-      {% endfor %}
+  <section class="setting">
+    <div class="setting-info">
+      <h3>{{ t("policy.entities") }}</h3>
+      <p>{{ t("policy.entities_hint") }}</p>
+      <p class="setting-count">{{ t("policy.entities_count", selected=selected | length, total=all_entities | length) }}</p>
     </div>
-    <p class="hint">{{ t("policy.entities_hint") }}</p>
-  </fieldset>
-
-  <fieldset>
-    <legend>{{ t("policy.search") }}</legend>
-    {% if not search_configured %}
-      <p class="alert warn spaced-below">{{ t("policy.search_unconfigured") }}</p>
-    {% endif %}
-    <div class="row">
-      <div class="grow stack">
-        <label class="inline">
-          <input type="checkbox" name="attachment_retrieval" {{ 'checked' if policy.attachment_retrieval }}>
-          {{ t("policy.search_enabled") }}
-        </label>
-        <label class="inline">
-          <input type="checkbox" name="knowledge_base" {{ 'checked' if policy.knowledge_base }}>
-          {{ t("policy.knowledge_enabled") }}
-        </label>
+    <div class="setting-controls">
+      <div class="checks">
+        {% for e in all_entities %}
+          <label class="inline" title="{{ e }}">
+            <input type="checkbox" name="entities" value="{{ e }}" {{ 'checked' if e in selected }}>
+            {{ t(entity_labels[e]) if e in entity_labels else e }}
+          </label>
+        {% endfor %}
       </div>
-      <label class="grow">{{ t("policy.search_top_k") }}
+    </div>
+  </section>
+
+  <section class="setting">
+    <div class="setting-info">
+      <h3>{{ t("policy.search") }}</h3>
+      <p>{{ t("policy.search_hint") }}</p>
+    </div>
+    <div class="setting-controls">
+      {% if not search_configured %}
+        <p class="alert warn">{{ t("policy.search_unconfigured") }}</p>
+      {% endif %}
+      <label class="inline">
+        <input type="checkbox" name="attachment_retrieval" {{ 'checked' if policy.attachment_retrieval }}>
+        {{ t("policy.search_enabled") }}
+      </label>
+      <label class="inline">
+        <input type="checkbox" name="knowledge_base" {{ 'checked' if policy.knowledge_base }}>
+        {{ t("policy.knowledge_enabled") }}
+      </label>
+      <label class="narrow">{{ t("policy.search_top_k") }}
         <input name="retrieval_top_k" type="number" min="1" max="{{ top_k_max }}" value="{{ policy.retrieval_top_k }}">
       </label>
     </div>
-    <p class="hint">{{ t("policy.search_hint") }}</p>
-  </fieldset>
+  </section>
 
-  <fieldset>
-    <legend>{{ t("policy.names") }}</legend>
-    <div class="row name-lists">
-      <div class="grow">
+  <section class="setting">
+    <div class="setting-info">
+      <h3>{{ t("policy.names") }}</h3>
+      <p>{{ t("policy.names_hint") }}</p>
+    </div>
+    <div class="setting-controls two">
+      <div>
         <label>{{ t("policy.denylist") }}
           <textarea name="denylist" rows="8" placeholder="ACME Sp. z o.o.">{{ policy.denylist }}</textarea>
         </label>
         <p class="hint">{{ t("policy.denylist_hint") }}</p>
       </div>
-      <div class="grow">
+      <div>
         <label>{{ t("policy.allowlist") }}
           <textarea name="allowlist" rows="8" placeholder="Facebook">{{ policy.allowlist }}</textarea>
         </label>
         <p class="hint">{{ t("policy.allowlist_hint") }}</p>
       </div>
     </div>
-  </fieldset>
-  <button class="btn" type="submit">{{ t("policy.save") }}</button>
+  </section>
+
+  <div class="settings-actions">
+    <button class="btn" type="submit">{{ t("policy.save") }}</button>
+  </div>
 </form>
 {% endblock %}

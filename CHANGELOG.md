@@ -8,6 +8,13 @@ All notable changes to this project are recorded here. The format follows
 
 ### Added
 
+- **The composer is one box**: the message, and under it in the same frame "Attach a file",
+  "Also mask…" with the extra terms in a small pop-up, and the send key. A picked file is
+  uploaded at once, without a second "Upload" key.
+- **The policy page reads as a list of decisions**: each setting has its title and one sentence
+  on the left and its controls on the right, the selected entity types are counted, and "Save"
+  stays at the bottom of the screen. Labels are set in the text colour and hints are darker.
+- **"New conversation" opens the empty one the list already has** instead of adding another.
 - **A conversation can be deleted** from its header, after one more click to confirm: its
   messages, files with their bytes, passages and vault mapping go at once instead of when
   retention gets to them.

@@ -24,7 +24,6 @@
         {% endfor %}
       </ul>
     </nav>
-    <p class="small subtle">{{ t("chat.sidebar_hint") }}</p>
   </aside>
 
   <main class="chat" id="main">
@@ -105,35 +104,42 @@
       {% endfor %}
     </ul>
 
+    {# One box: the message, and under it, inside the same frame, what goes with it. The upload is
+       a form of its own, since it posts a file; the extra terms and the send key belong to the
+       message's form through their `form` attribute. #}
     <div class="composer no-print">
-      <form class="composer-form" hx-post="/chat/{{ conversation.id }}/send" hx-target="#messages"
-            hx-swap="beforeend" hx-disabled-elt="find button" data-reset-on-success>
-        <div class="composer-main">
+      <div class="composer-box">
+        <form id="composer-form" class="composer-form" hx-post="/chat/{{ conversation.id }}/send"
+              hx-target="#messages" hx-swap="beforeend" hx-disabled-elt="#composer-send"
+              data-reset-on-success>
           <label class="sr-only" for="composer-text">{{ t("chat.placeholder") }}</label>
-          <textarea id="composer-text" name="text" rows="2" required
+          <textarea id="composer-text" name="text" rows="1" required
                     placeholder="{{ t('chat.placeholder') }}"
                     data-autogrow="200" data-submit-on-enter></textarea>
-          <button class="btn" type="submit" aria-label="{{ t('chat.send') }}" title="{{ t('chat.send_hint') }}">
+        </form>
+        <div class="composer-tools">
+          <form class="upload-form" hx-post="/files/upload?conversation_id={{ conversation.id }}"
+                hx-encoding="multipart/form-data" hx-target="#file-list" hx-swap="beforeend"
+                data-reset-on-success>
+            <label class="tool" title="{{ t('files.attach_hint') }}">
+              {{ icon.paperclip(15) }} <span>{{ t("files.attach") }}</span>
+              <input type="file" name="file" required data-upload-on-pick>
+            </label>
+          </form>
+          <details class="composer-details">
+            <summary class="tool"><span class="redacted" aria-hidden="true"></span> <span>{{ t("chat.more_options") }}</span></summary>
+            <div class="composer-popover">
+              <label for="extra-terms">{{ t("chat.extra_terms") }}</label>
+              <input id="extra-terms" name="extra_terms" form="composer-form"
+                     placeholder="{{ t('chat.extra_terms_hint') }}">
+            </div>
+          </details>
+          <button id="composer-send" class="btn send" type="submit" form="composer-form"
+                  aria-label="{{ t('chat.send') }}" title="{{ t('chat.send_hint') }}">
             {{ icon.send() }}
           </button>
         </div>
-        <details class="composer-details">
-          <summary>{{ t("chat.more_options") }}</summary>
-          <label for="extra-terms">{{ t("chat.extra_terms") }}</label>
-          <input id="extra-terms" name="extra_terms" placeholder="{{ t('chat.extra_terms_hint') }}">
-        </details>
-      </form>
-
-      <form class="upload-row" hx-post="/files/upload?conversation_id={{ conversation.id }}"
-            hx-encoding="multipart/form-data" hx-target="#file-list" hx-swap="beforeend"
-            hx-disabled-elt="find button" data-reset-on-success>
-        <label class="file-picker">
-          {{ icon.paperclip(14) }} <span>{{ t("files.choose") }}</span>
-          <input type="file" name="file" required data-names>
-        </label>
-        <span class="small subtle" data-name></span>
-        <button class="btn secondary small" type="submit">{{ t("files.upload") }}</button>
-      </form>
+      </div>
     </div>
   </main>
 </div>

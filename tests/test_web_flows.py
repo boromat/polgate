@@ -925,8 +925,12 @@ def test_a_link_to_the_creation_address_creates_nothing(admin_client):
         assert [c.id for c in session.exec(select(Conversation)).all()] == [conversation_id]
 
 
-def test_the_sidebar_creates_a_conversation_with_a_post(admin_client):
+def test_the_sidebar_creates_a_conversation_with_a_post(admin_client, monkeypatch):
+    from polgate.llm import router
+
+    monkeypatch.setattr(router, "stream_chat", _fake_stream(["ok"]))
     first = _open_conversation(admin_client)
+    admin_client.post(f"/chat/{first}/send", data={"text": "Cześć", "extra_terms": ""})
     response = admin_client.post("/chat/new", headers={"Sec-Fetch-Site": "same-origin"})
     assert response.headers["location"] != f"/chat/{first}"
     page = admin_client.get(response.headers["location"]).text
@@ -1241,6 +1245,8 @@ def test_a_conversation_is_deleted_with_its_files_and_mapping(admin_client, monk
 
     monkeypatch.setattr(router, "stream_chat", _fake_stream(["ok"]))
     keep = _open_conversation(admin_client)
+    admin_client.post(f"/chat/{keep}/send", data={"text": "Cześć", "extra_terms": ""})
+    admin_client.get(f"/chat/{keep}/stream", headers=STREAM)
     gone = int(admin_client.post("/chat/new").headers["location"].rsplit("/", 1)[1])
     admin_client.post(f"/chat/{gone}/send", data={"text": "PESEL 50810112354", "extra_terms": ""})
     admin_client.get(f"/chat/{gone}/stream", headers=STREAM)
@@ -1338,3 +1344,14 @@ def test_the_user_list_offers_no_switch_for_the_administrator_reading_it(admin_c
     page = admin_client.get("/admin/users").text
 
     assert f"/admin/users/{admin_id}/toggle" not in page
+
+
+def test_a_new_conversation_reuses_the_empty_one_the_list_already_has(admin_client):
+    """Each click added another empty "New conversation" to the list."""
+    first = _open_conversation(admin_client)
+
+    again = admin_client.post("/chat/new").headers["location"]
+
+    assert again == f"/chat/{first}"
+    with Session(get_engine()) as session:
+        assert len(session.exec(select(Conversation)).all()) == 1

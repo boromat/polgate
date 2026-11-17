@@ -100,7 +100,7 @@
   --border-strong: #bfbbb0;
   --text: #1c1b18;
   --muted: #5a5850;
-  --faint: #8a877e;
+  --faint: #77746b;
 
   /* Ink is the accent: the main action is set in it, as a signature is. */
   --accent: #1c1b18;
@@ -139,7 +139,7 @@
     --border-strong: #46443e;
     --text: #ebe9e2;
     --muted: #aaa79d;
-    --faint: #7e7b72;
+    --faint: #8f8c82;
     --accent: #ebe9e2;
     --accent-hover: #ffffff;
     --on-accent: #141412;
@@ -337,10 +337,10 @@ form.row { align-items: flex-end; }
 label {
   display: flex;
   flex-direction: column;
-  gap: 5px;
-  font-size: 12.5px;
-  font-weight: 600;
-  color: var(--muted);
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
 }
 label.inline {
   flex-direction: row;
@@ -374,7 +374,7 @@ fieldset:first-of-type { border-top: 0; padding-top: 0; }
 legend { float: left; width: 100%; padding: 0; margin-bottom: 12px; font-size: 14px; font-weight: 650; color: var(--text); }
 legend + * { clear: both; }
 
-.hint { margin: 6px 0 0; color: var(--faint); font-size: 12.5px; max-width: 64ch; }
+.hint { margin: 6px 0 0; color: var(--muted); font-size: 12.5px; line-height: 1.5; max-width: 64ch; }
 
 /* --- the redaction bar ------------------------------------------------------------------------ */
 
@@ -564,22 +564,70 @@ legend + * { clear: both; }
 @keyframes blink { to { opacity: 0; } }
 
 .composer { padding: 0 24px 18px; }
-.composer-form {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
+.composer-box {
   max-width: var(--reading);
   margin: 0 auto;
-  padding: 6px 6px 6px 14px;
   border: 1px solid var(--border-strong);
-  border-radius: 8px;
+  border-radius: 10px;
   background: var(--surface);
 }
-.composer-form:focus-within { border-color: var(--text); }
-.composer-main { display: flex; gap: 8px; align-items: flex-end; }
-.composer textarea { flex: 1; min-height: 40px; max-height: 200px; padding: 8px 0; border: 0; background: transparent; resize: none; }
-.composer textarea:focus { outline: none; }
-.composer-main .btn { width: 36px; min-height: 36px; padding: 0; border-radius: 6px; }
+.composer-box:focus-within { border-color: var(--text); }
+.composer-form { margin: 0; }
+.composer-form textarea {
+  display: block;
+  width: 100%;
+  min-height: 46px;
+  max-height: 200px;
+  padding: 13px 14px 4px;
+  border: 0;
+  background: transparent;
+  resize: none; /* it grows with its text, see data-autogrow */
+}
+.composer-form textarea:focus { outline: none; }
+.composer-tools { display: flex; align-items: center; gap: 2px; padding: 4px 6px 6px 6px; }
+.composer-tools .send { margin-left: auto; width: 34px; min-height: 34px; padding: 0; border-radius: 7px; }
+
+/* A tool in the composer: an icon and a word, quiet until pointed at. */
+.tool {
+  position: relative;
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 7px;
+  min-height: 30px;
+  padding: 0 9px;
+  border-radius: var(--radius-sm);
+  color: var(--muted);
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+.tool:hover { background: var(--surface-2); color: var(--text); }
+.tool:focus-within { outline: 2px solid var(--focus); outline-offset: -2px; }
+.tool .redacted { width: 1.1em; height: 0.6em; }
+/* Hidden, not removed: the picker stays in the tab order and opens with Enter or Space. */
+.tool input[type="file"] { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.upload-form { margin: 0; }
+
+.composer-details { position: relative; }
+.composer-details summary::-webkit-details-marker { display: none; }
+.composer-details[open] summary { background: var(--surface-2); color: var(--text); }
+.composer-popover {
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + 10px);
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: min(360px, 80vw);
+  padding: 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
 
 .attachments, .file-list { max-width: var(--reading); width: 100%; margin: 0 auto; }
 .attachments { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 24px 8px; }
@@ -587,23 +635,6 @@ legend + * { clear: both; }
 .file-row { display: flex; align-items: center; gap: 10px; padding: 4px 0; font-size: 13px; }
 .file-row svg { color: var(--faint); }
 .file-row.error { color: var(--bad); }
-
-.upload-row { display: flex; align-items: center; gap: 10px; max-width: var(--reading); margin: 8px auto 0; }
-.file-picker {
-  display: inline-flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 6px;
-  padding: 0;
-  color: var(--muted);
-  font-size: 12.5px;
-  font-weight: 600;
-  cursor: pointer;
-}
-.file-picker:hover { color: var(--text); }
-.file-picker input[type="file"] { display: none; }
-.upload-row [data-name] { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.upload-row:has(input[type="file"]:invalid) button[type="submit"] { display: none; }
 
 /* A file picker that is the whole form, as on the knowledge base page. */
 .picker-field {
@@ -815,17 +846,6 @@ legend + * { clear: both; }
 
 [disabled], .htmx-request { opacity: 0.5; pointer-events: none; }
 
-/* --- composer disclosure ------------------------------------------------------------------------- */
-
-.composer-details { font-size: 13px; }
-.composer-details summary { cursor: pointer; color: var(--faint); font-size: 12px; font-weight: 600; list-style: none; padding: 2px 0 2px; }
-.composer-details summary::-webkit-details-marker { display: none; }
-.composer-details summary::before { content: "+ "; }
-.composer-details[open] summary::before { content: "− "; }
-.composer-details summary:hover { color: var(--text); }
-.composer-details > label { margin: 8px 0 4px; }
-.composer-details > input { margin-bottom: 6px; }
-
 /* --- print: the transcript as a document ---------------------------------------------------------- */
 
 @media print {
@@ -868,6 +888,39 @@ legend + * { clear: both; }
     text-transform: uppercase;
     color: #555;
   }
+}
+
+/* --- settings: what a setting decides on the left, its control on the right ------------------ */
+
+.settings { max-width: 960px; }
+.setting {
+  display: grid;
+  grid-template-columns: minmax(0, 270px) minmax(0, 1fr);
+  gap: 40px;
+  padding: 24px 0;
+  border-top: 1px solid var(--border);
+}
+.setting:first-of-type { border-top: 0; padding-top: 4px; }
+.setting-info h3 { margin: 0 0 6px; font-size: 15px; }
+.setting-info p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.55; }
+.setting-info .setting-count { margin-top: 10px; color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; }
+.setting-controls { display: flex; flex-direction: column; align-items: stretch; gap: 14px; min-width: 0; }
+.setting-controls.two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 20px; }
+.setting-controls .narrow { max-width: 320px; }
+.setting-controls label.inline { font-size: 14px; }
+.setting-controls .checks { gap: 6px 20px; }
+.settings-actions {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  justify-content: flex-end;
+  padding: 14px 0;
+  border-top: 1px solid var(--border);
+  background: var(--bg);
+}
+@media (max-width: 760px) {
+  .setting { grid-template-columns: 1fr; gap: 14px; }
+  .setting-controls.two { grid-template-columns: 1fr; }
 }
 
 .policy-summary { display: flex; flex-wrap: wrap; gap: 4px 18px; margin: -8px 0 24px; color: var(--muted); font-size: 13px; }

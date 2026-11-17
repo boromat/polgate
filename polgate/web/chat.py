@@ -125,7 +125,13 @@ def new_conversation_link() -> Response:
 def new_conversation(
     user: User = Depends(current_user), session: Session = Depends(get_session)
 ) -> Response:
-    """Create an empty conversation and open it."""
+    """Open an empty conversation: the one the employee already has, or a new one.
+
+    Each click used to add another "New conversation" to the list, all of them empty.
+    """
+    for existing in _conversations(session, user):
+        if not retention.has_content(session, existing):
+            return RedirectResponse(f"/chat/{existing.id}", status_code=303)
     conversation = Conversation(user_id=_require_user_id(user))
     session.add(conversation)
     session.commit()

@@ -261,6 +261,12 @@
       field.form.submit();
       return;
     }
+    /* A file picked in the chat goes up at once: choosing it is the decision, and a second key to
+       press was one more thing between the employee and the review of what will be masked. */
+    if (field.matches("input[type=file][data-upload-on-pick]") && field.files.length) {
+      field.form.requestSubmit();
+      return;
+    }
     if (field.matches("input[type=file][data-names]")) {
       var label = field.form.querySelector("[data-name]");
       if (label) {
