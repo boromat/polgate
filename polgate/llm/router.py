@@ -281,8 +281,10 @@ def _title_from(anonymized: str, limit: int = 60) -> str:
     return " ".join(kept).rstrip(" ,.;:-(") + "…"
 
 
-#: Where one sentence of a message ends and the next begins.
-_SENTENCE_BREAK = re.compile(r"(?<=[.!?…])\s+|\n+")
+#: Where one sentence of a message ends and the next begins: a stop followed by a capital, or a
+#: new line. The stop of an abbreviation, "tel. <TELEFON_1>" or "Sp. z o.o.", is followed by a
+#: token, a number or a small letter, and splitting there titled a request "▮, ▮), że wniosek…".
+_SENTENCE_BREAK = re.compile(r"(?<=[.!?…])\s+(?=[„\"«(\[]?[A-ZĄĆĘŁŃÓŚŹŻ])|\n+")
 #: A word for a title: letters, outside any token.
 _TITLE_WORD = re.compile(r"[^\W\d_]{2,}")
 #: Opening brackets and quotes a title may start with, and what closes each.

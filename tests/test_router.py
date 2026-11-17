@@ -245,6 +245,14 @@ class TestConversationTitles:
             ("<OSOBA_1>: „pilne” - umowa (aneks nr 2)", "<OSOBA_1>: „pilne” - umowa (aneks nr 2)"),
             ("„Pilne” (dla <OSOBA_1>", "„Pilne” (dla <OSOBA_1>"),
             ("), że wniosek jest przyjęty.", "że wniosek jest przyjęty"),
+            (
+                "Odpisz <OSOBA_1> (tel. <TELEFON_1>), że wniosek przyjęto. Podpisz jako <FIRMA_1>",
+                "Odpisz <OSOBA_1> (tel. <TELEFON_1>), że wniosek przyjęto",
+            ),
+            (
+                "Rozpisz plan umowy z Kwiatex Sp. z o.o. na przyszły tydzień.",
+                "Rozpisz plan umowy z Kwiatex Sp. z o.o. na przyszły tydzień",
+            ),
         ],
     )
     def test_a_title_is_the_request_with_its_tokens_and_no_stray_bracket(self, masked, title):
