@@ -42,7 +42,7 @@
     {% if user %}
       {% include "partials/account_menu.html" %}
     {% else %}
-      <a class="navlink" href="/login">{{ t("auth.login") }}</a>
+      {% if request.url.path != "/login" %}<a class="navlink" href="/login">{{ t("auth.login") }}</a>{% endif %}
       <span class="lang" role="group" aria-label="{{ t('a11y.language') }}">
         <a href="?lang=pl" class="{{ 'active' if lang == 'pl' }}">PL</a>
         <a href="?lang=en" class="{{ 'active' if lang == 'en' }}">EN</a>

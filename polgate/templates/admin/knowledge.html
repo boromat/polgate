@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% block title %}{{ t("admin.knowledge") }} · {{ t("app.name") }}{% endblock %}
 {% block content %}
 {% include "admin/_subnav.html" %}
 {% if flash %}<p class="alert ok spaced-below">{{ t(flash) }}</p>{% endif %}

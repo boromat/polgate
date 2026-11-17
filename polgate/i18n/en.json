@@ -171,6 +171,7 @@
   "files.unpacks_too_large": "Unpacked, this file is too large to read safely. Save a smaller part of the document.",
   "files.unreadable": "The file could not be read. It may be damaged or password-protected.",
   "files.unsupported": "Unsupported file type.",
+  "files.will_send": "What the model will see",
   "knowledge.add_hint": "PDF, DOCX, XLSX, CSV, JSON or TXT. The hub keeps only the masked passages, not the file.",
   "knowledge.added": "Added",
   "knowledge.disabled": "The knowledge base is switched off in the policy: published documents are not searched.",

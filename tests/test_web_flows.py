@@ -1472,3 +1472,13 @@ def test_the_list_leaves_out_empty_conversations_but_the_open_one(admin_client, 
     assert f'href="/chat/{empty}"' not in page
     assert f'href="/chat/{written}"' in page
     assert f'href="/chat/{empty}"' in admin_client.get(f"/chat/{empty}").text
+
+
+def test_every_admin_page_has_a_title_of_its_own(admin_client):
+    for path, title in (
+        ("/admin", "Administracja"),
+        ("/admin/users", "Użytkownicy"),
+        ("/admin/policy", "Polityka"),
+        ("/admin/audit", "Dziennik audytu"),
+    ):
+        assert f"<title>{title} · PolGate</title>" in admin_client.get(path).text

@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% block title %}{{ t("files.review") }} · {{ t("app.name") }}{% endblock %}
 {% block content %}
 <div class="spread spaced-below">
   <h2>{{ file|original_filename }}</h2>
@@ -11,7 +12,7 @@
 <div class="preview">
   <div class="col"><h4>{{ t("preview.original") }}</h4><pre>{{ original }}</pre></div>
   <div class="divider"></div>
-  <div class="col"><h4>{{ t("preview.sent") }}</h4><pre>{{ file.text_sent | highlight_tokens }}</pre></div>
+  <div class="col"><h4>{{ t("files.will_send") }}</h4><pre>{{ file.text_sent | highlight_tokens }}</pre></div>
 </div>
 {% if file.status.value == "pending_review" %}
 <div class="row-actions">

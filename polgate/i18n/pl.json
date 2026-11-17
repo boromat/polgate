@@ -171,6 +171,7 @@
   "files.unpacks_too_large": "Po rozpakowaniu ten plik jest zbyt duży, żeby go bezpiecznie odczytać. Zapisz mniejszą część dokumentu.",
   "files.unreadable": "Nie udało się odczytać pliku. Może być uszkodzony albo chroniony hasłem.",
   "files.unsupported": "Nieobsługiwany format pliku.",
+  "files.will_send": "Trafi do modelu",
   "knowledge.add_hint": "PDF, DOCX, XLSX, CSV, JSON albo TXT. Hub zapisuje tylko zamaskowane fragmenty, nie sam plik.",
   "knowledge.added": "Dodano",
   "knowledge.disabled": "Baza wiedzy jest wyłączona w polityce: opublikowane dokumenty nie są przeszukiwane.",

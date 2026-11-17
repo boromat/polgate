@@ -1,8 +1,9 @@
 {% extends "base.html" %}
+{% block title %}{{ t("admin.users") }} · {{ t("app.name") }}{% endblock %}
 {% block content %}
 {% include "admin/_subnav.html" %}
 <div class="table-wrap">
-  <table class="grid">
+  <table class="grid stacked">
     <thead><tr>
       <th>{{ t("auth.username") }}</th><th>{{ t("admin.role") }}</th>
       <th>{{ t("admin.active") }}</th><th>{{ t("admin.actions") }}</th>
@@ -11,8 +12,8 @@
       {% for u in users %}
         <tr>
           <td><strong>{{ u.username }}</strong></td>
-          <td>{{ t("admin.role_admin") if u.role.value == "admin" else t("admin.role_user") }}</td>
-          <td>
+          <td data-label="{{ t('admin.role') }}">{{ t("admin.role_admin") if u.role.value == "admin" else t("admin.role_user") }}</td>
+          <td data-label="{{ t('admin.active') }}">
             {% if u.is_active %}<span class="badge shield">{{ t("admin.yes") }}</span>
             {% else %}<span class="badge">{{ t("admin.no") }}</span>{% endif %}
           </td>
