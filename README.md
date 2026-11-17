@@ -20,9 +20,10 @@ gaps.
 The masking engine is [polanon](https://github.com/boromat/polanon), a separate library that pip
 installs from [PyPI](https://pypi.org/project/polanon/); this repository holds the hub around it.
 
-![A message with a name, a PESEL, a phone number, an e-mail address, an IBAN and a company is sent;
-the answer streams back with the originals in place, and "What the model saw" shows that the provider
-received only tokens such as OSOBA_1 and PESEL_1.](docs/images/demo.webp)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/demo-dark.webp">
+  <img src="docs/images/demo.webp" alt="A message with a name, a PESEL, a phone number, an e-mail address, an IBAN and a company is sent; the answer streams back with the originals in place, and &quot;What the model saw&quot; shows that the provider received only tokens such as OSOBA_1 and PESEL_1.">
+</picture>
 
 <sub>Recorded against a stand-in provider on the developer's machine, with synthetic data.</sub>
 
@@ -135,8 +136,10 @@ own puts the passage with the answer first for every question.
   history and uploaded files all disappear on the schedule the admin sets.
 - **Audit log** recording entity types, counts and hashes, never the values themselves.
 
-  ![The audit log: a sent message lists the kinds of data it masked, EMAIL, IBAN, ORG, PERSON,
-  PESEL and PHONE, one of each, and no value.](docs/images/audit.png)
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/images/audit-dark.png">
+    <img src="docs/images/audit.png" alt="The audit log: a sent message lists the kinds of data it masked, EMAIL, IBAN, ORG, PERSON, PESEL and PHONE, one of each, and no value.">
+  </picture>
 
 - **Admin policies**: approval mode per channel, stage-2 behaviour, retention, which entity types to
   mask, names to always mask, and names never to mask — Facebook, Google Ads, Canva and the other

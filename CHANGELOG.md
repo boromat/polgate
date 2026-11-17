@@ -6,6 +6,12 @@ All notable changes to this project are recorded here. The format follows
 
 ## [Unreleased]
 
+### Changed
+
+- **The README's pictures follow the reader's theme**: the demo, in English and in Polish, and the
+  audit log picture are recorded in the dark theme as well, and GitHub shows the dark ones to a
+  reader who uses its dark theme.
+
 ## [0.4.0] - 2026-11-17
 
 A chat that looks like one: nothing above the conversation, the account at the sidebar's foot,

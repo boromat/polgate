@@ -22,10 +22,10 @@ Silnikiem maskowania jest [polanon](https://github.com/boromat/polanon), osobna 
 instaluje z [PyPI](https://pypi.org/project/polanon/); to repozytorium zawiera hub zbudowany wokół
 niej.
 
-![Użytkownik wysyła wiadomość z imieniem i nazwiskiem, numerem PESEL, numerem telefonu, adresem
-e-mail, numerem IBAN i nazwą firmy; odpowiedź spływa strumieniowo z oryginałami na właściwych
-miejscach, a „Co zobaczył model” pokazuje, że dostawca dostał tylko tokeny, takie jak OSOBA_1
-i PESEL_1.](docs/images/demo-pl.webp)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/demo-pl-dark.webp">
+  <img src="docs/images/demo-pl.webp" alt="Użytkownik wysyła wiadomość z imieniem i nazwiskiem, numerem PESEL, numerem telefonu, adresem e-mail, numerem IBAN i nazwą firmy; odpowiedź spływa strumieniowo z oryginałami na właściwych miejscach, a „Co zobaczył model” pokazuje, że dostawca dostał tylko tokeny, takie jak OSOBA_1 i PESEL_1.">
+</picture>
 
 <sub>Nagrane na komputerze programisty, z atrapą dostawcy i syntetycznymi danymi.</sub>
 
@@ -144,8 +144,10 @@ stawia fragment z odpowiedzią na pierwszym miejscu przy każdym pytaniu.
   historia wiadomości i wgrane pliki znikają zgodnie z harmonogramem ustawionym przez administratora.
 - **Dziennik audytu**, który zapisuje typy danych, ich liczby i skróty (hashe), a nigdy same wartości.
 
-  ![Dziennik audytu: wpis o wysłanej wiadomości wymienia rodzaje zamaskowanych danych — EMAIL, IBAN,
-  ORG, PERSON, PESEL i PHONE, po jednym z każdego — i nie zawiera żadnej wartości.](docs/images/audit.png)
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/images/audit-dark.png">
+    <img src="docs/images/audit.png" alt="Dziennik audytu: wpis o wysłanej wiadomości wymienia rodzaje zamaskowanych danych, EMAIL, IBAN, ORG, PERSON, PESEL i PHONE, po jednym z każdego, i nie zawiera żadnej wartości.">
+  </picture>
 
 - **Polityka ustalana przez administratora**: tryb zatwierdzania dla każdego kanału, działanie
   etapu 2, retencja, maskowane typy danych, nazwy, które trzeba maskować zawsze, i nazwy, których nie
