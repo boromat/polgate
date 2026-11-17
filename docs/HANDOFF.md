@@ -185,8 +185,17 @@ moved to polanon and has grown since; the current numbers are in its
       quoted a masked number; and retention periods that a typo switched off, a large number broke,
       or a shorter value did not apply to stored mappings.
 - [x] `polgate.__version__` 0.2.0 and the dated `CHANGELOG.md` heading, in one commit.
-- [ ] Push the tag `v0.2.0` once CI on `main` is green: the release workflow publishes the image and
-      the GitHub release.
+- [x] The tag `v0.2.0`, pushed on 2026-11-13 once CI on `main` was green: the release workflow
+      published `ghcr.io/boromat/polgate` as `0.2.0`, `0.2` and `latest` and the GitHub release.
+
+### Since 0.2.0 (unreleased, see `CHANGELOG.md`)
+- [x] polanon 0.3.9 as the lower bound: driving licence numbers as `DRIVING_LICENCE`, 630 more
+      first names, "ani nowak" in lowercase; the leak evaluation still finds 0 of 125.
+- [x] The last check before sending leaves out the system prompt, which made a conversation stuck
+      once the employee asked to mask a word it holds.
+- [x] Names come back in the case the answer needs: polanon's `token_instructions` in the system
+      prompt, `<OSOBA_1:wołacz>` restored declined, and `polgate/tokens.py` so the fingerprints,
+      the check and the preview read cased tokens.
 
 ### Search in long attachments (in 0.2.0)
 - [x] Search in long attachments, stage A: the files of one conversation. A file over the
