@@ -7,8 +7,9 @@ repository is public and the image is on GitHub Container Registry. Version 0.2.
 2026-11-13, adds the search in long attachments, `start.bat` to run the hub on Windows and a leak
 evaluation that measures what reaches the provider, requires polanon 0.3.3, which fixed every leak
 that evaluation found, and fixes everything a review of the whole project found (see *0.2.0*).
-Stage B, the company knowledge base, is done on `main` and not released yet; what is left is under
-*Known detection gaps* and under *After MVP*.
+Version 0.3.0, dated 2026-11-17, adds stage B, the company knowledge base, answers data subject
+requests from the admin panel, restores names in the case the answer needs and requires polanon
+0.3.9 (see *0.3.0*). What is left is under *Known detection gaps* and under *After MVP*.
 
 Read `CLAUDE.md` (rules) and `docs/ARCHITECTURE.md` (data flow) first. Run `/env-check` at the start
 of a session and `/quality-gate` before every commit, and `/pii-safety-review` as well for anything
@@ -189,7 +190,7 @@ moved to polanon and has grown since; the current numbers are in its
 - [x] The tag `v0.2.0`, pushed on 2026-11-13 once CI on `main` was green: the release workflow
       published `ghcr.io/boromat/polgate` as `0.2.0`, `0.2` and `latest` and the GitHub release.
 
-### Since 0.2.0 (unreleased, see `CHANGELOG.md`)
+### 0.3.0 (2026-11-17)
 - [x] polanon 0.3.9 as the lower bound: driving licence numbers as `DRIVING_LICENCE`, 630 more
       first names, "ani nowak" in lowercase; the leak evaluation still finds 0 of 125.
 - [x] The last check before sending leaves out the system prompt, which made a conversation stuck
@@ -227,7 +228,7 @@ moved to polanon and has grown since; the current numbers are in its
 - [x] Measure the search with a real embedding model: bge-m3 in LM Studio, on 13 November 2026,
       16 of 16 answers past the budget reach the model, and vectors alone put every one first.
 
-### Company knowledge base on polanon.index (stage B), done, unreleased
+### Company knowledge base on polanon.index (stage B, in 0.3.0)
 Documents the whole company may ask about, such as regulations and procedures, uploaded once by an
 administrator under Admin, Knowledge base (`polgate/web/knowledge.py`), and searched by every
 signed-in employee's turns, as the owner decided on 17 November 2026. Code in `polgate/knowledge/`,

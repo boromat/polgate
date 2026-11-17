@@ -6,6 +6,15 @@ All notable changes to this project are recorded here. The format follows
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-11-17
+
+A company knowledge base: an administrator publishes the documents everybody asks about once, and
+every employee's question draws the passages that answer it, while the provider sees only the
+conversation's own tokens. Requests from data subjects are answered from the admin panel: one
+person found in every conversation, file and document, then exported or erased. Names come back
+in the case the answer needs, and polanon 0.3.9 is required. The leak evaluation still finds none
+of its 125 values reaching the provider.
+
 ### Added
 
 - **Data subject requests.** Under Admin, Data subjects, an administrator names a person by a
