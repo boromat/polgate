@@ -86,8 +86,6 @@
   "chat.preview": "Co zobaczył model",
   "chat.print": "Drukuj",
   "chat.print_note": "Wydruk z hubu. Zawiera dane osobowe: chroń jak dokument papierowy.",
-  "chat.protected": "Maskowanie włączone",
-  "chat.protected_hint": "Dane osobowe są maskowane przed wysyłką i przywracane w odpowiedzi.",
   "chat.recent": "Ostatnie",
   "chat.review_hint": "Zamaskowano elementów: {count}",
   "chat.review_nothing": "nic do zamaskowania",

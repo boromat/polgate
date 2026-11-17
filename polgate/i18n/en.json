@@ -86,8 +86,6 @@
   "chat.preview": "What the model saw",
   "chat.print": "Print",
   "chat.print_note": "Printed from the hub. Contains personal data: handle as a paper record.",
-  "chat.protected": "Masking on",
-  "chat.protected_hint": "Personal data is masked before sending and restored in the answer.",
   "chat.recent": "Recent",
   "chat.review_hint": "Masked items: {count}",
   "chat.review_nothing": "nothing to mask",

@@ -948,7 +948,7 @@ legend + * { clear: both; }
   /* The composer stays at hand at the bottom of a phone's screen. */
   .chat:has(.msg) .composer { position: sticky; bottom: 0; }
   .composer { padding: 6px 10px 8px; background: var(--surface); }
-  .composer-caption .caption-text { display: none; }
+  .composer-caption.quiet { display: none; }
   #messages { padding: 12px 16px 20px; gap: 20px; }
   .empty-state h1 { font-size: 22px; }
   .msg.user .bubble { max-width: 90%; }

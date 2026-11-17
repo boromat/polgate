@@ -33,16 +33,19 @@ def test_clearing_every_box_really_does_switch_masking_off(admin_client):
         assert session.exec(select(Policy)).first().enabled_entities == ""
 
 
-def test_the_chat_badge_stops_claiming_protection(admin_client):
+def test_the_chat_stops_claiming_protection(admin_client):
+    """Masking on is the normal state and needs no badge; off gets one and loses the claim."""
     admin_client.get("/chat")
     conversation_id = _conversation_id()
-    assert "Maskowanie włączone" in admin_client.get(f"/chat/{conversation_id}").text
+    page = admin_client.get(f"/chat/{conversation_id}").text
+    assert "Dane osobowe są maskowane" in page
+    assert "Bez maskowania" not in page
 
     _clear_entities(admin_client)
 
     page = admin_client.get(f"/chat/{conversation_id}").text
     assert "Bez maskowania" in page
-    assert "Maskowanie włączone" not in page
+    assert "Dane osobowe są maskowane" not in page
 
 
 def test_the_admin_dashboard_says_so(admin_client):
