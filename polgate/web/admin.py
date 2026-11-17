@@ -21,7 +21,7 @@ from polgate.config import get_settings
 from polgate.db import get_session
 from polgate.models import MAX_TTL_DAYS, AuditEvent, HilMode, Message, Role, User, utcnow
 from polgate.policy_loader import get_policy, masking_is_off
-from polgate.rendering import render
+from polgate.rendering import group_entities, render
 from polgate.vault import store as vault
 
 router = APIRouter(prefix="/admin")
@@ -174,8 +174,8 @@ def policy_form(
         request,
         "admin/policy.html",
         policy=policy,
-        # polanon's own order, people and companies first, reads better than the codes sorted.
         all_entities=list(ENTITY_TYPES),
+        entity_groups=group_entities(list(ENTITY_TYPES)),
         # An empty policy split on commas gives one empty name, and the summary counted it.
         selected={e.strip() for e in policy.enabled_entities.split(",") if e.strip()},
         masking_off=masking_is_off(policy),

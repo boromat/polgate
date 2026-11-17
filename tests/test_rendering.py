@@ -118,3 +118,20 @@ def test_a_title_draws_its_tokens_as_bars_and_escapes_the_rest():
     html = str(rendering.redacted("Pismo <b> dla <OSOBA_1:wołacz>"))
     assert html == 'Pismo &lt;b&gt; dla <span class="redacted" aria-hidden="true"></span>'
     assert rendering.redacted_plain("Dla <OSOBA_1>") == "Dla \u25ae"
+
+
+def test_every_entity_type_lands_in_exactly_one_group():
+    from polanon.policy import ENTITY_TYPES
+
+    groups = rendering.group_entities(list(ENTITY_TYPES))
+    placed = [e for _, members in groups for e in members]
+    assert sorted(placed) == sorted(ENTITY_TYPES)
+    assert len(placed) == len(set(placed))
+
+
+def test_a_type_no_group_names_goes_to_the_last_group_and_empty_groups_are_left_out():
+    groups = rendering.group_entities(["PESEL", "NOWY_TYP"])
+    assert groups == [
+        ("entity_group.documents", ["PESEL"]),
+        ("entity_group.other", ["NOWY_TYP"]),
+    ]

@@ -179,6 +179,50 @@ ENTITY_LABELS = {
     "BANK_ACCOUNT": "entity.bank_account",
     "OTHER": "entity.other",
 }
+
+#: How the policy page groups the types, so 28 boxes read as five short lists. The last group takes
+#: any type a later polanon adds and this map does not know yet.
+ENTITY_GROUPS: tuple[tuple[str, tuple[str, ...]], ...] = (
+    (
+        "entity_group.people",
+        ("PERSON", "ORG", "LOCATION", "ADDRESS", "POSTAL_CODE", "BIRTH_DATE", "DATE"),
+    ),
+    (
+        "entity_group.documents",
+        (
+            "PESEL",
+            "NIP",
+            "REGON",
+            "KRS",
+            "PL_ID",
+            "PL_PASSPORT",
+            "DRIVING_LICENCE",
+            "TAX_ID",
+            "COMPANY_ID",
+        ),
+    ),
+    ("entity_group.money", ("IBAN", "BANK_ACCOUNT", "CREDIT_CARD")),
+    ("entity_group.contact", ("EMAIL", "PHONE", "LINK", "IP_ADDRESS", "MAC_ADDRESS")),
+    ("entity_group.other", ("SECRET", "PLATE", "VIN", "OTHER")),
+)
+
+
+def group_entities(entities: list[str]) -> list[tuple[str, list[str]]]:
+    """Sort the given entity types into the page's groups, leaving out groups with none of them.
+
+    Args:
+        entities: The entity types the masking engine knows.
+
+    Returns:
+        Each group's i18n key with its types in the group's order; a type no group names goes last.
+    """
+    known = set(entities)
+    grouped = [(key, [e for e in members if e in known]) for key, members in ENTITY_GROUPS]
+    named = {e for _, members in ENTITY_GROUPS for e in members}
+    grouped[-1][1].extend(e for e in entities if e not in named)
+    return [(key, members) for key, members in grouped if members]
+
+
 templates.env.globals["entity_labels"] = ENTITY_LABELS
 templates.env.filters["entity_counts"] = entity_counts
 templates.env.filters["original_filename"] = original_filename

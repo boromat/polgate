@@ -66,17 +66,26 @@
     <div class="setting-info">
       <h3>{{ t("policy.entities") }}</h3>
       <p>{{ t("policy.entities_hint") }}</p>
-      <p class="setting-count">{{ t("policy.entities_count", selected=selected | length, total=all_entities | length) }}</p>
+      {# The count follows the boxes as they change; {n} is where app.js writes the number. #}
+      <p class="setting-count" data-count-checked="entities"
+         data-count-template="{{ t('policy.entities_count', selected='{n}', total=all_entities | length) }}">
+        {{ t("policy.entities_count", selected=selected | length, total=all_entities | length) }}
+      </p>
     </div>
-    <div class="setting-controls">
-      <div class="checks">
-        {% for e in all_entities %}
-          <label class="inline" title="{{ e }}">
-            <input type="checkbox" name="entities" value="{{ e }}" {{ 'checked' if e in selected }}>
-            {{ t(entity_labels[e]) if e in entity_labels else e }}
-          </label>
-        {% endfor %}
-      </div>
+    <div class="setting-controls entity-groups">
+      {% for group, members in entity_groups %}
+        <fieldset class="entity-group">
+          <legend>{{ t(group) }}</legend>
+          <div class="toggles">
+            {% for e in members %}
+              <label class="toggle" title="{{ e }}">
+                <input type="checkbox" name="entities" value="{{ e }}" {{ 'checked' if e in selected }}>
+                <span>{{ t(entity_labels[e]) if e in entity_labels else e }}</span>
+              </label>
+            {% endfor %}
+          </div>
+        </fieldset>
+      {% endfor %}
     </div>
   </section>
 

@@ -867,9 +867,6 @@ legend + * { clear: both; }
 .subnav a:hover { color: var(--text); }
 .subnav a.active { color: var(--text); font-weight: 600; border-bottom-color: var(--text); }
 
-.checks { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 2px 20px; }
-.checks label.inline { align-items: baseline; gap: 8px; padding: 3px 0; }
-.checks label.inline input { transform: translateY(2px); }
 .name-lists { align-items: flex-start; gap: 24px; }
 .name-lists > .grow { min-width: 16rem; }
 .pager { display: flex; gap: 8px; margin-top: 16px; }
@@ -1076,7 +1073,52 @@ legend + * { clear: both; }
 .setting-controls.two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 20px; }
 .setting-controls .narrow { max-width: 320px; }
 .setting-controls label.inline { font-size: 14px; }
-.setting-controls .checks { gap: 6px 20px; }
+
+/* The entity types: short groups of pills, a filled mark for a masked type and an empty ring for
+   one that goes through as written, so the odd one out shows at a glance. */
+.entity-groups { gap: 18px; }
+.entity-group { min-width: 0; margin: 0; padding: 0; border: 0; }
+.entity-group legend { margin: 0 0 8px; padding: 0; color: var(--faint); font-size: 12px; font-weight: 600; }
+.toggles { display: flex; flex-wrap: wrap; gap: 6px; }
+.toggle {
+  position: relative;
+  flex-direction: row;
+  align-items: center;
+  gap: 7px;
+  min-height: 30px;
+  padding: 0 12px 0 9px;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 13px;
+  cursor: pointer;
+  user-select: none;
+}
+.toggle input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.toggle::before {
+  content: "";
+  box-sizing: border-box;
+  width: 15px;
+  height: 15px;
+  border: 1.5px solid var(--border-strong);
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.toggle:hover { border-color: var(--faint); color: var(--text); }
+.toggle:has(input:checked) { background: var(--surface-2); border-color: var(--surface-2); color: var(--text); }
+.toggle:has(input:checked)::before { border-color: var(--accent); background: var(--accent); }
+.toggle:has(input:checked)::after {
+  content: "";
+  position: absolute;
+  left: 15px;
+  top: 50%;
+  width: 3px;
+  height: 7px;
+  border: solid var(--on-accent);
+  border-width: 0 1.5px 1.5px 0;
+  transform: translateY(-62%) rotate(45deg);
+}
+.toggle:has(input:focus-visible) { outline: 2px solid var(--focus); outline-offset: 2px; }
 .settings-actions {
   position: sticky;
   bottom: 0;

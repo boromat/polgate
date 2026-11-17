@@ -239,8 +239,6 @@
     }
   });
 
-  /* Enter sends and Shift+Enter starts a new line, as in every other chat window. The Enter that
-     confirms an IME composition is not a send, and a message of nothing but spaces is not sent. */
   /* On a phone the conversations slide in over the chat; Escape or the shade behind them closes them. */
   function setConversations(open) {
     var layout = document.querySelector(".chat-layout");
@@ -259,6 +257,8 @@
     }
   });
 
+  /* Enter sends and Shift+Enter starts a new line, as in every other chat window. The Enter that
+     confirms an IME composition is not a send, and a message of nothing but spaces is not sent. */
   document.addEventListener("keydown", function (event) {
     var field = event.target;
     if (!field.matches || !field.matches("[data-submit-on-enter]")) {
@@ -273,8 +273,20 @@
     }
   });
 
+  /* A count of ticked boxes that follows the boxes, written into the page's own sentence. */
+  function recount(form) {
+    form.querySelectorAll("[data-count-checked][data-count-template]").forEach(function (out) {
+      var name = out.dataset.countChecked;
+      var ticked = form.querySelectorAll('input[name="' + name + '"]:checked').length;
+      out.textContent = out.dataset.countTemplate.replace("{n}", String(ticked));
+    });
+  }
+
   document.addEventListener("change", function (event) {
     var field = event.target;
+    if (field.type === "checkbox" && field.form) {
+      recount(field.form);
+    }
     if (field.matches("[data-autosubmit]") && field.form) {
       field.form.submit();
       return;

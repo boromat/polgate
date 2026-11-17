@@ -94,3 +94,12 @@ def test_the_policy_summary_counts_no_entity_type_when_none_is_on(admin_client):
     _clear_entities(admin_client)
     page = admin_client.get("/admin/policy").text
     assert "Zaznaczone: 0 z " in page
+
+
+def test_the_policy_page_groups_the_types_and_counts_them_as_they_change(admin_client):
+    """Five short lists instead of one wall of boxes; the count carries a template for app.js."""
+    page = admin_client.get("/admin/policy").text
+    for legend in ("Osoby i miejsca", "Numery i dokumenty", "Finanse", "Kontakt i sieć"):
+        assert f"<legend>{legend}</legend>" in page
+    assert 'data-count-checked="entities"' in page
+    assert 'data-count-template="Zaznaczone: {n} z ' in page
