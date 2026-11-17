@@ -1376,7 +1376,7 @@ def test_the_chat_keeps_the_account_in_its_sidebar_and_opens_it_as_a_drawer(admi
 
 
 def test_the_chat_says_masking_happens_without_telling_people_what_to_write(admin_client):
-    """One plain line: personal data is masked. No invitation to write names and numbers, no rule."""
+    """One plain line, that personal data is masked: no invitation to write names, no rule."""
     page = admin_client.get(f"/chat/{_open_conversation(admin_client)}").text
 
     assert "Dane osobowe są maskowane przed wysłaniem do modelu.</p>" in page
