@@ -37,6 +37,16 @@ def _fingerprint_key() -> bytes:
     return hashlib.sha256(b"polgate value fingerprint:" + _vault_key().encode()).digest()
 
 
+@lru_cache
+def pseudonym_key() -> bytes:
+    """Return the key of the knowledge base's stable tokens, derived from the vault key.
+
+    Derived rather than stored, so it is backed up with the vault key and needs nothing new; a hub
+    whose vault key changes cannot read its knowledge base's values either, and indexes again.
+    """
+    return hashlib.sha256(b"polgate knowledge pseudonyms:" + _vault_key().encode()).digest()
+
+
 def _vault_key() -> str:
     settings = get_settings()
     if settings.vault_key:

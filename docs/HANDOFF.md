@@ -7,7 +7,8 @@ repository is public and the image is on GitHub Container Registry. Version 0.2.
 2026-11-13, adds the search in long attachments, `start.bat` to run the hub on Windows and a leak
 evaluation that measures what reaches the provider, requires polanon 0.3.3, which fixed every leak
 that evaluation found, and fixes everything a review of the whole project found (see *0.2.0*).
-What is left is stage B, under *Known detection gaps* and under *After MVP*.
+Stage B, the company knowledge base, is done on `main` and not released yet; what is left is under
+*Known detection gaps* and under *After MVP*.
 
 Read `CLAUDE.md` (rules) and `docs/ARCHITECTURE.md` (data flow) first. Run `/env-check` at the start
 of a session and `/quality-gate` before every commit, and `/pii-safety-review` as well for anything
@@ -224,26 +225,57 @@ moved to polanon and has grown since; the current numbers are in its
 - [x] Measure the search with a real embedding model: bge-m3 in LM Studio, on 13 November 2026,
       16 of 16 answers past the budget reach the model, and vectors alone put every one first.
 
-### Next: a company knowledge base on polanon.index (stage B)
+### Company knowledge base on polanon.index (stage B), done, unreleased
 Documents the whole company may ask about, such as regulations and procedures, uploaded once by an
-administrator rather than into one conversation. Stage A was built so that this adds a source of
-passages rather than a second search:
-- **Masking.** A knowledge base has no conversation mapping to share, so its documents are masked
-  with stable tokens: an `Anonymizer` built with `polanon.Pseudonyms(key)`, the key kept beside the
-  vault key, so the same person gets the same token in every document. The passages are cut with
-  `split_passages` and masked by `polanon.index.index_chunks`, which puts what each token stands for
-  into a `MappingStore` (its `add` and `get`), implemented over an encrypted table like `VaultEntry`,
-  never into the passages.
-- **Questions.** `polanon.index.mask_query` masks a question with the conversation's mapping and the
-  same pseudonyms, so a person named in the chat and in a document meets as one token; the tokens it
-  adds join the conversation's vault mapping, so the answer is restored as usual.
-- **Storage.** A table of its own, `KnowledgeChunk` (document, position, masked text, vector, model),
-  rather than a nullable `file_id` on `AttachmentChunk`: making a column nullable is not an additive
-  change, and `polgate/schema.py` would refuse it on an existing installation.
-- **Ranking and the rest.** `polgate/retrieval/select.py` as it is; the turn adds the knowledge
-  base's best passages beside the attachments', checked by `assert_no_raw_values` like them. Still to
-  decide: who may see which documents, how a document is withdrawn (its passages and its share of
-  the mapping store go with it), and whether one index for the company still fits in memory.
+administrator under Admin, Knowledge base (`polgate/web/knowledge.py`), and searched by every
+signed-in employee's turns, as the owner decided on 17 November 2026. Code in `polgate/knowledge/`,
+tests in `tests/test_knowledge.py` and `tests/test_web_knowledge.py`.
+- [x] **Masking.** `index.ingest` cuts the extracted text with `split_passages` and masks the file
+  name and the passages with `polanon.index.index_chunks`, through the hub's own anonymizer without
+  its judge and with `Pseudonyms` under a key derived from the vault key
+  (`vault.pseudonym_key`). What each token stands for goes into `KnowledgeToken` through
+  `KnowledgeMappingStore`, encrypted, never into the passages; the file and its text are not kept.
+  A document is refused when masking fails, when an original value is still found in its passages,
+  when it has no text, when it has more than `RETRIEVAL_MAX_CHUNKS_PER_FILE` passages, and while the
+  policy masks nothing.
+- [x] **Review and publish.** A document waits, masked, for the administrator to read it; publishing
+  embeds its passages for `EMBEDDING_MODEL`, checked against the store first, and a new model gets
+  vectors of its own from the stored passages ("Index again" on the page).
+- [x] **Withdrawal.** `store.withdraw` deletes the document, its passages and the tokens no other
+  document uses (`KnowledgeTokenUse`).
+- [x] **Questions.** `KnowledgeSearch.prepare` masks the message with `mask_query` before the turn
+  masks it; a name the store holds that the conversation has no token for, a surname alone among
+  them, gets the conversation's next number and goes to the turn's masking as a known value, so
+  the message, the judge and the last check see it masked. `KnowledgeSearch.search` embeds the
+  question, ranks with `polgate/retrieval/select.py` and writes every stable token of the chosen
+  passages as the conversation's: the provider never sees a stable token, and the vault keeps the
+  new ones. The policy page switches the knowledge base off; it shares `retrieval_top_k` with the
+  attachments and has `KNOWLEDGE_BUDGET_CHARS` of its own.
+- [x] **Memory.** Every published passage of the configured model is read and ranked per turn, in
+  memory: a few thousand passages of 1 024 numbers are a few megabytes, and a company's
+  regulations rarely hold more.
+
+Still open, each worth an issue:
+- The leak evaluation does not cover the knowledge base yet: `evals/run.py` plays attachments, and a
+  set of published documents with questions about them would measure what reaches the chat and
+  the embeddings endpoint from it.
+- A surname alone in a question and the full name in a passage are two tokens: "Kowalczyk" asked
+  about and "Jan Kowalczyk" in a regulation reach the model as `<OSOBA_1>` and `<OSOBA_2>`.
+  polanon stores the surname under a token of its own; joining the two would need to know that
+  only one person of that surname is meant, so the hub leaves them apart rather than merge two
+  people.
+- A document masked before a polanon release that detects more is not masked again: the
+  extracted text is not kept, so it has to be uploaded again.
+- Found by a review before the first commit, fixed with a test each: every spelling of a name
+  the base knows gets its own conversation token, "Wróblowi" after "Wróbel" went out in clear; a
+  document over about 50 000 characters ran past SQLite's limit on query variables; an upload and
+  a withdrawal at once could delete a token a passage still used, so both take
+  `store.WRITE_LOCK`, a token and its use are written in one transaction and a document is
+  `indexing` until its masking ends; a title with a token the store lost was sent with it.
+- polanon's collision record lives in memory (`knowledge.index._COLLISIONS`); after a restart the
+  store reports a collision again, which costs one more masking pass, never a wrong token.
+- Visibility per group: every signed-in employee draws on every published document. A group would
+  be a table of its own and a column on `KnowledgeDocument`, both additive.
 
 ### Found in the review before 0.2.0, all fixed
 Most severe first; each was confirmed by reading the code, the first by running it.
@@ -291,6 +323,11 @@ that is also a word typed in lowercase before a common surname.
   "anna.kowalczyk" after "Login". A fix in polanon would join a known first name, a `.`, `_` or `-`
   and a word that reads as a surname into one person, make the local part of a masked address of
   that shape a known value, and accept five letters in the login rule when a separator is there.
+- `index_chunks` stores the surname of a person it finds by the full name, "Wróbel" of "Jan
+  Wróbel", but masks the surname's other forms written alone in the same document, "Wróbla",
+  "Wróblowi", only on a later call, once the store holds it: one call left them in clear in the
+  passages. The hub calls it twice (`knowledge/index.py`); polanon should look its new surnames up
+  within the same call, and the hub can then drop the second pass.
 - [x] The hub's own gap, fixed: a word an employee asked to mask that also occurs in
   `SYSTEM_PROMPT` ("company") made the final check refuse every turn of that conversation. The
   check now reads what came from people and files and leaves out the system prompt, which is the

@@ -76,6 +76,8 @@ class Settings(BaseSettings):
     #: Passages indexed per file. The rest of a longer file is not searched, and the employee and
     #: the model are told so.
     retrieval_max_chunks_per_file: int = 500
+    #: Characters of knowledge base passages sent per turn, from every published document together.
+    knowledge_budget_chars: int = 12_000
 
     # NLP
     spacy_model: str = "pl_core_news_md"

@@ -46,6 +46,13 @@ employee browser ── HTMX/SSE ──> FastAPI hub
                     │   exact → best top_k that fit the budget; endpoint down → file cut as before
                     │   every text bound for /embeddings passes assert_no_raw_values first
                     ├──────────────────────────────┐
+                    │ Knowledge base (polgate/knowledge), only with EMBEDDING_MODEL set:
+                    │   admin upload → index_chunks with stable tokens (Pseudonyms) → KnowledgeChunk,
+                    │   values encrypted in KnowledgeToken; review, then publish embeds the passages
+                    │   each turn: mask_query finds the names the base knows → tokens of this
+                    │   conversation, masked in the message; ranked passages are written in the
+                    │   conversation's tokens before they join the payload and the check
+                    ├──────────────────────────────┐
                     │ LLM router: OpenAI-compatible client (OpenRouter / OpenAI / Ollama)
                     │   provider receives tokens only; the system prompt carries polanon's note:
                     │   copy tokens verbatim, and in Polish add a person's case, <OSOBA_1:wołacz>
@@ -86,6 +93,25 @@ Both are in plaintext, like `text_sent` itself; `docs/THREAT_MODEL.md` says why 
 have to change. They are deleted before their file, by retention or rejection, and with their
 conversation. Ranking runs in memory with numpy: a conversation's attachments hold few enough
 passages that a vector database would add a service and no speed.
+
+The knowledge base has four tables of its own. `KnowledgeDocument` holds a document's masked
+title and its status; the file and its extracted text are not kept. `KnowledgeChunk` holds its
+masked passages, once without a vector and once per embedding model it was published under.
+`KnowledgeToken` is polanon's `MappingStore`: what each stable token stands for, encrypted like the
+vault, a person in the nominative, with polanon's keyed fingerprint; it belongs to no conversation
+and does not expire. `KnowledgeTokenUse` records which document stored which token, so withdrawing a
+document deletes the tokens no other document uses. The stable tokens are computed under a key
+derived from the vault key, so a backup of the vault key covers them.
+
+A turn never sends a stable token. Before it masks the message, `KnowledgeSearch.prepare` masks it
+with the stable tokens and asks the store which names it holds; one the conversation has no token
+for gets the conversation's next number and is handed to the masking as a known value. After the
+masking, `KnowledgeSearch.search` embeds the question, ranks the published passages with
+`polgate/retrieval/select.py`, and writes each stable token of the chosen ones as the
+conversation's token for the same value, matched as written, as the store holds it, or by the stable
+token the conversation's own value would get, which ignores the case it stands in. A value of a
+passage the conversation never named gets a new token, which the vault stores with the turn's
+mapping.
 
 `polgate/retrieval/select.py` is pure: cutting, ranking and choosing passages take masked text and
 vectors and nothing else, so a later source of passages, such as a company knowledge base

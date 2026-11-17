@@ -8,6 +8,17 @@ All notable changes to this project are recorded here. The format follows
 
 ### Added
 
+- **A company knowledge base.** Under Admin, Knowledge base, an administrator uploads the
+  documents the whole company asks about, such as regulations and procedures, reads them masked
+  and publishes them; every employee's turn then gets the passages that answer the question,
+  ranked as attachments are. A document is masked once with polanon's stable tokens, the same for
+  the same value in every document, and what they stand for is kept encrypted in a table of its
+  own; the file and its text are not kept. A turn writes the passages in the conversation's own
+  tokens, so a person named in the chat and in a regulation is one token to the model, and the
+  provider never sees a stable token. A name a document holds, a surname alone among them, is
+  masked in the question too, before the judge and the last check read it. Withdrawing a document
+  deletes its passages and the values no other document uses. Needs `EMBEDDING_MODEL`; the policy
+  page switches it off, and `KNOWLEDGE_BUDGET_CHARS` sets how much of it a turn may send.
 - **Names come back in the case the answer needs.** The system prompt now carries polanon's note
   about tokens in the employee's language. In Polish it asks the model to write the case a person
   stands in after the token, `<OSOBA_1:wołacz>`, and the restore declines the name: "Odpisz

@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block content %}
+{% include "admin/_subnav.html" %}
+<div class="spread spaced-below">
+  <h2>{{ original_title }}</h2>
+  <a class="link" href="/admin/knowledge">&larr; {{ t("admin.knowledge") }}</a>
+</div>
+{% if error %}<p class="alert error spaced-below">{{ t(error) }}</p>{% endif %}
+<p class="small subtle spaced-below">{{ t("knowledge.review_hint") }}</p>
+<div class="card wide spaced-below">
+  <h4>{{ t("preview.sent") }}</h4>
+  <pre>{{ document.title | highlight_tokens }}</pre>
+  {% for passage in passages %}
+    <pre>{{ passage.text_sent | highlight_tokens }}</pre>
+  {% endfor %}
+</div>
+<div class="row-actions">
+  {% if document.status.value == "pending_review" %}
+    <form method="post" action="/admin/knowledge/{{ document.id }}/publish">
+      <button class="btn" type="submit" {{ 'disabled' if not configured }}>{{ t("knowledge.publish") }}</button>
+    </form>
+  {% endif %}
+  <form method="post" action="/admin/knowledge/{{ document.id }}/withdraw">
+    <button class="btn danger" type="submit">{{ t("knowledge.withdraw") }}</button>
+  </form>
+</div>
+{% if not configured %}<p class="small subtle spaced">{{ t("knowledge.unconfigured") }}</p>{% endif %}
+{% endblock %}

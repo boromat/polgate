@@ -22,6 +22,7 @@ from sqlmodel import Session, col, select
 from polgate import audit
 from polgate.config import Settings
 from polgate.files.extract import TRUNCATION_MARKER
+from polgate.knowledge.search import KnowledgeFound, KnowledgeQuery, KnowledgeSearch
 from polgate.llm.openai_compat import LLMError, assert_no_raw_values, stream_chat
 from polgate.llm.prompts import system_prompt
 from polgate.models import (
@@ -180,6 +181,55 @@ async def _search_attachments(
         yield TurnEvent("status", detail="capped")
 
 
+async def _prepare_knowledge(
+    session: Session,
+    conversation: Conversation,
+    user: User,
+    knowledge: KnowledgeSearch,
+    text: str,
+    mapping: dict[str, str],
+) -> KnowledgeQuery | None:
+    """Mask the message for the knowledge base, or return None when it is off, empty or failed."""
+    if not knowledge.enabled or not knowledge.has_passages():
+        return None
+    try:
+        return await knowledge.prepare(text, mapping)
+    except SearchUnavailableError as exc:
+        _knowledge_failed(session, conversation, user, exc)
+        return None
+
+
+async def _search_knowledge(
+    session: Session,
+    conversation: Conversation,
+    user: User,
+    knowledge: KnowledgeSearch,
+    query: KnowledgeQuery,
+    question: str,
+    mapping: dict[str, str],
+) -> KnowledgeFound:
+    """Find the knowledge base's passages; when the search cannot run, the turn goes on without."""
+    try:
+        return await knowledge.search(query, question, mapping)
+    except SearchUnavailableError as exc:
+        _knowledge_failed(session, conversation, user, exc)
+        return KnowledgeFound()
+
+
+def _knowledge_failed(
+    session: Session, conversation: Conversation, user: User, exc: SearchUnavailableError
+) -> None:
+    """Record, in a word, why the knowledge base was not searched for this turn."""
+    logger.warning("knowledge base search unavailable (%s); the turn goes on without", exc.reason)
+    audit.log(
+        session,
+        event="knowledge_search_failed",
+        user_id=user.id,
+        conversation_id=conversation.id,
+        detail=f"reason={exc.reason}",
+    )
+
+
 def _search_question(anonymized: str, history: list[dict[str, str]]) -> str:
     """Return what the search looks for: this message, after the employee's previous one.
 
@@ -254,8 +304,13 @@ async def run_turn(
     # and the search's indexing in between made that window seconds long.
     async with vault.conversation_lock(_require_id(conversation)):
         mapping = vault.load_mapping(session, _require_id(conversation))
+        knowledge = KnowledgeSearch(session, settings, policy, anonymizer, client)
+        query = await _prepare_knowledge(session, conversation, user, knowledge, text, mapping)
+        # A name the knowledge base knows and the conversation did not, such as a surname written
+        # alone, is handed to the masking as known, so the message goes out with it masked.
+        known = query.known if query is not None else {}
         try:
-            result = await anonymizer.anonymize(text, mapping)
+            result = await anonymizer.anonymize(text, {**mapping, **known})
         except JudgeError as exc:
             logger.warning("turn blocked: judge unavailable (%s)", exc)
             audit.log(
@@ -280,10 +335,25 @@ async def run_turn(
             session, conversation, user, search, files, question, found
         ):
             yield event
+        learned = KnowledgeFound()
+        if query is not None:
+            learned = await _search_knowledge(
+                session,
+                conversation,
+                user,
+                knowledge,
+                query,
+                _search_question(query.anonymized, history),
+                result.mapping,
+            )
+        # The tokens the knowledge base's passages brought join the turn's mapping: the check
+        # below reads them, the vault keeps them and the answer is restored with them.
+        turn_mapping = {**result.mapping, **learned.mapping}
         replayed = [
             *_attachment_messages(
                 files, settings.attachment_budget_chars, found.texts, result.mapping, expired
             ),
+            *([{"role": "system", "content": learned.text}] if learned.text else []),
             *history,
         ]
         # Earlier turns are replayed from what was sent at the time, and a value that has a token
@@ -292,7 +362,7 @@ async def run_turn(
         # it in the replay and refuses this turn and every later one. The stored text is not
         # rewritten: it is the record of what the provider received, and the preview shows exactly
         # that.
-        replayed = await asyncio.to_thread(_mask_replay, replayed, result.mapping)
+        replayed = await asyncio.to_thread(_mask_replay, replayed, turn_mapping)
         conversation_messages = [*replayed, {"role": "user", "content": result.anonymized}]
         # The last check before anything leaves, and it runs before anything is stored.
         # `content_sent` is plaintext and is replayed as history on every later turn, so a message
@@ -302,7 +372,7 @@ async def run_turn(
         # in which the employee asked to mask a word it happens to contain, such as "company".
         # A system prompt built from anything but code would have to join the check again.
         try:
-            assert_no_raw_values(conversation_messages, result.mapping)
+            assert_no_raw_values(conversation_messages, turn_mapping)
         except LLMError as exc:
             logger.warning("turn refused before sending: %s", exc)
             audit.log(
@@ -315,9 +385,9 @@ async def run_turn(
             yield TurnEvent("error", detail="refused_unmasked")
             return
 
-        entity_types = {token: entity_type_for_token(token) for token in result.mapping}
+        entity_types = {token: entity_type_for_token(token) for token in turn_mapping}
         vault.save_mapping(
-            session, _require_id(conversation), result.mapping, entity_types, policy.vault_ttl_days
+            session, _require_id(conversation), turn_mapping, entity_types, policy.vault_ttl_days
         )
         user_message = Message(
             conversation_id=_require_id(conversation),
@@ -340,7 +410,7 @@ async def run_turn(
     yield TurnEvent("preview", text=result.anonymized, detail=str(user_message.id))
 
     messages = [{"role": "system", "content": system_prompt(user.language)}, *conversation_messages]
-    restorer = StreamRestorer(result.mapping)
+    restorer = StreamRestorer(turn_mapping)
     raw_parts: list[str] = []
     restored_parts: list[str] = []
     try:
@@ -368,7 +438,7 @@ async def run_turn(
             model=settings.llm_model,
             entity_counts=result.entity_counts,
             stage2_hits=result.judge_hits,
-            detail=_sent_detail(policy, settings, result.judge_failed, found, expired)
+            detail=_sent_detail(policy, settings, result.judge_failed, found, learned, expired)
             + " interrupted",
         )
         raise
@@ -397,14 +467,14 @@ async def run_turn(
     restored = "".join(restored_parts)
     # Same reason the guards run in a thread inside the pipeline: the sweep runs them again, over
     # the whole answer, and the event loop still has other people's requests to serve.
-    report = await asyncio.to_thread(anonymizer.sweep, restored, result.mapping)
+    report = await asyncio.to_thread(anonymizer.sweep, restored, turn_mapping)
     session.add(
         Message(
             conversation_id=_require_id(conversation),
             role=MessageRole.ASSISTANT,
             content_original_enc=vault.encrypt(restored),
             content_sent="".join(raw_parts),
-            token_fingerprints=fingerprints.record("".join(raw_parts), result.mapping),
+            token_fingerprints=fingerprints.record("".join(raw_parts), turn_mapping),
         )
     )
     session.commit()
@@ -420,7 +490,7 @@ async def run_turn(
         stage2_hits=result.judge_hits,
         # The backend is recorded because it answers a compliance question the counts cannot:
         # with `remote`, the stage-1 masked text left the network as well as the final prompt.
-        detail=_sent_detail(policy, settings, result.judge_failed, found, expired),
+        detail=_sent_detail(policy, settings, result.judge_failed, found, learned, expired),
     )
     if not report.is_clean:
         audit.log(
@@ -436,10 +506,17 @@ async def run_turn(
 
 
 def _sent_detail(
-    policy: Policy, settings: Settings, judge_failed: bool, found: SearchResult, expired: list[int]
+    policy: Policy,
+    settings: Settings,
+    judge_failed: bool,
+    found: SearchResult,
+    learned: KnowledgeFound,
+    expired: list[int],
 ) -> str:
-    """Describe a sent message for its audit row: the judge, the search and expired tokens."""
+    """Describe a sent message for its audit row: the judge, the searches and expired tokens."""
     detail = _judge_detail(policy, settings, failed=judge_failed) + _search_detail(found)
+    if learned.passages or learned.stale:
+        detail += f" knowledge_passages={learned.passages} knowledge_stale={learned.stale}"
     return detail + (f" expired_tokens={sum(expired)}" if sum(expired) else "")
 
 

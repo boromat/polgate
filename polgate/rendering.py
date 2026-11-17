@@ -116,6 +116,9 @@ FLASH_KEYS = frozenset(
         "files.approved_flash",
         "files.rejected_flash",
         "account.password_changed",
+        "knowledge.published_flash",
+        "knowledge.withdrawn_flash",
+        "knowledge.reindexed_flash",
     }
 )
 

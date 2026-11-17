@@ -294,9 +294,9 @@ def test_a_backfilled_enum_column_reads_back(engine):
         engine,
         "INSERT INTO policy (id, hil_files, judge_enabled, judge_fallback, vault_ttl_days,"
         " enabled_entities, entity_types_known, denylist, allowlist, updated_at,"
-        " well_known_names_known, attachment_retrieval, retrieval_top_k)"
+        " well_known_names_known, attachment_retrieval, retrieval_top_k, knowledge_base)"
         " VALUES (1, 'REVIEW', 1, 'SEND_STAGE1', 30, 'PESEL', '', '', '',"
-        " '2026-11-13 00:00:00', '', 1, 6)",
+        " '2026-11-13 00:00:00', '', 1, 6, 1)",
     )
 
     assert reconcile(engine).added == ["policy.hil_chat"]

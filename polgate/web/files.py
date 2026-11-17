@@ -75,7 +75,7 @@ async def upload(
 ) -> Response:
     """Store an upload, extract its text and anonymize it before it can be attached."""
     conversation = _load_conversation(session, conversation_id, user)
-    payload = await _read_capped(upload_file)
+    payload = await read_capped(upload_file)
     if payload is None:
         return render(
             request, "partials/file_error.html", reason="files.too_large", status_code=413
@@ -89,15 +89,15 @@ async def upload(
             request, "partials/file_error.html", reason="files.unsupported", status_code=400
         )
 
-    stored = _store(payload, suffix)
+    stored = store_upload(payload, suffix)
     try:
         asset, result = await _ingest(session, conversation, user, upload_file, filename, stored)
     except UnsupportedFileError as exc:
-        _discard(stored)
+        discard_upload(stored)
         reason = EXTRACTION_ERRORS.get(str(exc), "files.unsupported")
         return render(request, "partials/file_error.html", reason=reason, status_code=400)
     except JudgeError as exc:
-        _discard(stored)
+        discard_upload(stored)
         logger.warning("upload blocked: judge unavailable (%s)", type(exc).__name__)
         audit.log(
             session,
@@ -112,7 +112,7 @@ async def upload(
     except BaseException:
         # Nothing refers to the bytes until the row is committed. Whatever went wrong, the
         # employee's document goes now, not an hour later with the retention job's orphan sweep.
-        _discard(stored)
+        discard_upload(stored)
         raise
 
     audit.log(
@@ -127,7 +127,7 @@ async def upload(
     return render(request, "partials/file_row.html", file=asset)
 
 
-def _store(payload: bytes, suffix: str) -> Path:
+def store_upload(payload: bytes, suffix: str) -> Path:
     """Write an upload under a random name and return where it went."""
     upload_dir = get_settings().upload_dir
     upload_dir.mkdir(parents=True, exist_ok=True)
@@ -138,7 +138,7 @@ def _store(payload: bytes, suffix: str) -> Path:
     return stored
 
 
-def _discard(stored: Path) -> None:
+def discard_upload(stored: Path) -> None:
     """Delete a stored upload without raising, so a failed clean-up never hides why it was needed.
 
     Windows will not delete a file another thread still has open; the caller has either arranged a
@@ -155,7 +155,7 @@ def _discard_when_done(extraction: asyncio.Task[str], stored: Path) -> None:
     if not extraction.cancelled():
         # Retrieved, so asyncio does not report an exception nobody was waiting for any more.
         extraction.exception()
-    _discard(stored)
+    discard_upload(stored)
 
 
 async def _ingest(
@@ -298,7 +298,7 @@ def reject(
     )
 
 
-async def _read_capped(upload_file: UploadFile) -> bytes | None:
+async def read_capped(upload_file: UploadFile) -> bytes | None:
     """Read an upload in chunks, stopping at the limit.
 
     Reading first and measuring afterwards would let a single request decide how much memory the

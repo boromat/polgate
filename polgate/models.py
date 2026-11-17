@@ -135,6 +135,83 @@ class AttachmentChunk(SQLModel, table=True):
     created_at: datetime = Field(default_factory=utcnow)
 
 
+class KnowledgeStatus(StrEnum):
+    """Where a document of the company knowledge base sits: reviewed and searched, or not yet."""
+
+    INDEXING = "indexing"  # being masked; neither published nor withdrawn until that ends
+    PENDING_REVIEW = "pending_review"  # masked, waiting for an administrator to publish it
+    PUBLISHED = "published"  # embedded and searched in every conversation
+
+
+class KnowledgeDocument(SQLModel, table=True):
+    """A document of the company knowledge base, uploaded once by an administrator.
+
+    Every signed-in employee's turns may draw passages from a published document. It is masked
+    with stable tokens (polanon's pseudonyms) rather than a conversation's numbering, so the same
+    person has the same token in every document; what each token stands for is kept, encrypted,
+    in `KnowledgeToken`. Neither the uploaded bytes nor the extracted text are kept: the masked
+    passages in `KnowledgeChunk` are all a search needs.
+    """
+
+    id: int | None = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="user.id")  # the administrator who uploaded it
+    title: str = ""  # the file name, masked; safe in plaintext
+    title_enc: str = ""  # the name it was uploaded under, encrypted
+    mime_type: str = ""
+    size_bytes: int = 0
+    passages: int = 0
+    status: KnowledgeStatus = KnowledgeStatus.PENDING_REVIEW
+    created_at: datetime = Field(default_factory=utcnow)
+    published_at: datetime | None = None
+
+
+class KnowledgeChunk(SQLModel, table=True):
+    """One masked passage of a knowledge base document, and its embedding under one model.
+
+    The row with an empty `embedding_model` holds the passage as it was masked, before any vector;
+    publishing adds one row per passage for the configured model, and a new model gets rows of its
+    own from those, so vectors of two models are never compared. Text and vector are in plaintext,
+    like `AttachmentChunk`: they hold tokens only.
+    """
+
+    __table_args__ = (UniqueConstraint("document_id", "position", "embedding_model"),)
+
+    id: int | None = Field(default=None, primary_key=True)
+    document_id: int = Field(foreign_key="knowledgedocument.id", index=True)
+    position: int  # order of the passage in the document, from 0
+    text_sent: str  # masked with stable tokens
+    vector: bytes = b""  # float32, unit length; empty on the row of the masked passage
+    embedding_model: str = ""
+    created_at: datetime = Field(default_factory=utcnow)
+
+
+class KnowledgeToken(SQLModel, table=True):
+    """What a stable token of the knowledge base stands for: polanon's `MappingStore`, encrypted.
+
+    Unlike `VaultEntry` it belongs to no conversation and does not expire: it lives as long as a
+    document uses it (`KnowledgeTokenUse`). The value is a person's name in the nominative,
+    anything else as first written; the fingerprint is polanon's keyed one, which tells two
+    values with one token apart and names nothing without the key.
+    """
+
+    id: int | None = Field(default=None, primary_key=True)
+    token: str = Field(index=True, unique=True)
+    entity_type: str
+    value_enc: str  # Fernet-encrypted value
+    fingerprint: str
+    created_at: datetime = Field(default_factory=utcnow)
+
+
+class KnowledgeTokenUse(SQLModel, table=True):
+    """That a document stored a token, so withdrawing the last document that did deletes it."""
+
+    __table_args__ = (UniqueConstraint("document_id", "token"),)
+
+    id: int | None = Field(default=None, primary_key=True)
+    document_id: int = Field(foreign_key="knowledgedocument.id", index=True)
+    token: str = Field(index=True)
+
+
 class PendingTurn(SQLModel, table=True):
     """A message accepted by the send endpoint and waiting for its stream to start.
 
@@ -236,4 +313,7 @@ class Policy(SQLModel, table=True):
     attachment_retrieval: bool = True
     # Passages chosen per file and turn, at most; they also have to fit the attachment budget.
     retrieval_top_k: int = 6
+    # Company knowledge base (polgate/knowledge): every turn may draw passages from the documents
+    # an administrator published. Works only once EMBEDDING_MODEL is set.
+    knowledge_base: bool = True
     updated_at: datetime = Field(default_factory=utcnow)

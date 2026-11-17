@@ -85,6 +85,11 @@
       </label>
     </div>
     <p class="small subtle">{{ t("policy.search_hint") }}</p>
+    <label class="inline spaced">
+      <input type="checkbox" name="knowledge_base" {{ 'checked' if policy.knowledge_base }}>
+      {{ t("policy.knowledge_enabled") }}
+    </label>
+    <p class="small subtle">{{ t("policy.knowledge_hint") }}</p>
   </fieldset>
 
   <fieldset>

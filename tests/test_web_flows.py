@@ -727,13 +727,13 @@ def test_a_file_the_hub_cannot_read_is_never_written(admin_client, monkeypatch):
     from polgate.web import files as files_web
 
     written = []
-    real_store = files_web._store
+    real_store = files_web.store_upload
 
     def recording_store(payload, suffix):
         written.append(suffix)
         return real_store(payload, suffix)
 
-    monkeypatch.setattr(files_web, "_store", recording_store)
+    monkeypatch.setattr(files_web, "store_upload", recording_store)
     conversation_id = _open_conversation(admin_client)
     response = admin_client.post(
         f"/files/upload?conversation_id={conversation_id}",

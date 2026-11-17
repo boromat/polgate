@@ -110,6 +110,13 @@ stawia fragment z odpowiedzią na pierwszym miejscu przy każdym pytaniu.
   pytaniu pasujące fragmenty, a nie tylko swój początek. Potrzebny jest model embeddingów, a dla
   firmy zalecany jest lokalny: z LM Studio albo Ollamą uruchomionymi z bge-m3 na tym samym serwerze
   zamaskowany dokument go nie opuszcza. Wyłączone, dopóki nie ustawisz `EMBEDDING_MODEL`.
+- **Baza wiedzy firmy**: administrator raz wgrywa regulaminy i procedury, o które wszyscy pytają,
+  przegląda je zamaskowane i publikuje, a pytanie każdego pracownika dostaje fragmenty, które na
+  nie odpowiadają. Dokumenty są maskowane tokenami, które są takie same w każdym dokumencie,
+  a wartości są osobno zaszyfrowane. Tura zapisuje fragmenty tokenami tej rozmowy, więc osoba
+  nazwana w czacie i w regulaminie jest dla modelu jednym tokenem. Samo nazwisko, które pada
+  w regulaminie, jest maskowane także w pytaniu. Wymaga `EMBEDDING_MODEL`, tak jak wyszukiwanie
+  w załącznikach.
 - **Stabilne tokeny**: ta sama osoba pozostaje `<OSOBA_1>` tak długo, jak sejf przechowuje
   mapowanie (domyślnie 30 dni), więc model może się do niej odnosić w kolejnych turach rozmowy.
 - **Imiona wracają w dobrym przypadku**: model dopisuje po tokenie przypadek, w jakim stoi osoba,
@@ -264,13 +271,14 @@ odnotowuje obie zmiany.
 | `PENDING_TURN_TTL_MINUTES` | jak długo wiadomość w kolejce czeka na swój strumień |
 | `HISTORY_BUDGET_CHARS`, `ATTACHMENT_BUDGET_CHARS` | ile rozmowy i ile z każdego dołączonego dokumentu trafia ponownie do modelu w każdej turze |
 | `EMBEDDING_MODEL`, `EMBEDDING_BASE_URL`, `EMBEDDING_API_KEY` | model embeddingów do wyszukiwania w długich załącznikach; pusty model wyłącza wyszukiwanie. Najlepiej lokalny endpoint, np. LM Studio pod `http://localhost:1234/v1`. Bez własnego adresu używany jest dostawca czatu z jego kluczem; z własnym adresem klucz czatu nigdy tam nie trafia |
-| `EMBEDDING_BATCH_SIZE`, `RETRIEVAL_CHUNK_CHARS`, `RETRIEVAL_MAX_CHUNKS_PER_FILE` | fragmentów na jedno zapytanie o embeddingi, długość fragmentu i liczba fragmentów indeksowanych z jednego pliku |
+| `EMBEDDING_BATCH_SIZE`, `RETRIEVAL_CHUNK_CHARS`, `RETRIEVAL_MAX_CHUNKS_PER_FILE` | fragmentów na jedno zapytanie o embeddingi, długość fragmentu i liczba fragmentów indeksowanych z jednego pliku albo dokumentu bazy wiedzy |
+| `KNOWLEDGE_BUDGET_CHARS` | ile znaków fragmentów bazy wiedzy trafia do modelu w jednej turze, ze wszystkich opublikowanych dokumentów razem |
 | `SPACY_MODEL`, `DEFAULT_LANGUAGE` | model NER i język interfejsu, który widzi nowy odwiedzający |
 
 Retencję, tryb zatwierdzania, maskowane typy danych, nazwy, które zawsze albo nigdy nie mają być
-maskowane, oraz to, czy długie załączniki są przeszukiwane i ile fragmentów może z nich trafić do
-modelu, ustawia się w panelu administracyjnym, a nie w `.env`, bo to kwestia polityki, a nie
-wdrożenia.
+maskowane, oraz to, czy długie załączniki i baza wiedzy są przeszukiwane i ile fragmentów może
+z nich trafić do modelu, ustawia się w panelu administracyjnym, a nie w `.env`, bo to kwestia
+polityki, a nie wdrożenia.
 
 ## Czym to nie jest
 

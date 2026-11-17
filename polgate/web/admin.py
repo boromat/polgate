@@ -215,6 +215,7 @@ async def update_policy(
     _set("allowlist", str(form.get("allowlist", "")).strip())
     _set("attachment_retrieval", form.get("attachment_retrieval") is not None)
     _set("retrieval_top_k", _top_k(form.get("retrieval_top_k"), policy.retrieval_top_k))
+    _set("knowledge_base", form.get("knowledge_base") is not None)
     policy.updated_at = utcnow()
     if "vault_ttl_days" in changed:
         vault.apply_ttl(session, policy.vault_ttl_days)

@@ -125,6 +125,18 @@ used on its own; this one covers the hub, the library's detection limits include
   `<OSOBA_1>owi` keeps the suffix, and the sentence reads oddly. Neither leaks anything. A cased
   token in a stored answer is fingerprinted and expired as the token it declines, so a number given
   to somebody else is not replayed under the old case either.
+- **The knowledge base's stable tokens.** A knowledge base document is masked with tokens that are
+  the same for the same value everywhere, under a key derived from the vault key. Its passages and
+  the masked questions sent for embedding carry them, so an embeddings endpoint sees the same token
+  for the same person in every employee's question; with a remote endpoint that is linkable, as
+  pseudonymised data is, though it names nobody. The chat provider never sees one: a turn writes
+  passages in the conversation's own tokens. The values are encrypted in `KnowledgeToken` and do
+  not expire with the vault; they go when the last document that uses them is withdrawn.
+- **Knowledge base documents are not judged.** polanon masks a document for an index without the
+  stage-2 judge, so what the rules and the language model miss in a regulation stays in its
+  passages and reaches every conversation that draws on them. The administrator reviews the masked
+  passages before publishing, and the last check before sending still searches each passage for
+  every value the store and the conversation hold.
 - **Images and scans without OCR.** If tesseract is not installed, image uploads are rejected rather than
   silently sent. With OCR enabled, recognition errors become detection gaps.
 - **More of a long attachment goes to the embeddings endpoint.** With the search on, the whole
