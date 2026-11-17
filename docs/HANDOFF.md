@@ -77,7 +77,10 @@ Tests: `tests/test_router.py`, including the no-leak assertion and a token split
 
 ### Step 7: chat UI — done
 Conversation list, message history, SSE streaming, per-message "what the model saw" preview, optional
-approve-before-send flow, per-message extra terms to mask.
+approve-before-send flow, per-message extra terms to mask. Since 0.3.0 (on `main`, see the changelog's
+*Unreleased*): a chat page with no top bar and the account at the sidebar's foot, a drawer on a
+phone, Markdown answers, copying an answer, deleting and pinning a conversation, and a list that
+leaves out empty conversations. The README's screenshots predate this look.
 
 ### Step 8: files — done
 PDF, DOCX, XLSX, CSV, JSON, TXT extraction with a cp1250 fallback, optional OCR, review-and-approve flow,

@@ -9,24 +9,23 @@ All notable changes to this project are recorded here. The format follows
 ### Added
 
 - **The chat is a page with nothing above it**: no top bar, the sidebar carries the name, a new
-  conversation, the recent ones and, at its foot, the account with administration, the account
-  page, the language and sign-out. A new conversation asks "Where shall we start?" with the
-  composer in the middle of the screen, which moves down with the first message. The header is a
-  quiet title and "⋯"; copying and the time show when the pointer is on a message; one line
-  under the composer says that personal data is masked and asks for only what the task needs,
-  rather than inviting names and numbers, since masking is pseudonymisation. On a phone the
-  sidebar slides in from the left. The other pages keep a top bar, with the account as one menu.
-- **A phone shows the conversation, not the controls**: the top bar holds the name and one menu,
-  and the conversation's bar its title, which opens the list of conversations under it, a "+"
-  for a new one, a dot for masking and "⋯" for printing and deleting. The composer's tools are
-  icons there, and the admin's tabs are one line that scrolls sideways.
+  conversation, the pinned and the recent ones and, at its foot, the account with administration,
+  the account page, the language and sign-out. A new conversation asks "Where shall we start?" with
+  the composer in the middle of the screen, which moves down with the first message. The header is
+  a quiet title and "⋯"; copying and the time show when the pointer is on a message. On a phone the
+  sidebar slides in from the left over a shade, the composer's tools are icons and the admin's tabs
+  are one line that scrolls sideways. The other pages keep a top bar, with the account as one menu.
+- **Conversations can be pinned** from their menu or from the pin that shows on a row in the list;
+  pinned ones head the sidebar above the recent ones. Retention still applies to them.
 - **The composer is one box**: the message, and under it in the same frame "Attach a file",
   "Also mask…" with the extra terms in a small pop-up, and the send key. A picked file is
   uploaded at once, without a second "Upload" key.
 - **The policy page reads as a list of decisions**: each setting has its title and one sentence
-  on the left and its controls on the right, the selected entity types are counted, and "Save"
-  stays at the bottom of the screen. Labels are set in the text colour and hints are darker.
-- **"New conversation" opens the empty one the list already has** instead of adding another.
+  on the left and its controls on the right, and "Save" stays at the bottom of the screen. The
+  entity types are five short groups of pills, with a filled mark for a masked type, and the count
+  beside them follows the boxes as they change.
+- **"New conversation" opens the empty one the list already has** instead of adding another, and
+  the list leaves out empty conversations other than the open one.
 - **A conversation can be deleted** from its header, after one more click to confirm: its
   messages, files with their bytes, passages and vault mapping go at once instead of when
   retention gets to them.
@@ -41,12 +40,19 @@ All notable changes to this project are recorded here. The format follows
 - **A look of its own.** The interface borrowed PolCV's white cards, blue accent, soft shadows
   and pill badges, and read like any generated dashboard. It is now set like a document under
   redaction: warm paper or graphite, ink for the main action, hairline rules instead of shadowed
-  cards, square corners, and a status as a dot and a word. The token's black bar is the one
+  cards, tight corners, and a status as a dot and a word. The token's black bar is the one
   strong mark on a page, and the logo is one too. The model's answer reads as text on the page
   rather than a bubble, the headline numbers are one ledger line, a data subject request shows
   its form beside what it found with the erasure set apart, and the composer stays at the bottom
   of a phone's screen. Entity types have names in both languages beside their codes, in
   polanon's order, and the long explanations under forms are one sentence each.
+- **Masking is said once, quietly.** One line under the composer says that personal data is masked
+  and asks for only what the task needs, rather than inviting names and numbers, since masking is
+  pseudonymisation; a phone leaves it out. Only masking switched off gets a badge, a red one, and
+  the line then goes, since it would claim protection that is not there.
+- **Every page has a title of its own** in the browser's tab, and the sign-in page says "Sign in"
+  instead of repeating the name the bar above already shows. On a phone the users table is one
+  block per person instead of a table that scrolls sideways.
 
 ### Fixed
 
@@ -59,8 +65,11 @@ All notable changes to this project are recorded here. The format follows
 - **Smaller things on the pages**: roles are "Administrator" and "Employee", not "admin" and
   "user"; the switch for an account says "Disable" or "Enable" and is not offered on one's own
   account, which the server refuses anyway; the audit log names the user instead of a number;
-  on a narrow screen the conversation list folds away behind one button and the title gets a
-  line of its own.
+  a file's review calls its right column what the model will see, since nothing was sent yet;
+  on a phone the landing page's example puts each label above its own text.
+- **Red buttons sit level with their neighbours.** "Reject" beside "Approve and attach", and the
+  delete key in a conversation's menu, took the top margin and rule of the data request page's
+  danger zone, which shared their class name.
 - **An answer that names a person in another case no longer warns of new data.** With names
   restored declined in 0.3.0, "Szanowny Panie Janie Kowalski" after a message about "Janowi
   Kowalskiemu" showed "the answer holds data your message did not" under nearly every Polish

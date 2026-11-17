@@ -101,7 +101,9 @@ stawia fragment z odpowiedzią na pierwszym miejscu przy każdym pytaniu.
 
 ## Funkcje
 
-- **Czat jak w każdym asystencie**: rozmowy, historia i odpowiedzi przesyłane strumieniowo.
+- **Czat jak w każdym asystencie**: rozmowy, historia i odpowiedzi przesyłane strumieniowo, w
+  Markdownie. Rozmowę można przypiąć, skopiować z niej odpowiedź i usunąć, a strona działa też na
+  telefonie.
 - **„Co zobaczył model”** przy każdej wiadomości, żeby nikt nie musiał ślepo ufać maskowaniu.
 - **Wgrywanie plików**: PDF, DOCX, XLSX, CSV, JSON, TXT, a gdy zainstalowany jest tesseract, także
   obrazy i zeskanowane PDF-y. Pliki mogą wymagać zatwierdzenia, zanim ich zamaskowana treść zostanie

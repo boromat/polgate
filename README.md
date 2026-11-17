@@ -95,7 +95,8 @@ own puts the passage with the answer first for every question.
 
 ## Features
 
-- **Chat like any assistant**, with conversations, history and streamed answers.
+- **Chat like any assistant**, with conversations, history and streamed answers in Markdown. A
+  conversation can be pinned, copied from and deleted, and the page works on a phone.
 - **"What the model saw"** next to every message, so nobody has to trust the masking blindly.
 - **File uploads**: PDF, DOCX, XLSX, CSV, JSON, TXT, and images and scanned PDFs when tesseract is
   installed. Files can require approval before their masked text is attached.
