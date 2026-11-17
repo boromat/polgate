@@ -35,7 +35,7 @@
 
 {% if documents %}
 <div class="table-wrap spaced">
-  <table class="grid">
+  <table class="grid stacked">
     <thead><tr>
       <th>{{ t("knowledge.document") }}</th><th>{{ t("knowledge.status") }}</th>
       <th class="num">{{ t("knowledge.passages") }}</th><th>{{ t("knowledge.added") }}</th>
@@ -44,13 +44,13 @@
       {% for document in documents %}
         <tr>
           <td><a href="/admin/knowledge/{{ document.id }}">{{ titles[document.id] }}</a></td>
-          <td>
+          <td data-label="{{ t('knowledge.status') }}">
             {% if document.status.value == "published" %}<span class="badge shield">{{ t("knowledge.published") }}</span>
             {% elif document.status.value == "indexing" %}<span class="badge">{{ t("knowledge.indexing") }}</span>
             {% else %}<span class="badge warn">{{ t("knowledge.pending") }}</span>{% endif %}
           </td>
-          <td class="num">{{ document.passages }}</td>
-          <td class="muted"><time datetime="{{ document.created_at | iso_utc }}" data-local-time="date">{{ document.created_at.strftime("%Y-%m-%d %H:%M") }}</time></td>
+          <td class="num" data-label="{{ t('knowledge.passages') }}">{{ document.passages }}</td>
+          <td class="muted" data-label="{{ t('knowledge.added') }}"><time datetime="{{ document.created_at | iso_utc }}" data-local-time="date">{{ document.created_at.strftime("%Y-%m-%d %H:%M") }}</time></td>
         </tr>
       {% endfor %}
     </tbody>

@@ -18,11 +18,11 @@
   <form method="post" action="/account/language" class="row">
     <label class="grow">{{ t("admin.language") }}
       <select name="language">
-        <option value="pl" {{ 'selected' if user.language == 'pl' }}>PL</option>
-        <option value="en" {{ 'selected' if user.language == 'en' }}>EN</option>
+        <option value="pl" {{ 'selected' if user.language == 'pl' }}>Polski</option>
+        <option value="en" {{ 'selected' if user.language == 'en' }}>English</option>
       </select>
     </label>
-    <button class="btn secondary small" type="submit">{{ t("account.save_language") }}</button>
+    <button class="btn secondary" type="submit">{{ t("account.save_language") }}</button>
   </form>
 </div>
 

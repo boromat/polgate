@@ -1553,3 +1553,12 @@ def test_the_audit_log_marks_its_times_for_the_reader_s_time_zone(admin_client):
 
     assert 'data-local-time="date">' in page
     assert 'datetime="20' in page
+
+
+def test_the_audit_table_becomes_blocks_on_a_phone_without_empty_columns(admin_client):
+    """Six columns scrolled sideways on a phone; each row is a block and an empty cell is marked."""
+    page = admin_client.get("/admin/audit").text
+
+    assert 'class="grid stacked"' in page
+    assert 'data-label="Użytkownik"' in page
+    assert 'data-label="Wykrycia etapu 2" class="empty"' in page

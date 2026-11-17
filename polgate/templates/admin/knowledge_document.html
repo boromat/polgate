@@ -9,7 +9,8 @@
   {% else %}<span class="badge warn">{{ t("knowledge.pending") }}</span>{% endif %}
 </div>
 {% if error %}<p class="alert error spaced-below">{{ t(error) }}</p>{% endif %}
-<p class="lede">{{ t("knowledge.review_hint") }}</p>
+{# Once published the text has been read; the advice to read it belongs before that. #}
+{% if document.status.value == "pending_review" %}<p class="lede">{{ t("knowledge.review_hint") }}</p>{% endif %}
 
 <div class="card passages spaced-below">
   <pre>{{ document.title | highlight_tokens }}</pre>

@@ -987,7 +987,9 @@ legend + * { clear: both; }
   .stacked tr:last-child { border-bottom: 0; }
   .stacked td { padding: 2px 0; border: 0; }
   .stacked td[data-label]::before { content: attr(data-label); display: inline-block; min-width: 90px; color: var(--faint); font-size: 12px; }
-  .stacked td:last-child { padding-top: 8px; }
+  .stacked td.actions { padding-top: 8px; }
+  .stacked td.num { text-align: left; }
+  .stacked td.empty { display: none; }
   .stacked .row-actions.compact input:not([type="checkbox"]) { max-width: none; flex: 1; }
 }
 

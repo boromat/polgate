@@ -144,6 +144,17 @@ def test_a_published_document_was_embedded_from_masked_passages_only(admin_clien
     assert _events("knowledge_published")
 
 
+def test_the_advice_to_read_before_publishing_goes_once_published(admin_client, embeddings):
+    _upload(admin_client)
+    document = _document()
+    hint = "przeczytaj tekst przed publikacją"
+    assert hint in admin_client.get(f"/admin/knowledge/{document.id}").text
+
+    admin_client.post(f"/admin/knowledge/{document.id}/publish")
+
+    assert hint not in admin_client.get(f"/admin/knowledge/{document.id}").text
+
+
 def test_a_failing_endpoint_keeps_the_document_unpublished(admin_client, monkeypatch):
     from polgate.llm.openai_compat import LLMError
 
