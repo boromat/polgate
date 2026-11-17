@@ -263,8 +263,8 @@ Most severe first; each was confirmed by reading the code, the first by running 
   `polgate/schema.py` backfills an enum column by name and drops an indexed leftover column.
 
 ### Known detection gaps worth an issue each
-All but the last are polanon's and belong in
-[its issue tracker](https://github.com/boromat/polanon/issues); the last is the hub's. Each was
+They are polanon's and belong in
+[its issue tracker](https://github.com/boromat/polanon/issues). Each was
 checked again against polanon 0.3.9. 0.3.3 fixed the PESEL with a typo after its label, the street
 without "ul." or a postcode, the password after "Hasło administratora:", the feminine surname in
 another case and the over-masking of "ZUS" and "Płatnik"; 0.3.6 fixed "ani nowak", a first name
@@ -282,10 +282,10 @@ that is also a word typed in lowercase before a common surname.
   "anna.kowalczyk" after "Login". A fix in polanon would join a known first name, a `.`, `_` or `-`
   and a word that reads as a surname into one person, make the local part of a masked address of
   that shape a known value, and accept five letters in the login rule when a separator is there.
-- A word an employee asks to mask that also occurs in `SYSTEM_PROMPT` ("company", "data") makes the
-  final check refuse every turn of that conversation. It fails closed, so nothing leaks, but the
-  conversation is stuck. Either keep the system prompt out of the check, since it is code, or refuse
-  such a term when it is entered.
+- [x] The hub's own gap, fixed: a word an employee asked to mask that also occurs in
+  `SYSTEM_PROMPT` ("company") made the final check refuse every turn of that conversation. The
+  check now reads what came from people and files and leaves out the system prompt, which is the
+  hub's constant and holds nobody's data.
 
 ### After MVP (separate iterations)
 - In polanon: a GLiNER-PL guard (optional extra) as a second engine, scored with its benchmark.

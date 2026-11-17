@@ -293,16 +293,16 @@ async def run_turn(
         # rewritten: it is the record of what the provider received, and the preview shows exactly
         # that.
         replayed = await asyncio.to_thread(_mask_replay, replayed, result.mapping)
-        messages = [
-            {"role": "system", "content": SYSTEM_PROMPT},
-            *replayed,
-            {"role": "user", "content": result.anonymized},
-        ]
+        conversation_messages = [*replayed, {"role": "user", "content": result.anonymized}]
         # The last check before anything leaves, and it runs before anything is stored.
         # `content_sent` is plaintext and is replayed as history on every later turn, so a message
         # that failed this check and was saved anyway would make every following turn fail it too.
+        # It reads everything that came from people and files. The system prompt is the hub's own
+        # constant and holds nobody's data, and checking it refused every turn of a conversation
+        # in which the employee asked to mask a word it happens to contain, such as "company".
+        # A system prompt built from anything but code would have to join the check again.
         try:
-            assert_no_raw_values(messages, result.mapping)
+            assert_no_raw_values(conversation_messages, result.mapping)
         except LLMError as exc:
             logger.warning("turn refused before sending: %s", exc)
             audit.log(
@@ -339,6 +339,7 @@ async def run_turn(
     # The message id lets the page offer the stored preview for a message it has not reloaded.
     yield TurnEvent("preview", text=result.anonymized, detail=str(user_message.id))
 
+    messages = [{"role": "system", "content": SYSTEM_PROMPT}, *conversation_messages]
     restorer = StreamRestorer(result.mapping)
     raw_parts: list[str] = []
     restored_parts: list[str] = []

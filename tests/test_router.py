@@ -460,6 +460,33 @@ async def test_a_turn_that_would_leak_is_refused_before_anything_is_stored_or_se
     assert "50810112354" not in rows[-1].detail
 
 
+async def test_a_turn_is_sent_when_a_masked_word_also_stands_in_the_system_prompt(turn_setup):
+    """The system prompt is the hub's constant: a word it shares with a masked term is no leak."""
+    from polgate.llm.prompts import SYSTEM_PROMPT
+
+    session, conversation, user, _, policy = turn_setup
+    assert "company" in SYSTEM_PROMPT
+    anonymizer = Anonymizer([RegexGuard(), DenylistGuard(["company"])], enabled=set(ENTITY_TYPES))
+    captured: list[dict] = []
+
+    events = await _collect(
+        session,
+        conversation,
+        user,
+        anonymizer,
+        policy,
+        ["ok"],
+        captured,
+        text="Nazwa projektu to company, proszę o plan.",
+    )
+
+    assert "refused_unmasked" not in [event.detail for event in events if event.type == "error"]
+    system, *rest = captured[0]["messages"]
+    assert system == {"role": "system", "content": SYSTEM_PROMPT}
+    assert_no_raw_values(rest, vault.load_mapping(session, conversation.id))
+    assert "company" not in rest[-1]["content"]
+
+
 async def test_a_refused_turn_does_not_poison_the_next_one(turn_setup, monkeypatch):
     """Had the refused text been saved, it would be replayed as history and refused forever."""
     from polgate.llm import router

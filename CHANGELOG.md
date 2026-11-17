@@ -16,6 +16,13 @@ All notable changes to this project are recorded here. The format follows
   "nr" before its number. The leak evaluation gives the same result with it: 0 of 125 values
   reach the provider.
 
+### Fixed
+
+- **A word the employee asks to mask no longer stops the conversation when the system prompt holds
+  it too.** Asked to mask "company", the hub masked it in the message and then found it in its own
+  system prompt, so the last check refused that turn and every later one. The check reads what
+  came from people and files; the system prompt is the hub's constant and holds nobody's data.
+
 ## [0.2.0] - 2026-11-13
 
 A file longer than the attachment budget is searched for the passages that answer each question,
