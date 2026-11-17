@@ -2,7 +2,7 @@
 {% block content %}
 <div class="auth-wrap">
   <div class="card auth-card">
-    <div class="brand"><span class="brand-logo">{{ icon.shield(17) }}</span> {{ t("app.name") }}</div>
+    <div class="brand"><span class="brand-mark" aria-hidden="true"></span>{{ t("app.name") }}</div>
     <form method="post" action="/login">
       {% if error %}<p class="alert error">{{ t("auth.invalid") }}</p>{% endif %}
       {% if locked %}<p class="alert warn">{{ t("auth.locked") }}</p>{% endif %}

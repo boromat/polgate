@@ -116,6 +116,41 @@ def entity_counts(counts_json: str | None) -> list[tuple[str, int]]:
 
 templates.env.filters["highlight_tokens"] = highlight_tokens
 templates.env.filters["markdown"] = markdown
+
+#: What each entity type is called on the page. Written out so every key appears verbatim in the
+#: source, where the i18n coverage test looks for it; a type a later polanon adds and this map does
+#: not know yet is shown by its code, which the page shows beside the name anyway.
+ENTITY_LABELS = {
+    "PERSON": "entity.person",
+    "ORG": "entity.org",
+    "LOCATION": "entity.location",
+    "PESEL": "entity.pesel",
+    "NIP": "entity.nip",
+    "REGON": "entity.regon",
+    "KRS": "entity.krs",
+    "PL_ID": "entity.pl_id",
+    "PL_PASSPORT": "entity.pl_passport",
+    "DRIVING_LICENCE": "entity.driving_licence",
+    "IBAN": "entity.iban",
+    "CREDIT_CARD": "entity.credit_card",
+    "EMAIL": "entity.email",
+    "LINK": "entity.link",
+    "PHONE": "entity.phone",
+    "POSTAL_CODE": "entity.postal_code",
+    "SECRET": "entity.secret",
+    "IP_ADDRESS": "entity.ip_address",
+    "MAC_ADDRESS": "entity.mac_address",
+    "ADDRESS": "entity.address",
+    "PLATE": "entity.plate",
+    "VIN": "entity.vin",
+    "DATE": "entity.date",
+    "BIRTH_DATE": "entity.birth_date",
+    "TAX_ID": "entity.tax_id",
+    "COMPANY_ID": "entity.company_id",
+    "BANK_ACCOUNT": "entity.bank_account",
+    "OTHER": "entity.other",
+}
+templates.env.globals["entity_labels"] = ENTITY_LABELS
 templates.env.filters["entity_counts"] = entity_counts
 templates.env.filters["original_filename"] = original_filename
 templates.env.filters["iso_utc"] = iso_utc

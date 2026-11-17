@@ -11,35 +11,32 @@
     <a class="link" href="/account">{{ t("account.change") }}</a>
   </p>
 {% endif %}
-<div class="cards">
-  <div class="card stat"><span class="num">{{ user_count }}</span><span class="label">{{ t("admin.users") }}</span></div>
-  <div class="card stat"><span class="num">{{ message_count }}</span><span class="label">{{ t("stats.messages") }}</span></div>
-  <div class="card stat"><span class="num">{{ entity_total }}</span><span class="label">{{ t("stats.entities") }}</span></div>
-  <div class="card stat"><span class="num">{{ stage2_hits }}</span><span class="label">{{ t("stats.stage2") }}</span></div>
+
+<div class="ledger">
+  <div><span class="num">{{ user_count }}</span><span class="label">{{ t("admin.users") }}</span></div>
+  <div><span class="num">{{ message_count }}</span><span class="label">{{ t("stats.messages") }}</span></div>
+  <div><span class="num">{{ entity_total }}</span><span class="label">{{ t("stats.entities") }}</span></div>
+  <div><span class="num">{{ stage2_hits }}</span><span class="label">{{ t("stats.stage2") }}</span></div>
 </div>
 
-<section class="card spaced-below">
-  <div class="card-head">
-    <h3>{{ t("admin.retention") }}</h3>
-    <a class="link" href="/admin/policy">{{ t("admin.policy") }}</a>
-  </div>
+<div class="card-head">
+  <h3>{{ t("stats.by_type") }}</h3>
   <p class="policy-summary">
-    <span class="chip">{{ t("policy.vault_ttl_short", days=policy.vault_ttl_days) if policy.vault_ttl_days else t("policy.forever") }}</span>
-    <span class="chip">{{ t("policy.history_ttl_short", days=policy.history_ttl_days) if policy.history_ttl_days else t("policy.history_forever") }}</span>
+    <span>{{ t("policy.vault_ttl_short", days=policy.vault_ttl_days) if policy.vault_ttl_days else t("policy.forever") }}</span>
+    <span>{{ t("policy.history_ttl_short", days=policy.history_ttl_days) if policy.history_ttl_days else t("policy.history_forever") }}</span>
+    <a class="link" href="/admin/policy">{{ t("admin.policy") }}</a>
   </p>
-</section>
-
-<section class="card">
-<h3>{{ t("stats.by_type") }}</h3>
+</div>
 {% if entity_counts %}
-  <div class="table-wrap flush">
+  <div class="table-wrap">
     <table class="grid">
-      <thead><tr><th>{{ t("stats.entity_type") }}</th><th>{{ t("stats.count") }}</th><th class="barcell"></th></tr></thead>
+      <thead><tr><th>{{ t("stats.entity_type") }}</th><th class="num">{{ t("stats.count") }}</th><th class="barcell"></th></tr></thead>
       <tbody>
         {% for name, count in entity_counts %}
           <tr>
-            <td><span class="token">{{ name }}</span></td>
-            <td>{{ count }}</td>
+            {% set label = t(entity_labels[name]) if name in entity_labels else name %}
+            <td>{{ label }}{% if label != name %} <span class="code">{{ name }}</span>{% endif %}</td>
+            <td class="num">{{ count }}</td>
             <td class="barcell">
               {# The width is data, so it travels as data and /static/app.js applies it. #}
               <span class="bar" data-width="{{ (count / entity_counts[0][1] * 100) | round(1) }}"></span>
@@ -50,7 +47,6 @@
     </table>
   </div>
 {% else %}
-  <p class="muted small">{{ t("stats.empty") }}</p>
+  <p class="muted">{{ t("stats.empty") }}</p>
 {% endif %}
-</section>
 {% endblock %}

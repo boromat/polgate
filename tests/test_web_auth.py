@@ -17,11 +17,11 @@ def _add_user(username: str, password: str, role: Role = Role.USER) -> None:
 def test_landing_page_renders_for_anonymous_visitors(app_client):
     response = app_client.get("/")
     assert response.status_code == 200
-    assert "Bezpieczny hub AI" in response.text
+    assert "nie widzi danych osobowych" in response.text
 
 
 def test_landing_page_can_switch_to_english(app_client):
-    assert "A safe AI hub" in app_client.get("/?lang=en").text
+    assert "never sees personal data" in app_client.get("/?lang=en").text
 
 
 def test_chat_redirects_anonymous_visitors_to_login(app_client):

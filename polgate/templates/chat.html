@@ -4,7 +4,7 @@
 <div class="chat-layout">
   <aside class="sidebar">
     <form method="post" action="/chat/new">
-      <button class="btn block" type="submit">{{ icon.plus() }} {{ t("chat.new") }}</button>
+      <button class="btn secondary block" type="submit">{{ icon.plus(14) }} {{ t("chat.new") }}</button>
     </form>
     <nav aria-label="{{ t('a11y.conversations') }}">
       <ul class="conversations">
@@ -28,13 +28,9 @@
           <a class="link no-print" href="#" data-print>{{ t("chat.print") }}</a>
         {% endif %}
         {% if masking_off %}
-          <span class="badge error" title="{{ t('chat.unprotected_hint') }}">
-            {{ icon.shield(13) }} {{ t("chat.unprotected") }}
-          </span>
+          <span class="badge error" title="{{ t('chat.unprotected_hint') }}">{{ t("chat.unprotected") }}</span>
         {% else %}
-          <span class="badge shield" title="{{ t('chat.protected_hint') }}">
-            {{ icon.shield(13) }} {{ t("chat.protected") }}
-          </span>
+          <span class="badge shield" title="{{ t('chat.protected_hint') }}">{{ t("chat.protected") }}</span>
         {% endif %}
       </div>
     </header>
@@ -44,9 +40,8 @@
     <div id="messages">
       {% if not messages %}
         <div class="empty-state">
-          {{ icon.shield(40) }}
           <h3>{{ t("chat.empty_title") }}</h3>
-          <p class="small">{{ t("chat.empty_body") }}</p>
+          <p>{{ t("chat.empty_body") }}</p>
         </div>
       {% endif %}
       {% for m in messages %}
@@ -61,7 +56,7 @@
             <time datetime="{{ m.created_at | iso_utc }}" data-local-time>{{ m.created_at.strftime("%H:%M") }}</time>
             {% if m.role == "user" %}
               {% if m.entity_count %}
-                <span class="badge shield" title="{{ t('chat.masked_hint') }}">{{ icon.shield(11) }} {{ m.entity_count }}</span>
+                <span class="badge shield" title="{{ t('chat.masked_hint') }}">{{ t("chat.masked_count", count=m.entity_count) }}</span>
               {% else %}
                 <span class="badge" title="{{ t('chat.nothing_masked_hint') }}">{{ t("chat.nothing_masked") }}</span>
               {% endif %}

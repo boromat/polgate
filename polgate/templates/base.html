@@ -21,7 +21,7 @@
 <body>
 <a class="skip-link" href="#main">{{ t("a11y.skip") }}</a>
 <header class="topbar">
-  <a class="brand" href="/"><span class="brand-logo">{{ icon.shield(15) }}</span> {{ t("app.name") }}</a>
+  <a class="brand" href="/"><span class="brand-mark" aria-hidden="true"></span>{{ t("app.name") }}</a>
   <nav class="topnav">
     {% if user %}
       <a class="navlink {{ 'active' if request.url.path.startswith('/chat') }}" href="/chat"

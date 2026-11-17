@@ -3,7 +3,6 @@
 {% include "admin/_subnav.html" %}
 {% if flash %}<p class="alert ok spaced-below">{{ t(flash) }}</p>{% endif %}
 {% if error %}<p class="alert error spaced-below">{{ t(error) }}</p>{% endif %}
-<p class="small subtle spaced-below">{{ t("knowledge.intro") }}</p>
 {% if masking_off %}
   <p class="alert error spaced-below">{{ t("admin.masking_off") }}</p>
 {% endif %}
@@ -21,43 +20,42 @@
   </div>
 {% endif %}
 
-<div class="card narrow spaced-below">
-  <h3>{{ t("knowledge.add") }}</h3>
-  <form method="post" action="/admin/knowledge" enctype="multipart/form-data" class="stack">
-    <label class="file-picker">
-      {{ icon.paperclip(14) }} <span>{{ t("files.choose") }}</span>
-      <input type="file" name="file" required data-names>
-    </label>
-    <span class="small subtle" data-name></span>
-    <p class="small subtle">{{ t("knowledge.add_hint") }}</p>
-    <button class="btn" type="submit">{{ t("knowledge.upload") }}</button>
-  </form>
-</div>
+<p class="lede">{{ t("knowledge.intro") }}</p>
+
+<form method="post" action="/admin/knowledge" enctype="multipart/form-data" class="row spaced-below">
+  <label class="picker-field grow">
+    {{ icon.paperclip(14) }}
+    <span data-name>{{ t("files.choose") }}</span>
+    <input type="file" name="file" required data-names>
+  </label>
+  <button class="btn" type="submit">{{ t("knowledge.upload") }}</button>
+</form>
+<p class="hint spaced-below">{{ t("knowledge.add_hint") }}</p>
 
 {% if documents %}
-<div class="table-wrap">
+<div class="table-wrap spaced">
   <table class="grid">
     <thead><tr>
       <th>{{ t("knowledge.document") }}</th><th>{{ t("knowledge.status") }}</th>
-      <th>{{ t("knowledge.passages") }}</th><th>{{ t("knowledge.added") }}</th>
+      <th class="num">{{ t("knowledge.passages") }}</th><th>{{ t("knowledge.added") }}</th>
     </tr></thead>
     <tbody>
       {% for document in documents %}
         <tr>
-          <td><a class="link" href="/admin/knowledge/{{ document.id }}">{{ titles[document.id] }}</a></td>
+          <td><a href="/admin/knowledge/{{ document.id }}">{{ titles[document.id] }}</a></td>
           <td>
             {% if document.status.value == "published" %}<span class="badge shield">{{ t("knowledge.published") }}</span>
             {% elif document.status.value == "indexing" %}<span class="badge">{{ t("knowledge.indexing") }}</span>
-            {% else %}<span class="badge">{{ t("knowledge.pending") }}</span>{% endif %}
+            {% else %}<span class="badge warn">{{ t("knowledge.pending") }}</span>{% endif %}
           </td>
-          <td>{{ document.passages }}</td>
-          <td><time datetime="{{ document.created_at | iso_utc }}" data-local-time>{{ document.created_at.strftime("%Y-%m-%d %H:%M") }}</time></td>
+          <td class="num">{{ document.passages }}</td>
+          <td class="muted"><time datetime="{{ document.created_at | iso_utc }}">{{ document.created_at.strftime("%Y-%m-%d %H:%M") }}</time></td>
         </tr>
       {% endfor %}
     </tbody>
   </table>
 </div>
 {% else %}
-  <p class="muted">{{ t("knowledge.empty") }}</p>
+  <p class="muted spaced">{{ t("knowledge.empty") }}</p>
 {% endif %}
 {% endblock %}

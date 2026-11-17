@@ -2,16 +2,16 @@
 {% block content %}
 {% include "admin/_subnav.html" %}
 <p class="policy-summary">
-  <span class="chip">{{ t("policy.hil_chat") }}: {{ t("policy.manual") if policy.hil_chat.value == "review" else t("policy.auto") }}</span>
-  <span class="chip">{{ t("policy.hil_files") }}: {{ t("policy.manual") if policy.hil_files.value == "review" else t("policy.auto") }}</span>
-  <span class="chip">{{ t("policy.judge") }}: {{ t("admin.yes") if policy.judge_enabled else t("admin.no") }}</span>
-  <span class="chip">{{ t("policy.entities") }}: {{ selected | length }}</span>
-  <span class="chip">{{ t("policy.vault_ttl_short", days=policy.vault_ttl_days) if policy.vault_ttl_days else t("policy.forever") }}</span>
+  <span>{{ t("policy.hil_chat") }}: <strong>{{ t("policy.manual") if policy.hil_chat.value == "review" else t("policy.auto") }}</strong></span>
+  <span>{{ t("policy.hil_files") }}: <strong>{{ t("policy.manual") if policy.hil_files.value == "review" else t("policy.auto") }}</strong></span>
+  <span>{{ t("policy.judge") }}: <strong>{{ t("admin.yes") if policy.judge_enabled else t("admin.no") }}</strong></span>
+  <span>{{ t("policy.entities") }}: <strong>{{ selected | length }}</strong></span>
+  <span>{{ t("policy.vault_ttl_short", days=policy.vault_ttl_days) if policy.vault_ttl_days else t("policy.forever") }}</span>
 </p>
 {% if masking_off %}
   <p class="alert error spaced-below">{{ t("admin.masking_off") }}</p>
 {% endif %}
-<form class="card wide" method="post" action="/admin/policy">
+<form class="wide" method="post" action="/admin/policy">
   <fieldset>
     <legend>{{ t("policy.review") }}</legend>
     <div class="row">
@@ -32,16 +32,18 @@
 
   <fieldset>
     <legend>{{ t("policy.judge") }}</legend>
-    <label class="inline">
-      <input type="checkbox" name="judge_enabled" {{ 'checked' if policy.judge_enabled }}>
-      {{ t("policy.judge_enabled") }}
-    </label>
-    <label class="spaced">{{ t("policy.judge_fallback") }}
-      <select name="judge_fallback">
-        <option value="send_stage1" {{ 'selected' if policy.judge_fallback.value == 'send_stage1' }}>{{ t("policy.fallback_send") }}</option>
-        <option value="block" {{ 'selected' if policy.judge_fallback.value == 'block' }}>{{ t("policy.fallback_block") }}</option>
-      </select>
-    </label>
+    <div class="row">
+      <label class="inline grow">
+        <input type="checkbox" name="judge_enabled" {{ 'checked' if policy.judge_enabled }}>
+        {{ t("policy.judge_enabled") }}
+      </label>
+      <label class="grow">{{ t("policy.judge_fallback") }}
+        <select name="judge_fallback">
+          <option value="send_stage1" {{ 'selected' if policy.judge_fallback.value == 'send_stage1' }}>{{ t("policy.fallback_send") }}</option>
+          <option value="block" {{ 'selected' if policy.judge_fallback.value == 'block' }}>{{ t("policy.fallback_block") }}</option>
+        </select>
+      </label>
+    </div>
   </fieldset>
 
   <fieldset>
@@ -54,20 +56,20 @@
         <input name="history_ttl_days" type="number" min="1" value="{{ policy.history_ttl_days or '' }}">
       </label>
     </div>
-    <p class="small subtle">{{ t("policy.retention_hint") }}</p>
+    <p class="hint">{{ t("policy.retention_hint") }}</p>
   </fieldset>
 
   <fieldset>
     <legend>{{ t("policy.entities") }}</legend>
-    <p class="small subtle">{{ t("policy.entities_hint") }}</p>
     <div class="checks">
       {% for e in all_entities %}
-        <label class="inline">
+        <label class="inline" title="{{ e }}">
           <input type="checkbox" name="entities" value="{{ e }}" {{ 'checked' if e in selected }}>
-          <span class="token">{{ e }}</span>
+          {{ t(entity_labels[e]) if e in entity_labels else e }}
         </label>
       {% endfor %}
     </div>
+    <p class="hint">{{ t("policy.entities_hint") }}</p>
   </fieldset>
 
   <fieldset>
@@ -76,20 +78,21 @@
       <p class="alert warn spaced-below">{{ t("policy.search_unconfigured") }}</p>
     {% endif %}
     <div class="row">
-      <label class="inline grow">
-        <input type="checkbox" name="attachment_retrieval" {{ 'checked' if policy.attachment_retrieval }}>
-        {{ t("policy.search_enabled") }}
-      </label>
+      <div class="grow stack">
+        <label class="inline">
+          <input type="checkbox" name="attachment_retrieval" {{ 'checked' if policy.attachment_retrieval }}>
+          {{ t("policy.search_enabled") }}
+        </label>
+        <label class="inline">
+          <input type="checkbox" name="knowledge_base" {{ 'checked' if policy.knowledge_base }}>
+          {{ t("policy.knowledge_enabled") }}
+        </label>
+      </div>
       <label class="grow">{{ t("policy.search_top_k") }}
         <input name="retrieval_top_k" type="number" min="1" max="{{ top_k_max }}" value="{{ policy.retrieval_top_k }}">
       </label>
     </div>
-    <p class="small subtle">{{ t("policy.search_hint") }}</p>
-    <label class="inline spaced">
-      <input type="checkbox" name="knowledge_base" {{ 'checked' if policy.knowledge_base }}>
-      {{ t("policy.knowledge_enabled") }}
-    </label>
-    <p class="small subtle">{{ t("policy.knowledge_hint") }}</p>
+    <p class="hint">{{ t("policy.search_hint") }}</p>
   </fieldset>
 
   <fieldset>
@@ -99,16 +102,16 @@
         <label>{{ t("policy.denylist") }}
           <textarea name="denylist" rows="8" placeholder="ACME Sp. z o.o.">{{ policy.denylist }}</textarea>
         </label>
-        <p class="small subtle">{{ t("policy.denylist_hint") }}</p>
+        <p class="hint">{{ t("policy.denylist_hint") }}</p>
       </div>
       <div class="grow">
         <label>{{ t("policy.allowlist") }}
           <textarea name="allowlist" rows="8" placeholder="Facebook">{{ policy.allowlist }}</textarea>
         </label>
-        <p class="small subtle">{{ t("policy.allowlist_hint") }}</p>
+        <p class="hint">{{ t("policy.allowlist_hint") }}</p>
       </div>
     </div>
   </fieldset>
-  <button class="btn spaced" type="submit">{{ t("policy.save") }}</button>
+  <button class="btn" type="submit">{{ t("policy.save") }}</button>
 </form>
 {% endblock %}

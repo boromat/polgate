@@ -12,6 +12,18 @@ All notable changes to this project are recorded here. The format follows
   are rendered instead of shown with their asterisks. Raw HTML in an answer is escaped, and
   pictures are not rendered, since one could carry a restored value to the server it loads from.
 
+### Changed
+
+- **A look of its own.** The interface borrowed PolCV's white cards, blue accent, soft shadows
+  and pill badges, and read like any generated dashboard. It is now set like a document under
+  redaction: warm paper or graphite, ink for the main action, hairline rules instead of shadowed
+  cards, square corners, and a status as a dot and a word. The token's black bar is the one
+  strong mark on a page, and the logo is one too. The model's answer reads as text on the page
+  rather than a bubble, the headline numbers are one ledger line, a data subject request shows
+  its form beside what it found with the erasure set apart, and the composer stays at the bottom
+  of a phone's screen. Entity types have names in both languages beside their codes, in
+  polanon's order, and the long explanations under forms are one sentence each.
+
 ### Fixed
 
 - **An answer that names a person in another case no longer warns of new data.** With names

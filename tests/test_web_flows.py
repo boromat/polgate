@@ -674,7 +674,7 @@ def test_the_audit_page_shows_entity_counts_as_labels(admin_client, monkeypatch)
     admin_client.get(f"/chat/{conversation_id}/stream", headers=STREAM)
 
     page = admin_client.get("/admin/audit?event=message_sent").text
-    assert '<span class="token">PESEL</span> 1' in page
+    assert '<span class="code">PESEL</span> 1' in page
     assert "{&#34;PESEL&#34;" not in page
     assert '{"PESEL"' not in page
 

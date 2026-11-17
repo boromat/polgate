@@ -174,7 +174,8 @@ def policy_form(
         request,
         "admin/policy.html",
         policy=policy,
-        all_entities=sorted(ENTITY_TYPES),
+        # polanon's own order, people and companies first, reads better than the codes sorted.
+        all_entities=list(ENTITY_TYPES),
         # An empty policy split on commas gives one empty name, and the summary counted it.
         selected={e.strip() for e in policy.enabled_entities.split(",") if e.strip()},
         masking_off=masking_is_off(policy),

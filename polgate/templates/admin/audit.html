@@ -17,11 +17,11 @@
       {% for r in rows %}
         <tr>
           <td class="mono">{{ r.created_at.strftime("%Y-%m-%d %H:%M") }}</td>
-          <td><span class="badge">{{ r.event }}</span></td>
+          <td class="mono">{{ r.event }}</td>
           <td>{{ r.user_id or "-" }}</td>
           <td>
             {% for name, count in r.entity_counts_json | entity_counts %}
-              <span class="entity-count"><span class="token">{{ name }}</span> {{ count }}</span>
+              <span class="entity-count" title="{{ t(entity_labels[name]) if name in entity_labels else name }}"><span class="code">{{ name }}</span> {{ count }}</span>
             {% else %}-{% endfor %}
           </td>
           <td>{{ r.stage2_hits or "-" }}</td>
