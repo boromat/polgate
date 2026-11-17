@@ -17,6 +17,7 @@ import httpx
 from polanon import Anonymizer, StreamRestorer, mask_known_values
 from polanon.judge.base import JudgeError
 from polanon.policy import TOKEN_PATTERN, entity_type_for_token
+from polanon.stream_restore import restored as restore_text
 from sqlmodel import Session, col, select
 
 from polgate import audit
@@ -36,6 +37,7 @@ from polgate.models import (
     utcnow,
 )
 from polgate.retrieval.search import AttachmentSearch, SearchResult, SearchUnavailableError
+from polgate.tokens import WRITTEN_TOKEN_RE, base_token
 from polgate.vault import fingerprints
 from polgate.vault import store as vault
 
@@ -265,11 +267,45 @@ def _title_from(anonymized: str, limit: int = 44) -> str:
     # Tokens are replaced with a separator first: TOKEN_PATTERN has capture groups, and re.split
     # would return their contents as fragments of their own.
     parts = _TOKEN_RE.sub("\x00", anonymized).split("\x00")
-    fragments = [" ".join(part.split()).strip(" ,.;:-") for part in parts]
+    fragments = [_trimmed(" ".join(part.split())) for part in parts]
     best = max(fragments, key=lambda part: len(part.split()), default="")
     if not best:
         return utcnow().strftime("%Y-%m-%d %H:%M")
     return best if len(best) <= limit else best[:limit].rsplit(" ", 1)[0] + "…"
+
+
+#: Opening brackets and quotes a title may start with, and what closes each.
+_CLOSERS = {"(": ")", "[": "]", "„": "”", "«": "»", '"': '"'}
+
+
+def _trimmed(fragment: str) -> str:
+    """Trim what a token left at a fragment's edges: "(PESEL <PESEL_1>), że" gave "), że".
+
+    Anything but a letter or a digit goes from the start, except an opening bracket or quote the
+    fragment closes; separators and a bracket nothing in the fragment opened go from the end.
+    """
+    start = 0
+    while start < len(fragment) and not fragment[start].isalnum():
+        closer = _CLOSERS.get(fragment[start])
+        if closer is not None and closer in fragment[start + 1 :]:
+            break
+        start += 1
+    text = fragment[start:].rstrip(" ,.;:-(")
+    while text.endswith(")") and text.count(")") > text.count("("):
+        text = text[:-1].rstrip(" ,.;:-(")
+    return text
+
+
+def _for_sweep(answer: str, mapping: dict[str, str]) -> str:
+    """Restore an answer for the output sweep with every name in the form the mapping holds.
+
+    A token with a case comes back declined, "Janie Kowalski" for "Janowi Kowalskiemu", and
+    polanon's sweep, which knows a known name with Polish endings glued on but not one whose stem
+    changes, reported every such answer as holding a person the message never named. Restored
+    without the cases, the answer holds the same tokens and nothing the sweep has to guess about.
+    """
+    plain = WRITTEN_TOKEN_RE.sub(base_token, answer)
+    return restore_text(plain, mapping)
 
 
 async def run_turn(
@@ -467,7 +503,9 @@ async def run_turn(
     restored = "".join(restored_parts)
     # Same reason the guards run in a thread inside the pipeline: the sweep runs them again, over
     # the whole answer, and the event loop still has other people's requests to serve.
-    report = await asyncio.to_thread(anonymizer.sweep, restored, turn_mapping)
+    report = await asyncio.to_thread(
+        anonymizer.sweep, _for_sweep("".join(raw_parts), turn_mapping), turn_mapping
+    )
     session.add(
         Message(
             conversation_id=_require_id(conversation),

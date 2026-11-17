@@ -235,6 +235,22 @@ class TestConversationTitles:
         masked = "<OSOBA_1>, PESEL <PESEL_1>, <ADRES_1>. Proszę o przygotowanie umowy najmu."
         assert _title_from(masked) == "Proszę o przygotowanie umowy najmu"
 
+    @pytest.mark.parametrize(
+        ("masked", "title"),
+        [
+            (
+                "Odpisz <OSOBA_1> (PESEL <PESEL_1>), że wniosek jest przyjęty.",
+                "że wniosek jest przyjęty",
+            ),
+            ("<OSOBA_1>: „pilne” - umowa (aneks nr 2)", "„pilne” - umowa (aneks nr 2)"),
+        ],
+    )
+    def test_a_title_starts_with_a_word_and_leaves_no_bracket_unopened(self, masked, title):
+        """A token cut out of "(PESEL <PESEL_1>), że" left the title opening with "), że"."""
+        from polgate.llm.router import _title_from
+
+        assert _title_from(masked) == title
+
     def test_a_message_that_is_only_tokens_falls_back_to_a_timestamp(self):
         from polgate.llm.router import _title_from
 
@@ -513,6 +529,10 @@ async def test_a_name_comes_back_in_the_case_the_model_asks_for(turn_setup):
     assert json.loads(answer.token_fingerprints) == {
         "<OSOBA_1>": vault.value_hash("Janowi Kowalskiemu")
     }
+    # The declined name is the person the message named, not one the model made up.
+    assert events[-1].type == "done"
+    assert events[-1].detail == ""
+    assert not session.exec(select(AuditEvent).where(AuditEvent.event == "output_sweep_hit")).all()
 
 
 @pytest.mark.parametrize("language", ["pl", "en"])

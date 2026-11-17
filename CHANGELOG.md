@@ -6,6 +6,15 @@ All notable changes to this project are recorded here. The format follows
 
 ## [Unreleased]
 
+### Fixed
+
+- **An answer that names a person in another case no longer warns of new data.** With names
+  restored declined in 0.3.0, "Szanowny Panie Janie Kowalski" after a message about "Janowi
+  Kowalskiemu" showed "the answer holds data your message did not" under nearly every Polish
+  answer. The output sweep reads the answer with each name in the form the conversation stored.
+- **A conversation's title starts with a word**: a message such as "Odpisz Janowi Kowalskiemu
+  (PESEL …), że…" was titled "), że…" once its tokens were cut out.
+
 ## [0.3.0] - 2026-11-17
 
 A company knowledge base: an administrator publishes the documents everybody asks about once, and
