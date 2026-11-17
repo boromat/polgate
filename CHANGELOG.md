@@ -59,8 +59,9 @@ All notable changes to this project are recorded here. The format follows
   of a phone's screen. Entity types have names in both languages beside their codes, in
   polanon's order, and the long explanations under forms are one sentence each.
 - **Masking is said once, quietly.** One line under the composer says that personal data is masked
-  and asks for only what the task needs, rather than inviting names and numbers, since masking is
-  pseudonymisation; a phone leaves it out. Only masking switched off gets a badge, a red one, and
+  before it reaches the model, and nothing more: no invitation to write names and numbers, since
+  masking is pseudonymisation, and no rule about what to write; a phone shows it over an empty
+  conversation. Only masking switched off gets a badge, a red one, and
   the line then goes, since it would claim protection that is not there.
 - **Every page has a title of its own** in the browser's tab, and the sign-in page says "Sign in"
   instead of repeating the name the bar above already shows. On a phone the users table is one

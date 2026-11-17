@@ -59,7 +59,7 @@
   "auth.password": "Password",
   "auth.username": "Username",
   "chat.actions": "More",
-  "chat.caption": "Personal data is masked before it reaches the model. Share only what the task needs.",
+  "chat.caption": "Personal data is masked before it reaches the model.",
   "chat.copied": "Copied",
   "chat.copy": "Copy",
   "chat.delete": "Delete conversation",

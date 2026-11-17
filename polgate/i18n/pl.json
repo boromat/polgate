@@ -59,7 +59,7 @@
   "auth.password": "Hasło",
   "auth.username": "Nazwa użytkownika",
   "chat.actions": "Więcej",
-  "chat.caption": "Dane osobowe są maskowane przed wysłaniem do modelu. Podawaj tylko te, które są potrzebne.",
+  "chat.caption": "Dane osobowe są maskowane przed wysłaniem do modelu.",
   "chat.copied": "Skopiowano",
   "chat.copy": "Kopiuj",
   "chat.delete": "Usuń rozmowę",
