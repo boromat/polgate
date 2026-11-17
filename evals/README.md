@@ -90,6 +90,10 @@ With the search in attachments, on 13 November 2026 with polanon 0.3.3, the numb
 answers restored exactly. The check covered 15 requests to the embeddings endpoint with 28 texts,
 passages of the four attachments and the questions about them, as well as the chat.
 
+On 17 November 2026 with polanon 0.3.9, which the hub now requires, the result is unchanged: 0 of
+125 values leaked, 0 phrases masked anyway, no turn refused, 60 of 60 answers restored exactly and
+2 values masked off the list.
+
 Having found no leak in conversations its author wrote says little about conversations nobody has
 written yet. Each new miss belongs in `conversations.json`, and in `known_gaps.json` until polanon
 fixes it.

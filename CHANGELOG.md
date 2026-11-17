@@ -6,6 +6,16 @@ All notable changes to this project are recorded here. The format follows
 
 ## [Unreleased]
 
+### Changed
+
+- **polanon 0.3.9 or later is required.** It masks driving licence numbers after their label, as
+  the new type `DRIVING_LICENCE`, which the admin panel lists and an existing policy switches on
+  by itself; knows 630 more first names from the PESEL register without the language model; masks
+  "ani nowak" typed in lowercase before a common surname, an e-mail address with letters from
+  outside Polish, a NIP, ID card or card number with a typo after its label, and a street with
+  "nr" before its number. The leak evaluation gives the same result with it: 0 of 125 values
+  reach the provider.
+
 ## [0.2.0] - 2026-11-13
 
 A file longer than the attachment budget is searched for the passages that answer each question,

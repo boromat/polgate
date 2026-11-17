@@ -2,7 +2,7 @@
 
 Status: steps 1-12 are done and tested. The masking engine that steps 3-5 and 12 built lived here as
 `piianon/` and is now a library of its own, [polanon](https://github.com/boromat/polanon), which the
-hub installs from PyPI, now at 0.3.3 or later. Version 0.1.0 was released on 2026-11-03: the
+hub installs from PyPI, now at 0.3.9 or later. Version 0.1.0 was released on 2026-11-03: the
 repository is public and the image is on GitHub Container Registry. Version 0.2.0, dated
 2026-11-13, adds the search in long attachments, `start.bat` to run the hub on Windows and a leak
 evaluation that measures what reaches the provider, requires polanon 0.3.3, which fixed every leak
@@ -265,15 +265,23 @@ Most severe first; each was confirmed by reading the code, the first by running 
 ### Known detection gaps worth an issue each
 All but the last are polanon's and belong in
 [its issue tracker](https://github.com/boromat/polanon/issues); the last is the hub's. Each was
-checked again against polanon 0.3.3, which fixed the PESEL with a typo after its label, the street
+checked again against polanon 0.3.9. 0.3.3 fixed the PESEL with a typo after its label, the street
 without "ul." or a postcode, the password after "Hasło administratora:", the feminine surname in
-another case and the over-masking of "ZUS" and "Płatnik".
-- The login part of an e-mail address on its own: after "jan.nowak@example.com" is masked, "jan.nowak"
-  later in the text comes out as "<OSOBA_1>.nowak" without the language model, so the surname
-  leaves. With `pl_core_news_md` loaded the whole login is masked.
-- A first name that is also a common word, in lowercase, before a surname that does not decline:
-  "ani nowak" is not masked, while "Ani Nowak" and "jana kowalskiego" are. The rule has nothing to
-  hold on to; the language model is the intended net, and it leans on capitals.
+another case and the over-masking of "ZUS" and "Płatnik"; 0.3.6 fixed "ani nowak", a first name
+that is also a word typed in lowercase before a common surname.
+- The login part of an e-mail address, `first.last`: "jan.nowak" comes out as "<OSOBA_1>.nowak"
+  without the language model, and "anna.kowalczyk" as "<OSOBA_1>.kowalczyk" with it too, whether
+  or not "anna.kowalczyk@example.com" was masked earlier in the text. The surname leaves next to
+  the token, and the hub's last check cannot see it, since only "anna" and the whole address are
+  in the mapping. Four mechanisms each miss for a reason of their own: `PersonNameGuard` finds the
+  lowercase first name but ends it at the dot, where it joins a surname across a space, a comma,
+  a semicolon, a pipe or a line break; a masked e-mail address gives its local part to no known
+  value, as a full name gives its surname; the login rule of 0.3.6 ("tmalinowski",
+  "t.malinowski") needs the surname in the mapping already from a full name, and six letters at
+  least, so "nowak" never qualifies; and spaCy takes "jan.nowak" whole in one sentence and not
+  "anna.kowalczyk" after "Login". A fix in polanon would join a known first name, a `.`, `_` or `-`
+  and a word that reads as a surname into one person, make the local part of a masked address of
+  that shape a known value, and accept five letters in the login rule when a separator is there.
 - A word an employee asks to mask that also occurs in `SYSTEM_PROMPT` ("company", "data") makes the
   final check refuse every turn of that conversation. It fails closed, so nothing leaks, but the
   conversation is stuck. Either keep the system prompt out of the check, since it is code, or refuse
