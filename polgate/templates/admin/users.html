@@ -2,6 +2,8 @@
 {% block title %}{{ t("admin.users") }} · {{ t("app.name") }}{% endblock %}
 {% block content %}
 {% include "admin/_subnav.html" %}
+{% if flash %}<p class="alert ok spaced-below">{{ t(flash) }}</p>{% endif %}
+{% if error and error_for == "reset" %}<p class="alert error spaced-below">{{ t(error) }}</p>{% endif %}
 <div class="table-wrap">
   <table class="grid stacked">
     <thead><tr>
@@ -45,17 +47,18 @@
 
 <div class="card narrow spaced">
   <h3>{{ t("admin.new_user") }}</h3>
+  {% if error and error_for == "create" %}<p class="alert error">{{ t(error) }}</p>{% endif %}
   <form method="post" action="/admin/users" class="stack">
-    <label>{{ t("auth.username") }}<input name="username" required></label>
+    <label>{{ t("auth.username") }}<input name="username" required value="{{ draft.username or '' }}"></label>
     <label>{{ t("auth.password") }}
       <input name="password" type="password" required minlength="{{ min_length }}">
     </label>
     <div class="row">
       <label class="grow">{{ t("admin.role") }}
-        <select name="role"><option value="user">{{ t("admin.role_user") }}</option><option value="admin">{{ t("admin.role_admin") }}</option></select>
+        <select name="role"><option value="user">{{ t("admin.role_user") }}</option><option value="admin" {{ 'selected' if draft.role == 'admin' }}>{{ t("admin.role_admin") }}</option></select>
       </label>
       <label class="grow">{{ t("admin.language") }}
-        <select name="language"><option value="pl">PL</option><option value="en">EN</option></select>
+        <select name="language"><option value="pl">PL</option><option value="en" {{ 'selected' if draft.language == 'en' }}>EN</option></select>
       </label>
     </div>
     <button class="btn" type="submit">{{ t("admin.create") }}</button>

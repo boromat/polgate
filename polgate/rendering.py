@@ -260,6 +260,8 @@ FLASH_KEYS = frozenset(
         "knowledge.withdrawn_flash",
         "knowledge.reindexed_flash",
         "chat.deleted_flash",
+        "policy.saved_flash",
+        "admin.password_set_flash",
     }
 )
 

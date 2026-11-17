@@ -2,6 +2,7 @@
 {% block title %}{{ t("admin.policy") }} · {{ t("app.name") }}{% endblock %}
 {% block content %}
 {% include "admin/_subnav.html" %}
+{% if flash %}<p class="alert ok spaced-below">{{ t(flash) }}</p>{% endif %}
 {% if masking_off %}
   <p class="alert error spaced-below">{{ t("admin.masking_off") }}</p>
 {% endif %}

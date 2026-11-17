@@ -28,6 +28,13 @@ router = APIRouter(prefix="/admin")
 
 #: Rows per page in the audit table.
 PAGE_SIZE = 50
+
+#: Why an account form was refused, as the message the users page shows beside it.
+USER_ERRORS = {
+    "taken": "admin.error_taken",
+    "too_short": "account.error_short",
+    "same_as_username": "account.error_username",
+}
 #: Most passages the search may send per file and turn; they also have to fit the budget.
 TOP_K_MAX = 20
 
@@ -66,11 +73,28 @@ def users(
     session: Session = Depends(get_session),
 ) -> Response:
     """List every account."""
+    return _users_page(request, session)
+
+
+def _users_page(
+    request: Request,
+    session: Session,
+    *,
+    status_code: int = 200,
+    error: str | None = None,
+    error_for: str | None = None,
+    draft: dict[str, str] | None = None,
+) -> Response:
+    """Render the users page, with a refused form's reason beside it and its fields kept."""
     return render(
         request,
         "admin/users.html",
+        status_code=status_code,
         users=session.exec(select(User).order_by(col(User.id))).all(),
         min_length=MIN_LENGTH,
+        error=error,
+        error_for=error_for,
+        draft=draft or {},
     )
 
 
@@ -84,11 +108,27 @@ def create_user(
     admin: User = Depends(require_admin),
     session: Session = Depends(get_session),
 ) -> Response:
-    """Create an account."""
+    """Create an account; a refusal comes back on the same page with the fields still filled in."""
+    draft = {"username": username, "role": role, "language": language}
     if session.exec(select(User).where(User.username == username)).first() is not None:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="username taken")
-    if password_problem(password, username=username) is not None:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="password too weak")
+        return _users_page(
+            request,
+            session,
+            status_code=status.HTTP_409_CONFLICT,
+            error=USER_ERRORS["taken"],
+            error_for="create",
+            draft=draft,
+        )
+    problem = password_problem(password, username=username)
+    if problem is not None:
+        return _users_page(
+            request,
+            session,
+            status_code=status.HTTP_400_BAD_REQUEST,
+            error=USER_ERRORS[problem],
+            error_for="create",
+            draft=draft,
+        )
     account_role = _choice(Role, role)
     session.add(
         User(
@@ -105,6 +145,7 @@ def create_user(
 
 @router.post("/users/{user_id}/password")
 def reset_password(
+    request: Request,
     user_id: int,
     password: str = Form(...),
     admin: User = Depends(require_admin),
@@ -124,14 +165,22 @@ def reset_password(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="own password: use /account"
         )
-    if password_problem(password, username=target.username) is not None:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="password too weak")
+    problem = password_problem(password, username=target.username)
+    if problem is not None:
+        return _users_page(
+            request,
+            session,
+            status_code=status.HTTP_400_BAD_REQUEST,
+            error=USER_ERRORS[problem],
+            error_for="reset",
+        )
     target.password_hash = hash_password(password)
     end_all_sessions(session, target)
     session.add(target)
     session.commit()
     audit.log(session, event="password_reset", user_id=admin.id, detail=f"user_id={user_id}")
-    return RedirectResponse("/admin/users", status_code=303)
+    # Nothing on the list changes when a password does, so the page says it happened.
+    return RedirectResponse("/admin/users?flash=admin.password_set_flash", status_code=303)
 
 
 @router.post("/users/{user_id}/toggle")
@@ -232,7 +281,7 @@ async def update_policy(
         user_id=admin.id,
         detail=f"fields={','.join(changed) or 'none'}{note}",
     )
-    return RedirectResponse("/admin/policy", status_code=303)
+    return RedirectResponse("/admin/policy?flash=policy.saved_flash", status_code=303)
 
 
 @router.get("/audit")

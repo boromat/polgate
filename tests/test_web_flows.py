@@ -1506,3 +1506,42 @@ def test_an_empty_conversation_carries_its_menu_for_the_first_message(admin_clie
     assert 'class="more no-print" data-menu' in page
     assert 'class="composer-details" data-menu' in page
     assert 'class="account-menu up" data-menu' in page
+
+
+def test_saving_the_policy_says_it_saved(admin_client):
+    response = admin_client.post("/admin/policy", data={"hil_chat": "auto", "hil_files": "review"})
+
+    assert response.headers["location"] == "/admin/policy?flash=policy.saved_flash"
+    assert "Polityka zapisana." in admin_client.get(response.headers["location"]).text
+
+
+def test_a_refused_account_comes_back_with_its_reason_and_its_fields(admin_client):
+    """A taken name or a short password used to end on a bare error page, the form lost."""
+    data = {"username": "bliźniak", "password": "dostatecznie-dlugie", "role": "admin"}
+    admin_client.post("/admin/users", data=data)
+
+    taken = admin_client.post("/admin/users", data=data)
+    short = admin_client.post("/admin/users", data={**data, "username": "nowy", "password": "abc"})
+
+    assert taken.status_code == 409
+    assert "Konto o tej nazwie już istnieje." in taken.text
+    assert 'value="bliźniak"' in taken.text
+    assert '<option value="admin" selected>' in taken.text
+    assert short.status_code == 400
+    assert "Nowe hasło jest za krótkie." in short.text
+
+
+def test_setting_a_password_for_someone_says_it_is_set(admin_client):
+    data = {"username": "zapominalski", "password": "dostatecznie-dlugie", "role": "user"}
+    admin_client.post("/admin/users", data=data)
+    with Session(get_engine()) as session:
+        target = session.exec(select(User).where(User.username == "zapominalski")).one().id
+
+    url = f"/admin/users/{target}/password"
+    done = admin_client.post(url, data={"password": "zupelnie-nowe-1"})
+    weak = admin_client.post(url, data={"password": "abc"})
+
+    assert done.headers["location"] == "/admin/users?flash=admin.password_set_flash"
+    assert "Nowe hasło jest ustawione" in admin_client.get(done.headers["location"]).text
+    assert weak.status_code == 400
+    assert "Nowe hasło jest za krótkie." in weak.text
