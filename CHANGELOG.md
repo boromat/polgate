@@ -43,6 +43,12 @@ All notable changes to this project are recorded here. The format follows
 
 ### Changed
 
+- **Docker in one command, as polanon has it.** The README starts the published image with the
+  administrator's first password and the provider key in `ADMIN_PASSWORD` and `LLM_API_KEY`, on a
+  port this machine alone can reach and on the pinned minor version, `ghcr.io/boromat/polgate:0.3`,
+  instead of three commands that waited for a generated password. A table names the hub's image,
+  polanon on PyPI and polanon's gateway image, and upgrading in Docker is three commands. CI starts
+  the image the same way and signs in with that password.
 - **A look of its own.** The interface borrowed PolCV's white cards, blue accent, soft shadows
   and pill badges, and read like any generated dashboard. It is now set like a document under
   redaction: warm paper or graphite, ink for the main action, hairline rules instead of shadowed

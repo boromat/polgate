@@ -42,19 +42,33 @@ employee ──▶ hub (your server) ──▶ cloud model
 
 ## Try it
 
-**The hub, in one command.** Nothing to configure first: on its first start the hub generates its
-own keys and an administrator password, and keeps them in the volume with the database.
+**The hub, in Docker.** Nothing to install but Docker: the image holds the hub, polanon with its
+spaCy model and Tesseract for scans, on Intel and ARM machines alike.
 
 ```bash
-docker run -d --name polgate -p 8000:8000 -v polgate-data:/data ghcr.io/boromat/polgate
-until docker exec polgate test -s /data/initial-admin-password; do sleep 1; done  # wait for the first start
-docker exec polgate cat /data/initial-admin-password
+export ADMIN_PASSWORD=$(openssl rand -hex 12)  # the administrator's first password
+export LLM_API_KEY=sk-or-...                   # your provider's key, OpenRouter by default
+docker run -d --name polgate -p 127.0.0.1:8000:8000 -v polgate-data:/data \
+    -e ADMIN_PASSWORD -e LLM_API_KEY ghcr.io/boromat/polgate:0.3
 ```
 
-Open http://localhost:8000, sign in as `admin` with that password, and change it from the account
-page. Masking, uploads, the "what the model saw" preview and the admin panel all work as they are;
-to get answers, add your provider key with `-e LLM_API_KEY=...` (OpenRouter by default, any
-OpenAI-compatible endpoint with `LLM_BASE_URL`). The image runs on amd64 and arm64.
+Open http://127.0.0.1:8000, sign in as `admin` with that password (`echo $ADMIN_PASSWORD`) and
+change it on the account page. Without `ADMIN_PASSWORD` the hub generates one on its first start:
+`docker exec polgate cat /data/initial-admin-password`. Without `LLM_API_KEY` masking, uploads,
+the "what the model saw" preview and the admin panel work, and answers need the key. Another
+OpenAI-compatible provider is `-e LLM_BASE_URL=... -e LLM_MODEL=...`; a model on the same machine,
+such as Ollama, is `-e LLM_BASE_URL=http://host.docker.internal:11434/v1`, on Linux with
+`--add-host=host.docker.internal:host-gateway`. `-p 127.0.0.1:8000:8000` keeps the hub on this
+machine; a team reaches it behind HTTPS, see the [company deployment](#run-from-source). The
+volume `polgate-data` keeps the database, the uploads and the keys; keep a copy of `vault.key`
+from it elsewhere. The image is tagged with the version, such as `0.3.0`, the minor version,
+`0.3`, and `latest`.
+
+| You want | Install |
+|---|---|
+| The hub, a chat for the whole company | `docker pull ghcr.io/boromat/polgate:0.3` |
+| The masking in your own Python code | `pip install polanon` |
+| A gateway that masks calls from tools you already use | `docker pull ghcr.io/boromat/polanon-gateway:0.3` |
 
 **Just the masking, in your own code.** That is polanon, whose core needs nothing beyond the
 standard library:
@@ -231,7 +245,17 @@ other than the server: without it the stored history cannot be read again.
 
 ### Upgrading
 
-With Docker, pull the new image and start the container again. From a source checkout, `git pull`
+With Docker, pull the new image and start the container again on the same volume, which keeps
+the database, the uploads and the keys:
+
+```bash
+docker pull ghcr.io/boromat/polgate:0.3  # or the next minor version's tag
+docker rm -f polgate
+docker run -d --name polgate -p 127.0.0.1:8000:8000 -v polgate-data:/data \
+    -e LLM_API_KEY ghcr.io/boromat/polgate:0.3
+```
+
+From a source checkout, `git pull`
 and run `.venv/bin/pip install -e ".[dev]"` before restarting, so that a dependency added or raised
 since, polanon included, is installed. A column a newer model added is
 applied at startup and backfilled with its default, so an existing database keeps working.

@@ -130,6 +130,19 @@ jobs:
           curl -fsS http://127.0.0.1:8000/login | grep -q "<form"
           docker exec hub test -s /data/initial-admin-password
 
+      # The README's command: the administrator's password from ADMIN_PASSWORD, the port on this
+      # machine only. Signing in with it has to work, and the password must not reach the log.
+      - name: Start as the README says, and sign in
+        run: |
+          docker run -d --name readme -p 127.0.0.1:8001:8000 -e ADMIN_PASSWORD=ci-only-password-1 polgate:ci
+          for attempt in $(seq 1 60); do curl -fsS http://127.0.0.1:8001/health && break; sleep 2; done
+          code=$(curl -s -o /dev/null -w "%{http_code}" -H "Origin: http://127.0.0.1:8001" \
+            --data "username=admin&password=ci-only-password-1&next=/chat" http://127.0.0.1:8001/login)
+          test "$code" = 303
+          if docker logs readme 2>&1 | grep -q ci-only-password-1; then exit 1; fi
+
       - name: Container log
         if: always()
-        run: docker logs hub
+        run: |
+          docker logs hub
+          docker logs readme || true

@@ -46,19 +46,34 @@ pracownik ──▶ hub (Twój serwer) ──▶ model w chmurze
 
 ## Wypróbuj
 
-**Hub jednym poleceniem.** Niczego nie trzeba wcześniej konfigurować: przy pierwszym starcie hub sam
-generuje własne klucze oraz hasło administratora i przechowuje je w wolumenie razem z bazą danych.
+**Hub w Dockerze.** Poza Dockerem nie trzeba niczego instalować: obraz zawiera hub, polanon
+z modelem spaCy i Tesseract do skanów, na komputerach z procesorem Intel i ARM.
 
 ```bash
-docker run -d --name polgate -p 8000:8000 -v polgate-data:/data ghcr.io/boromat/polgate
-until docker exec polgate test -s /data/initial-admin-password; do sleep 1; done  # czeka na koniec pierwszego startu
-docker exec polgate cat /data/initial-admin-password
+export ADMIN_PASSWORD=$(openssl rand -hex 12)  # pierwsze hasło administratora
+export LLM_API_KEY=sk-or-...                   # klucz dostawcy, domyślnie OpenRouter
+docker run -d --name polgate -p 127.0.0.1:8000:8000 -v polgate-data:/data \
+    -e ADMIN_PASSWORD -e LLM_API_KEY ghcr.io/boromat/polgate:0.3
 ```
 
-Otwórz http://localhost:8000, zaloguj się jako `admin` tym hasłem i zmień je na stronie konta.
-Maskowanie, wgrywanie plików, podgląd „Co zobaczył model” i panel administracyjny działają od razu;
-żeby dostawać odpowiedzi, dodaj klucz dostawcy opcją `-e LLM_API_KEY=...` (domyślnie OpenRouter,
-a dowolny endpoint zgodny z API OpenAI przez `LLM_BASE_URL`). Obraz działa na amd64 i arm64.
+Otwórz http://127.0.0.1:8000, zaloguj się jako `admin` tym hasłem (`echo $ADMIN_PASSWORD`) i zmień
+je na stronie konta. Bez `ADMIN_PASSWORD` hub generuje hasło przy pierwszym starcie:
+`docker exec polgate cat /data/initial-admin-password`. Bez `LLM_API_KEY` działają maskowanie,
+wgrywanie plików, podgląd „Co zobaczył model” i panel administracyjny, a odpowiedzi wymagają
+klucza. Innego dostawcę zgodnego z API OpenAI ustawiasz przez `-e LLM_BASE_URL=... -e
+LLM_MODEL=...`; model na tym samym komputerze, na przykład Ollama, to
+`-e LLM_BASE_URL=http://host.docker.internal:11434/v1`, a na Linuksie dodatkowo
+`--add-host=host.docker.internal:host-gateway`. `-p 127.0.0.1:8000:8000` zostawia hub na tym
+komputerze; zespół korzysta z niego przez HTTPS, zobacz [wdrożenie w firmie](#uruchomienie-ze-źródeł).
+Wolumen `polgate-data` przechowuje bazę danych, wgrane pliki i klucze; kopię `vault.key` z niego
+trzymaj gdzie indziej. Obraz ma tagi z wersją, na przykład `0.3.0`, z wersją minor, `0.3`, oraz
+`latest`.
+
+| Chcesz | Instalacja |
+|---|---|
+| Hub, czyli czat dla całej firmy | `docker pull ghcr.io/boromat/polgate:0.3` |
+| Maskowanie we własnym kodzie w Pythonie | `pip install polanon` |
+| Bramkę, która maskuje wywołania z narzędzi, których już używasz | `docker pull ghcr.io/boromat/polanon-gateway:0.3` |
 
 **Samo maskowanie we własnym kodzie.** To właśnie polanon, którego rdzeń nie potrzebuje niczego
 poza biblioteką standardową:
@@ -249,7 +264,17 @@ trzymaj gdzieś poza serwerem: bez niego zapisanej historii nie da się już odc
 
 ### Aktualizacja
 
-W Dockerze pobierz nowy obraz i uruchom kontener ponownie. Przy instalacji ze źródeł wykonaj
+W Dockerze pobierz nowy obraz i uruchom kontener ponownie na tym samym wolumenie, który trzyma
+bazę danych, wgrane pliki i klucze:
+
+```bash
+docker pull ghcr.io/boromat/polgate:0.3  # albo tag kolejnej wersji minor
+docker rm -f polgate
+docker run -d --name polgate -p 127.0.0.1:8000:8000 -v polgate-data:/data \
+    -e LLM_API_KEY ghcr.io/boromat/polgate:0.3
+```
+
+Przy instalacji ze źródeł wykonaj
 `git pull`, a przed ponownym uruchomieniem `.venv/bin/pip install -e ".[dev]"`, żeby zainstalować
 zależności, które w międzyczasie doszły albo wymagają teraz nowszej wersji, w tym polanon. Kolumnę,
 którą dodał nowszy model danych, hub dokłada przy starcie i wypełnia wartością domyślną, więc
