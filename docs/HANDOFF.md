@@ -313,8 +313,11 @@ that is also a word typed in lowercase before a common surname.
   yourself, deterministically, as `StreamRestorer` does.
 - Presidio's Polish support is thin and its NER mapping does not fit the Polish spaCy models; that is why
   polanon has its own `recognizers_pl.py` and `ner.py`.
-- Models sometimes inflect tokens in Polish (`<OSOBA_1>a`). `TOKEN_PATTERN` matches exactly, so the
-  trailing suffix survives. Acceptable for the MVP; note it in the threat model and revisit with surrogates.
+- Models inflect tokens in Polish (`<OSOBA_1>a`) unless told how not to. The system prompt now asks
+  for the case after a colon, `<OSOBA_1:wołacz>`, which polanon restores declined. Anything that
+  reads a stored text for its tokens uses `polgate.tokens.WRITTEN_TOKEN_RE`, the pattern polanon's
+  restore reads, not `TOKEN_PATTERN`: a stored answer holds cased tokens, and the fingerprints
+  missed them until they did.
 - Allocate tokens in reading order, then substitute right-to-left. Doing both backwards numbers the first
   person in a text `<OSOBA_2>`, which confuses readers and the model.
 - Never store originals unencrypted and never put them in `AuditEvent.detail`; `audit.log` enforces this.

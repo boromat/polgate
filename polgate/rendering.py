@@ -7,7 +7,6 @@ factory, which would create an import cycle.
 from __future__ import annotations
 
 import json
-import re
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -16,28 +15,27 @@ from fastapi import Request
 from fastapi.responses import Response
 from fastapi.templating import Jinja2Templates
 from markupsafe import Markup, escape
-from polanon.policy import TOKEN_PATTERN
 
 from polgate.config import get_settings
 from polgate.i18n import translator
 from polgate.models import FileAsset
+from polgate.tokens import WRITTEN_TOKEN_RE
 from polgate.vault import store as vault
 
 TEMPLATE_DIR = Path(__file__).parent / "templates"
 templates = Jinja2Templates(directory=str(TEMPLATE_DIR))
-
-_TOKEN_RE = re.compile(TOKEN_PATTERN)
 
 
 def highlight_tokens(text: str) -> Markup:
     """Escape `text` and wrap anonymization tokens in a highlight span.
 
     Tokens are matched on the raw text, not on the escaped output: escaping first would turn
-    ``<OSOBA_1>`` into ``&lt;OSOBA_1&gt;`` and the pattern would never match.
+    ``<OSOBA_1>`` into ``&lt;OSOBA_1&gt;`` and the pattern would never match. A token with the case
+    a model wrote after it, ``<OSOBA_1:wołacz>``, is highlighted whole.
     """
     parts: list[str] = []
     cursor = 0
-    for match in _TOKEN_RE.finditer(text):
+    for match in WRITTEN_TOKEN_RE.finditer(text):
         parts.append(str(escape(text[cursor : match.start()])))
         parts.append(f'<span class="token">{escape(match.group(0))}</span>')
         cursor = match.end()

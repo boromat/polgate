@@ -105,6 +105,10 @@ own puts the passage with the answer first for every question.
   masked document never leaves it. Off until `EMBEDDING_MODEL` is set.
 - **Stable tokens**: the same person is `<OSOBA_1>` for as long as the vault keeps the mapping (30 days
   by default), so the model can reason about them across turns.
+- **Names come back in the right case**: the model writes the case a person stands in after the
+  token, `<OSOBA_1:wołacz>`, and "Odpisz Janowi Kowalskiemu" gets an answer that opens "Szanowny
+  Panie Janie Kowalski" rather than repeating the name in the form the message had. An employee
+  who uses the hub in English gets the English note, which asks for tokens as written.
 - **Encrypted vault** for the token mapping, and **retention that actually deletes**: mappings, message
   history and uploaded files all disappear on the schedule the admin sets.
 - **Audit log** recording entity types, counts and hashes, never the values themselves.

@@ -22,22 +22,20 @@ import json
 import re
 from collections.abc import Mapping
 
-from polanon.policy import TOKEN_PATTERN
-
+from polgate.tokens import WRITTEN_TOKEN_RE, base_token
 from polgate.vault.store import value_hash
 
 #: What the model reads in place of a token that no longer stands for what it did.
 EXPIRED = "[dane wygasłe / expired data]"
 
-_TOKEN_RE = re.compile(TOKEN_PATTERN)
-
 
 def record(text: str, mapping: Mapping[str, str]) -> str:
     """Return the fingerprints of the values the tokens in ``text`` stand for now, as JSON.
 
+    A token a model wrote with a case, ``<OSOBA_1:wołacz>``, is recorded as the token it declines.
     Tokens the mapping does not hold, such as one a model made up, are left out.
     """
-    tokens = {match.group(0) for match in _TOKEN_RE.finditer(text)}
+    tokens = {base_token(match) for match in WRITTEN_TOKEN_RE.finditer(text)}
     return json.dumps(
         {token: value_hash(mapping[token]) for token in sorted(tokens) if token in mapping}
     )
@@ -61,19 +59,22 @@ def expire(text: str, recorded: str, mapping: Mapping[str, str]) -> tuple[str, i
 
     def replace(match: re.Match[str]) -> str:
         nonlocal count
-        if match.group(0) not in stale:
+        if base_token(match) not in stale:
             return match.group(0)
         count += 1
         return EXPIRED
 
-    return _TOKEN_RE.sub(replace, text), count
+    return WRITTEN_TOKEN_RE.sub(replace, text), count
 
 
 def stale_tokens(text: str, recorded: str, mapping: Mapping[str, str]) -> set[str]:
-    """Return the tokens of ``text`` that the mapping has lost or now gives another value."""
+    """Return the tokens of ``text`` that the mapping has lost or now gives another value.
+
+    A cased token counts as the token it declines: ``<OSOBA_1:wołacz>`` is stale with ``<OSOBA_1>``.
+    """
     known: dict[str, str] = json.loads(recorded) if recorded else {}
     stale = set()
-    for token in {match.group(0) for match in _TOKEN_RE.finditer(text)}:
+    for token in {base_token(match) for match in WRITTEN_TOKEN_RE.finditer(text)}:
         current = mapping.get(token)
         moved = token in known and current is not None and known[token] != value_hash(current)
         if current is None or moved:

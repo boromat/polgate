@@ -23,7 +23,7 @@ from polgate import audit
 from polgate.config import Settings
 from polgate.files.extract import TRUNCATION_MARKER
 from polgate.llm.openai_compat import LLMError, assert_no_raw_values, stream_chat
-from polgate.llm.prompts import SYSTEM_PROMPT
+from polgate.llm.prompts import system_prompt
 from polgate.models import (
     Conversation,
     FileAsset,
@@ -297,8 +297,8 @@ async def run_turn(
         # The last check before anything leaves, and it runs before anything is stored.
         # `content_sent` is plaintext and is replayed as history on every later turn, so a message
         # that failed this check and was saved anyway would make every following turn fail it too.
-        # It reads everything that came from people and files. The system prompt is the hub's own
-        # constant and holds nobody's data, and checking it refused every turn of a conversation
+        # It reads everything that came from people and files. The system prompt is made from code
+        # alone and holds nobody's data, and checking it refused every turn of a conversation
         # in which the employee asked to mask a word it happens to contain, such as "company".
         # A system prompt built from anything but code would have to join the check again.
         try:
@@ -339,7 +339,7 @@ async def run_turn(
     # The message id lets the page offer the stored preview for a message it has not reloaded.
     yield TurnEvent("preview", text=result.anonymized, detail=str(user_message.id))
 
-    messages = [{"role": "system", "content": SYSTEM_PROMPT}, *conversation_messages]
+    messages = [{"role": "system", "content": system_prompt(user.language)}, *conversation_messages]
     restorer = StreamRestorer(result.mapping)
     raw_parts: list[str] = []
     restored_parts: list[str] = []

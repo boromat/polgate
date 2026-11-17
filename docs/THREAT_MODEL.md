@@ -118,8 +118,13 @@ used on its own; this one covers the hub, the library's detection limits include
   catch all of it. Out of the box no model reviews anything: the default `mock` judge is a demo stub
   that flags two fixed phrases, and a real review needs `JUDGE_BACKEND=ollama` (or the testing-only
   `remote`).
-- **Polish inflection of tokens.** A model may write `<OSOBA_1>a` or `<OSOBA_1>owi`. Restoration matches
-  tokens exactly, so the suffix survives and the sentence reads oddly. It does not leak anything.
+- **Polish inflection of tokens.** The system prompt asks the model to write a person's case after
+  the token, `<OSOBA_1:wołacz>`, and polanon's restore declines names of one or two words its rules
+  read for sure. A surname alone that may be a man's or a woman's, a foreign name, a company and a
+  place come back as written. A model that ignores the note and writes `<OSOBA_1>a` or
+  `<OSOBA_1>owi` keeps the suffix, and the sentence reads oddly. Neither leaks anything. A cased
+  token in a stored answer is fingerprinted and expired as the token it declines, so a number given
+  to somebody else is not replayed under the old case either.
 - **Images and scans without OCR.** If tesseract is not installed, image uploads are rejected rather than
   silently sent. With OCR enabled, recognition errors become detection gaps.
 - **More of a long attachment goes to the embeddings endpoint.** With the search on, the whole

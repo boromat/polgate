@@ -36,6 +36,11 @@ def test_tokens_are_wrapped_for_display():
     assert result == 'Witaj <span class="token">&lt;OSOBA_1&gt;</span>'
 
 
+def test_a_token_with_a_case_is_wrapped_whole():
+    result = str(highlight_tokens("Panie <OSOBA_1:wołacz>!"))
+    assert result == 'Panie <span class="token">&lt;OSOBA_1:wołacz&gt;</span>!'
+
+
 def test_surrounding_text_is_escaped():
     result = str(highlight_tokens("<script>alert(1)</script> <OSOBA_1>"))
     assert "<script>" not in result

@@ -46,6 +46,19 @@ def test_the_record_holds_keyed_fingerprints_and_no_value():
     assert "Anna" not in recorded
 
 
+def test_a_token_with_a_case_is_recorded_and_expired_as_the_token_it_declines():
+    """An answer stores <OSOBA_1:wołacz>; once the number is somebody else's it must go too."""
+    answer = "Szanowny Panie <OSOBA_1:wołacz>, wniosek <OSOBA_1> przyjęty."
+    recorded = fingerprints.record(answer, {"<OSOBA_1>": "Jan Kowalski"})
+    assert json.loads(recorded) == {"<OSOBA_1>": vault.value_hash("Jan Kowalski")}
+
+    text, count = fingerprints.expire(answer, recorded, {"<OSOBA_1>": "Piotr Lis"})
+
+    assert text == f"Szanowny Panie {EXPIRED}, wniosek {EXPIRED} przyjęty."
+    assert count == 2
+    assert fingerprints.expire(answer, recorded, {"<OSOBA_1>": "Jan Kowalski"}) == (answer, 0)
+
+
 @pytest.fixture
 def conversation(db_session):
     user = User(username="u", password_hash=hash_password("x"))
@@ -58,11 +71,11 @@ def conversation(db_session):
     return db_session, item, user
 
 
-async def _turn(db_session, conversation, user, text, captured):
+async def _turn(db_session, conversation, user, text, captured, answer="ok"):
     def handler(request: httpx.Request) -> httpx.Response:
         captured.append(json.loads(request.content))
-        body = 'data: {"choices": [{"delta": {"content": "ok"}}]}\n\ndata: [DONE]\n\n'
-        return httpx.Response(200, content=body.encode())
+        chunk = json.dumps({"choices": [{"delta": {"content": answer}}]})
+        return httpx.Response(200, content=f"data: {chunk}\n\ndata: [DONE]\n\n".encode())
 
     anonymizer = Anonymizer([DenylistGuard(["Anna Nowak", "Piotr Lis"])], enabled=set(ENTITY_TYPES))
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
@@ -99,6 +112,23 @@ async def test_history_about_somebody_whose_token_was_reused_is_not_replayed_as_
     assert "Umowa: <FIRMA_1>, pensja 9000." not in sent
     events = db_session.exec(select(AuditEvent).where(AuditEvent.event == "message_sent")).all()
     assert "expired_tokens=1" in events[-1].detail
+
+
+async def test_an_answer_with_a_cased_token_is_not_replayed_about_somebody_else(conversation):
+    """The model declined the token in its answer, and the answer is history on the next turn."""
+    db_session, item, user = conversation
+    captured: list[dict] = []
+    await _turn(
+        db_session, item, user, "Umowa: Anna Nowak.", captured, answer="Umowa <FIRMA_1:dopełniacz>."
+    )
+
+    db_session.exec(delete(VaultEntry))  # the mapping retention ran out
+    db_session.commit()
+    await _turn(db_session, item, user, "Co z Piotr Lis?", captured)
+
+    sent = [m["content"] for m in captured[-1]["messages"]]
+    assert f"Umowa {EXPIRED}." in sent
+    assert not any("<FIRMA_1:" in content for content in sent)
 
 
 async def test_history_whose_tokens_still_hold_is_replayed_unchanged(conversation):

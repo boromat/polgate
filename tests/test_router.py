@@ -8,9 +8,11 @@ from polanon import (
     Anonymizer,
     DenylistGuard,
     MockJudge,
+    PersonNameGuard,
     RegexGuard,
     SecretsGuard,
     mask_known_values,
+    token_instructions,
 )
 from polanon.policy import ENTITY_TYPES
 from sqlmodel import select
@@ -461,11 +463,11 @@ async def test_a_turn_that_would_leak_is_refused_before_anything_is_stored_or_se
 
 
 async def test_a_turn_is_sent_when_a_masked_word_also_stands_in_the_system_prompt(turn_setup):
-    """The system prompt is the hub's constant: a word it shares with a masked term is no leak."""
-    from polgate.llm.prompts import SYSTEM_PROMPT
+    """The system prompt is made from code: a word it shares with a masked term is no leak."""
+    from polgate.llm.prompts import system_prompt
 
     session, conversation, user, _, policy = turn_setup
-    assert "company" in SYSTEM_PROMPT
+    assert "company" in system_prompt(user.language)
     anonymizer = Anonymizer([RegexGuard(), DenylistGuard(["company"])], enabled=set(ENTITY_TYPES))
     captured: list[dict] = []
 
@@ -482,9 +484,55 @@ async def test_a_turn_is_sent_when_a_masked_word_also_stands_in_the_system_promp
 
     assert "refused_unmasked" not in [event.detail for event in events if event.type == "error"]
     system, *rest = captured[0]["messages"]
-    assert system == {"role": "system", "content": SYSTEM_PROMPT}
+    assert system == {"role": "system", "content": system_prompt(user.language)}
     assert_no_raw_values(rest, vault.load_mapping(session, conversation.id))
     assert "company" not in rest[-1]["content"]
+
+
+async def test_a_name_comes_back_in_the_case_the_model_asks_for(turn_setup):
+    """The message said "Janowi Kowalskiemu"; the answer addresses him, so it needs "Janie"."""
+    session, conversation, user, _, policy = turn_setup
+    anonymizer = Anonymizer([PersonNameGuard()], enabled=set(ENTITY_TYPES))
+    captured: list[dict] = []
+
+    events = await _collect(
+        session,
+        conversation,
+        user,
+        anonymizer,
+        policy,
+        ["Szanowny Panie <OSOBA_1:wo", "łacz>, urlop <OSOBA_1:dopełniacz> przyjęty."],
+        captured,
+        text="Odpisz Janowi Kowalskiemu w sprawie urlopu.",
+    )
+
+    text = "".join(event.text for event in events if event.type == "token")
+    assert text == "Szanowny Panie Janie Kowalski, urlop Jana Kowalskiego przyjęty."
+    assert "Kowalsk" not in json.dumps(captured[0], ensure_ascii=False)
+    answer = session.exec(select(Message).where(Message.role == "assistant")).one()
+    assert json.loads(answer.token_fingerprints) == {
+        "<OSOBA_1>": vault.value_hash("Janowi Kowalskiemu")
+    }
+
+
+@pytest.mark.parametrize("language", ["pl", "en"])
+async def test_the_model_is_told_about_tokens_in_the_employees_language(turn_setup, language):
+    session, conversation, user, anonymizer, policy = turn_setup
+    user.language = language
+    captured: list[dict] = []
+
+    await _collect(session, conversation, user, anonymizer, policy, ["ok"], captured)
+
+    system = captured[0]["messages"][0]
+    assert system["role"] == "system"
+    assert token_instructions(language) in system["content"]
+
+
+def test_a_language_the_hub_does_not_offer_gets_the_polish_note():
+    from polgate.llm.prompts import system_prompt
+
+    assert system_prompt("de") == system_prompt("pl")
+    assert "<OSOBA_1:wołacz>" in system_prompt("pl")
 
 
 async def test_a_refused_turn_does_not_poison_the_next_one(turn_setup, monkeypatch):

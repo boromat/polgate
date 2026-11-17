@@ -6,6 +6,16 @@ All notable changes to this project are recorded here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- **Names come back in the case the answer needs.** The system prompt now carries polanon's note
+  about tokens in the employee's language. In Polish it asks the model to write the case a person
+  stands in after the token, `<OSOBA_1:wołacz>`, and the restore declines the name: "Odpisz
+  Janowi Kowalskiemu" gets "Szanowny Panie Janie Kowalski" instead of the name in the form the
+  message had. In English it asks for tokens exactly as written. The fingerprints, the last check
+  before sending and the preview read a cased token as the token it declines, so a stored answer
+  that holds one is expired like any other when its number goes to somebody else.
+
 ### Changed
 
 - **polanon 0.3.9 or later is required.** It masks driving licence numbers after their label, as
@@ -21,7 +31,7 @@ All notable changes to this project are recorded here. The format follows
 - **A word the employee asks to mask no longer stops the conversation when the system prompt holds
   it too.** Asked to mask "company", the hub masked it in the message and then found it in its own
   system prompt, so the last check refused that turn and every later one. The check reads what
-  came from people and files; the system prompt is the hub's constant and holds nobody's data.
+  came from people and files; the system prompt is made from code and holds nobody's data.
 
 ## [0.2.0] - 2026-11-13
 

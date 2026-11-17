@@ -14,12 +14,12 @@ from collections.abc import AsyncIterator, Iterable, Mapping
 
 import httpx
 from polanon import mask_known_values
-from polanon.policy import TOKEN_PATTERN
+
+from polgate.tokens import WRITTEN_TOKEN_RE, base_token
 
 logger = logging.getLogger(__name__)
 
 _DONE = "[DONE]"
-_TOKEN_RE = re.compile(TOKEN_PATTERN)
 #: Stands in for a removed token, so a value cannot match across the place where one was.
 _GAP = chr(0)
 #: The lengths polanon calls a short number: four or five digits, such as a PIN. It leaves one
@@ -102,13 +102,21 @@ def _short_word(value: str) -> re.Pattern[str]:
 
 
 def _without_tokens(content: str, mapping: Mapping[str, str], hidden: set[str]) -> str:
-    """Replace every token with a character no value contains, except text that is no token."""
+    """Replace every token with a character no value contains, except text that is no token.
+
+    A token a model wrote with a case, as a replayed answer holds it, goes like the token it
+    declines, but the word after its colon stays to be searched: ``<OSOBA_1:Kowalski>`` would
+    otherwise hide a surname from the check, which must never see less than the text holds.
+    """
 
     def replace(match: re.Match[str]) -> str:
-        token = match.group(0)
-        return token if mapping.get(token) == token or token in hidden else _GAP
+        written = match.group(0)
+        token = base_token(match)
+        if mapping.get(token) == token or written in hidden:
+            return written
+        return f"{_GAP}{match['case'] or ''}{_GAP}"
 
-    return _TOKEN_RE.sub(replace, content)
+    return WRITTEN_TOKEN_RE.sub(replace, content)
 
 
 async def stream_chat(

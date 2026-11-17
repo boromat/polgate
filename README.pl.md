@@ -112,6 +112,10 @@ stawia fragment z odpowiedzią na pierwszym miejscu przy każdym pytaniu.
   zamaskowany dokument go nie opuszcza. Wyłączone, dopóki nie ustawisz `EMBEDDING_MODEL`.
 - **Stabilne tokeny**: ta sama osoba pozostaje `<OSOBA_1>` tak długo, jak sejf przechowuje
   mapowanie (domyślnie 30 dni), więc model może się do niej odnosić w kolejnych turach rozmowy.
+- **Imiona wracają w dobrym przypadku**: model dopisuje po tokenie przypadek, w jakim stoi osoba,
+  `<OSOBA_1:wołacz>`, więc na „Odpisz Janowi Kowalskiemu” odpowiedź zaczyna się od „Szanowny Panie
+  Janie Kowalski”, a nie powtarza imienia w formie z wiadomości. Pracownik, który używa huba po
+  angielsku, dostaje notatkę angielską, która każe przepisywać tokeny bez zmian.
 - **Zaszyfrowany sejf** na mapowanie tokenów i **retencja, która naprawdę usuwa**: mapowania,
   historia wiadomości i wgrane pliki znikają zgodnie z harmonogramem ustawionym przez administratora.
 - **Dziennik audytu**, który zapisuje typy danych, ich liczby i skróty (hashe), a nigdy same wartości.

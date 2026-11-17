@@ -47,9 +47,11 @@ employee browser ── HTMX/SSE ──> FastAPI hub
                     │   every text bound for /embeddings passes assert_no_raw_values first
                     ├──────────────────────────────┐
                     │ LLM router: OpenAI-compatible client (OpenRouter / OpenAI / Ollama)
-                    │   provider receives tokens only; SYSTEM_PROMPT says "copy tokens verbatim"
+                    │   provider receives tokens only; the system prompt carries polanon's note:
+                    │   copy tokens verbatim, and in Polish add a person's case, <OSOBA_1:wołacz>
                     ├──────────────────────────────┐
-                    │ StreamRestorer: replaces tokens in the SSE stream, buffering partial "<OSOBA_"
+                    │ StreamRestorer: replaces tokens in the SSE stream, buffering partial "<OSOBA_",
+                    │   and declines a person's name to the case written after the token
                     │ OutputSweep: unknown tokens / new PII in the answer → audit + warning
                     └──────────────────────────────┘
                     Audit log: who, when, provider, entity counts, stage-2 hits, hashes. Never raw values.

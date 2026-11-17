@@ -31,6 +31,20 @@ def test_an_original_value_in_the_payload_is_refused():
         )
 
 
+def test_a_token_with_a_case_is_taken_out_like_the_token_it_declines():
+    """The denylisted word "KARTA" is part of the label of <KARTA_1:biernik>, and no leak."""
+    mapping = {"<KARTA_1>": "KARTA", "<OSOBA_1>": "Jan Kowalski"}
+    history = [{"role": "assistant", "content": "Dla <OSOBA_1:dopełniacz>: <KARTA_1:biernik>."}]
+    assert assert_no_raw_values(history, mapping) is None
+
+
+def test_the_word_after_a_tokens_colon_is_still_searched():
+    """Taken out with the token, "<OSOBA_1:Kowalski>" would carry a surname past the check."""
+    mapping = {"<OSOBA_1>": "Jan Kowalski", "<OSOBA_2>": "Kowalski"}
+    with pytest.raises(LLMError, match="OSOBA_2"):
+        assert_no_raw_values([{"role": "assistant", "content": "Dla <OSOBA_1:Kowalski>."}], mapping)
+
+
 def test_a_blank_mapping_value_never_blocks_a_send():
     """An empty string appears in every text; treating it as a leak would block everything."""
     assert assert_no_raw_values(MESSAGES, {"<OSOBA_1>": "   "}) is None

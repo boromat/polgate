@@ -12,7 +12,7 @@ explains the data flow.
    `anonymized` text of polanon's `AnonymizationResult`. Tests must assert this (`assert_no_raw_values`).
 2. **Never log raw PII.** Audit events, logs, exceptions: entity types, counts and sha256 hashes only.
 3. **Treat polanon's public API and `polgate/models.py` as stable.** The hub imports `polanon`,
-   `polanon.policy`, `polanon.types`, `polanon.allowlist` and `polanon.judge.*`. A change to any of
+   `polanon.policy`, `polanon.types`, `polanon.allowlist`, `polanon.stream_restore` and `polanon.judge.*`. A change to any of
    them is made and released in the [polanon repository](https://github.com/boromat/polanon), and the
    hub then raises its `polanon` floor in `pyproject.toml`; never copy polanon code into this
    repository or patch the installed package. If you must change `polgate/models.py`, grep for usages
