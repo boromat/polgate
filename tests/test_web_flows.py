@@ -930,7 +930,7 @@ def test_the_sidebar_creates_a_conversation_with_a_post(admin_client):
     response = admin_client.post("/chat/new", headers={"Sec-Fetch-Site": "same-origin"})
     assert response.headers["location"] != f"/chat/{first}"
     page = admin_client.get(response.headers["location"]).text
-    assert '<form method="post" action="/chat/new">' in page
+    assert 'method="post" action="/chat/new"' in page
 
 
 def test_a_link_from_another_site_cannot_start_a_queued_turn(admin_client):
@@ -1233,3 +1233,108 @@ def test_opening_the_chat_creates_nothing(admin_client):
     assert 'action="/chat/new"' in response.text
     with Session(get_engine()) as session:
         assert session.exec(select(Conversation)).all() == []
+
+
+def test_a_conversation_is_deleted_with_its_files_and_mapping(admin_client, monkeypatch):
+    from polgate.llm import router
+    from polgate.models import AuditEvent, FileAsset, VaultEntry
+
+    monkeypatch.setattr(router, "stream_chat", _fake_stream(["ok"]))
+    keep = _open_conversation(admin_client)
+    gone = int(admin_client.post("/chat/new").headers["location"].rsplit("/", 1)[1])
+    admin_client.post(f"/chat/{gone}/send", data={"text": "PESEL 50810112354", "extra_terms": ""})
+    admin_client.get(f"/chat/{gone}/stream", headers=STREAM)
+    admin_client.post(
+        f"/files/upload?conversation_id={gone}",
+        files={"file": ("lista.txt", b"Jan Kowalski", "text/plain")},
+    )
+    with Session(get_engine()) as session:
+        stored = Path(session.exec(select(FileAsset)).one().storage_path)
+    assert stored.exists()
+
+    response = admin_client.post(f"/chat/{gone}/delete")
+
+    assert response.status_code == 303
+    assert response.headers["location"] == f"/chat/{keep}?flash=chat.deleted_flash"
+    assert not stored.exists()
+    with Session(get_engine()) as session:
+        assert session.get(Conversation, gone) is None
+        assert session.exec(select(Message).where(Message.conversation_id == gone)).all() == []
+        assert (
+            session.exec(select(VaultEntry).where(VaultEntry.conversation_id == gone)).all() == []
+        )
+        assert session.exec(select(FileAsset)).all() == []
+        events = session.exec(
+            select(AuditEvent).where(AuditEvent.event == "conversation_deleted")
+        ).all()
+    assert [row.detail for row in events] == ["messages=2"]
+    assert "Rozmowa została usunięta." in admin_client.get(response.headers["location"]).text
+
+
+def test_nobody_deletes_a_conversation_that_is_not_theirs(admin_client):
+    conversation_id = _open_conversation(admin_client)
+    with Session(get_engine()) as session:
+        session.add(User(username="pracownik", password_hash=hash_password("dlugie-haslo-x")))
+        session.commit()
+    admin_client.post("/logout")
+    admin_client.post("/login", data={"username": "pracownik", "password": "dlugie-haslo-x"})
+
+    assert admin_client.post(f"/chat/{conversation_id}/delete").status_code == 404
+    with Session(get_engine()) as session:
+        assert session.get(Conversation, conversation_id) is not None
+
+
+def test_the_first_answer_names_the_conversation_without_a_reload(admin_client, monkeypatch):
+    from polgate.llm import router
+
+    monkeypatch.setattr(router, "stream_chat", _fake_stream(["ok"]))
+    conversation_id = _open_conversation(admin_client)
+    admin_client.post(
+        f"/chat/{conversation_id}/send",
+        data={"text": "Odpisz Jan Kowalski, że umowa jest gotowa.", "extra_terms": ""},
+    )
+
+    body = admin_client.get(f"/chat/{conversation_id}/stream", headers=STREAM).text
+
+    done = json.loads(next(line for line in body.splitlines() if '"title"' in line)[5:])
+    assert (
+        done["title"]
+        == 'Odpisz <span class="redacted" aria-hidden="true"></span>, że umowa jest gotowa'
+    )
+    assert done["title_text"] == "Odpisz \u25ae, że umowa jest gotowa"
+    assert "Kowalski" not in body.split("event: done")[1]
+
+
+def test_an_answer_offers_to_copy_itself(admin_client, monkeypatch):
+    from polgate.llm import router
+
+    monkeypatch.setattr(router, "stream_chat", _fake_stream(["Gotowe."]))
+    conversation_id = _open_conversation(admin_client)
+    admin_client.post(f"/chat/{conversation_id}/send", data={"text": "Cześć", "extra_terms": ""})
+    admin_client.get(f"/chat/{conversation_id}/stream", headers=STREAM)
+
+    page = admin_client.get(f"/chat/{conversation_id}").text
+    assert "data-copy" in page
+    assert "Kopiuj" in page
+
+
+def test_the_user_list_names_roles_and_what_the_switch_does(admin_client):
+    with Session(get_engine()) as session:
+        session.add(User(username="pracownik", password_hash=hash_password("dlugie-haslo-x")))
+        session.commit()
+
+    page = admin_client.get("/admin/users").text
+
+    assert "Administrator" in page
+    assert "Pracownik" in page
+    assert "Wyłącz" in page
+
+
+def test_the_user_list_offers_no_switch_for_the_administrator_reading_it(admin_client):
+    """The server refuses it with a 400; the page should not offer it in the first place."""
+    with Session(get_engine()) as session:
+        admin_id = session.exec(select(User).where(User.username == "admin")).one().id
+
+    page = admin_client.get("/admin/users").text
+
+    assert f"/admin/users/{admin_id}/toggle" not in page

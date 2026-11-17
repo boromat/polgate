@@ -30,6 +30,7 @@ from polgate.files.extract import (
 from polgate.models import Conversation, FileAsset, FileStatus, HilMode, User
 from polgate.policy_loader import get_policy
 from polgate.rendering import render
+from polgate.retention import remove_upload
 from polgate.retrieval import store as passages
 from polgate.vault import fingerprints
 from polgate.vault import store as vault
@@ -282,7 +283,7 @@ def reject(
     asset.text_sent = ""
     # The original name goes with the text; pages fall back to the masked one.
     asset.filename_enc = ""
-    Path(asset.storage_path).unlink(missing_ok=True)
+    remove_upload(asset.storage_path)
     removed = passages.delete_for_files(session, [file_id])
     session.add(asset)
     session.commit()

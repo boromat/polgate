@@ -112,3 +112,9 @@ def test_a_link_in_an_answer_sends_no_referrer():
     html = str(rendering.markdown("[polityka](https://example.com/polityka)"))
     assert 'href="https://example.com/polityka"' in html
     assert 'rel="noopener noreferrer"' in html
+
+
+def test_a_title_draws_its_tokens_as_bars_and_escapes_the_rest():
+    html = str(rendering.redacted("Pismo <b> dla <OSOBA_1:wołacz>"))
+    assert html == 'Pismo &lt;b&gt; dla <span class="redacted" aria-hidden="true"></span>'
+    assert rendering.redacted_plain("Dla <OSOBA_1>") == "Dla \u25ae"

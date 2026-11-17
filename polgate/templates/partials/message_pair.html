@@ -27,5 +27,8 @@
          data-judge-label="{{ t('chat.error_judge') }}"
          data-warn-label="{{ t('chat.sweep_warning') }}">
   <div class="bubble" data-sink><span class="waiting">{{ t("chat.masking") }}</span></div>
+  <div class="msg-meta">
+    <button class="link no-print" type="button" data-copy data-copied-label="{{ t('chat.copied') }}" hidden>{{ t("chat.copy") }}</button>
+  </div>
   <p class="msg-meta" data-status hidden></p>
 </article>

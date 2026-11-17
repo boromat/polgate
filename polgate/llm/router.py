@@ -257,40 +257,62 @@ def _trim(text: str, budget_chars: int) -> str:
     return text[:budget_chars] + TRUNCATION_MARKER
 
 
-def _title_from(anonymized: str, limit: int = 44) -> str:
-    """Build a conversation title from the masked text.
+def _title_from(anonymized: str, limit: int = 60) -> str:
+    """Build a conversation title from the masked text: its sentence with the most words.
 
-    The original can never be used, because the title is stored unencrypted, and a title made of
-    placeholders is unreadable. So the longest run of real words between tokens is taken: in
-    practice that is the sentence carrying the request, not the data around it.
+    The original can never be used, because the title is stored unencrypted. The sentence is kept
+    with its tokens, which the page draws as redaction bars, so "Odpisz <OSOBA_1> (PESEL <PESEL_1>),
+    że wniosek…" reads as the request it is; a run of words cut out between tokens read as "że
+    wniosek…" and lost its verb. A token counts as two characters against the limit, the width of
+    its bar, and is never cut in two.
     """
-    # Tokens are replaced with a separator first: TOKEN_PATTERN has capture groups, and re.split
-    # would return their contents as fragments of their own.
-    parts = _TOKEN_RE.sub("\x00", anonymized).split("\x00")
-    fragments = [_trimmed(" ".join(part.split())) for part in parts]
-    best = max(fragments, key=lambda part: len(part.split()), default="")
-    if not best:
+    sentences = [" ".join(s.split()) for s in _SENTENCE_BREAK.split(anonymized) if s.strip()]
+    best = max(sentences, key=_word_count, default="")
+    if not _word_count(best):
         return utcnow().strftime("%Y-%m-%d %H:%M")
-    return best if len(best) <= limit else best[:limit].rsplit(" ", 1)[0] + "…"
+    title = _trimmed(best)
+    if _display_length(title) <= limit:
+        return title
+    kept: list[str] = []
+    for word in title.split(" "):
+        if _display_length(" ".join([*kept, word])) > limit:
+            break
+        kept.append(word)
+    return " ".join(kept).rstrip(" ,.;:-(") + "…"
 
 
+#: Where one sentence of a message ends and the next begins.
+_SENTENCE_BREAK = re.compile(r"(?<=[.!?…])\s+|\n+")
+#: A word for a title: letters, outside any token.
+_TITLE_WORD = re.compile(r"[^\W\d_]{2,}")
 #: Opening brackets and quotes a title may start with, and what closes each.
 _CLOSERS = {"(": ")", "[": "]", "„": "”", "«": "»", '"': '"'}
 
 
-def _trimmed(fragment: str) -> str:
-    """Trim what a token left at a fragment's edges: "(PESEL <PESEL_1>), że" gave "), że".
+def _word_count(text: str) -> int:
+    return len(_TITLE_WORD.findall(_TOKEN_RE.sub(" ", text)))
 
-    Anything but a letter or a digit goes from the start, except an opening bracket or quote the
-    fragment closes; separators and a bracket nothing in the fragment opened go from the end.
+
+def _display_length(text: str) -> int:
+    """Return how long a title looks: a token is drawn as a short bar, two characters wide."""
+    return len(_TOKEN_RE.sub("##", text))
+
+
+def _trimmed(fragment: str) -> str:
+    """Trim a sentence's edges: separators, a full stop, and a bracket nothing in it opened.
+
+    Anything but a letter, a digit or a token goes from the start, except an opening bracket or
+    quote the sentence closes, so a title never opens with "), że".
     """
     start = 0
     while start < len(fragment) and not fragment[start].isalnum():
+        if _TOKEN_RE.match(fragment, start):
+            break
         closer = _CLOSERS.get(fragment[start])
         if closer is not None and closer in fragment[start + 1 :]:
             break
         start += 1
-    text = fragment[start:].rstrip(" ,.;:-(")
+    text = fragment[start:].rstrip(" ,.;:-(!?")
     while text.endswith(")") and text.count(")") > text.count("("):
         text = text[:-1].rstrip(" ,.;:-(")
     return text

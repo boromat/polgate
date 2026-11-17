@@ -117,6 +117,35 @@ def entity_counts(counts_json: str | None) -> list[tuple[str, int]]:
 templates.env.filters["highlight_tokens"] = highlight_tokens
 templates.env.filters["markdown"] = markdown
 
+#: What a token in a title is written as where no markup can go, such as the browser's tab.
+REDACTION_MARK = "\u25ae"
+
+
+def redacted(text: str) -> Markup:
+    """Draw the tokens of a stored title as redaction bars, and escape everything else.
+
+    A title is built from the masked text and keeps its tokens; on the page they are what they
+    stand for, a value that did not leave, not a label to read.
+    """
+    parts: list[str] = []
+    cursor = 0
+    for match in WRITTEN_TOKEN_RE.finditer(text):
+        parts.append(str(escape(text[cursor : match.start()])))
+        parts.append('<span class="redacted" aria-hidden="true"></span>')
+        cursor = match.end()
+    parts.append(str(escape(text[cursor:])))
+    # Safe by construction: every fragment above is escaped and only our own markup is added.
+    return Markup("".join(parts))  # noqa: S704
+
+
+def redacted_plain(text: str) -> str:
+    """Write the tokens of a stored title as a mark, for the browser's tab."""
+    return WRITTEN_TOKEN_RE.sub(REDACTION_MARK, text)
+
+
+templates.env.filters["redacted"] = redacted
+templates.env.filters["redacted_plain"] = redacted_plain
+
 #: What each entity type is called on the page. Written out so every key appears verbatim in the
 #: source, where the i18n coverage test looks for it; a type a later polanon adds and this map does
 #: not know yet is shown by its code, which the page shows beside the name anyway.
@@ -186,6 +215,7 @@ FLASH_KEYS = frozenset(
         "knowledge.published_flash",
         "knowledge.withdrawn_flash",
         "knowledge.reindexed_flash",
+        "chat.deleted_flash",
     }
 )
 

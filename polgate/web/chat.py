@@ -14,7 +14,7 @@ from polanon.policy import enabled_entities
 from sqlmodel import Session, col, desc, select
 from sse_starlette.sse import EventSourceResponse
 
-from polgate import audit
+from polgate import audit, retention
 from polgate.auth.deps import current_user
 from polgate.config import get_settings
 from polgate.db import get_session
@@ -30,7 +30,7 @@ from polgate.models import (
     User,
 )
 from polgate.policy_loader import get_policy, masking_is_off
-from polgate.rendering import markdown, render
+from polgate.rendering import markdown, redacted, redacted_plain, render
 from polgate.security import is_same_origin
 from polgate.vault import store as vault
 
@@ -278,9 +278,37 @@ async def stream_answer(
                 # The answer streams as plain text and is replaced, once whole, by its Markdown:
                 # a half-written table or list rendered at every token would jump about.
                 data["html"] = str(markdown("".join(answer)))
+                # The first message names the conversation; the page shows it without a reload.
+                if conversation.title:
+                    data["title"] = str(redacted(conversation.title))
+                    data["title_text"] = redacted_plain(conversation.title)
             yield {"event": event.type, "data": json.dumps(data)}
 
     return EventSourceResponse(events())
+
+
+@router.post("/{conversation_id}/delete")
+def delete_conversation(
+    conversation_id: int,
+    user: User = Depends(current_user),
+    session: Session = Depends(get_session),
+) -> Response:
+    """Delete one of the employee's conversations, with its files and its vault mapping."""
+    conversation = _load_conversation(session, conversation_id, user)
+    removed = retention.delete_conversation(session, conversation)
+    audit.log(
+        session,
+        event="conversation_deleted",
+        user_id=user.id,
+        conversation_id=conversation_id,
+        detail=f"messages={removed}",
+    )
+    remaining = _conversations(session, user)
+    if remaining:
+        return RedirectResponse(
+            f"/chat/{remaining[0].id}?flash=chat.deleted_flash", status_code=303
+        )
+    return RedirectResponse("/chat", status_code=303)
 
 
 @router.get("/{conversation_id}/messages/{message_id}/preview")

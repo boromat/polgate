@@ -98,6 +98,29 @@
     meta.hidden = false;
   }
 
+  /* The first message gives the conversation its title: in the header, in the list beside it
+     and in the browser's tab. The markup is the server's own, tokens drawn as bars. */
+  function showTitle(html, text) {
+    var header = document.querySelector("[data-chat-title]");
+    var current = document.querySelector(".conversations li.active a");
+    [header, current].forEach(function (element) {
+      if (element) {
+        element.innerHTML = html;
+      }
+    });
+    var suffix = document.title.split(" · ").pop();
+    if (text) {
+      document.title = text + " · " + suffix;
+    }
+  }
+
+  function revealCopy(article) {
+    var button = article.querySelector("[data-copy]");
+    if (button) {
+      button.hidden = false;
+    }
+  }
+
   /* Read one answer from the server's event stream into the assistant bubble. */
   function connectStream(article) {
     if (article.dataset.wired === "1") {
@@ -166,6 +189,10 @@
         sink.innerHTML = data.html;
         sink.classList.add("prose");
       }
+      if (data.title) {
+        showTitle(data.title, data.title_text || "");
+      }
+      revealCopy(article);
       if (data.detail) {
         showBadge(status, "warn", article.dataset.warnLabel);
       }
@@ -242,11 +269,52 @@
     }
   });
 
+  /* Copy an answer as it reads, without its markup. The clipboard API needs a secure page, and a
+     hub on a company network is often plain HTTP, so the text is copied by selection there. */
+  function copyAnswer(button) {
+    var bubble = button.closest(".msg").querySelector(".bubble");
+    if (!bubble) {
+      return;
+    }
+    var text = bubble.innerText.trim();
+    var done = function () {
+      var label = button.textContent;
+      button.textContent = button.dataset.copiedLabel;
+      window.setTimeout(function () {
+        button.textContent = label;
+      }, 1600);
+    };
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(text).then(done);
+      return;
+    }
+    var range = document.createRange();
+    range.selectNodeContents(bubble);
+    var selection = window.getSelection();
+    selection.removeAllRanges();
+    selection.addRange(range);
+    if (document.execCommand("copy")) {
+      done();
+    }
+    selection.removeAllRanges();
+  }
+
   document.addEventListener("click", function (event) {
     var trigger = event.target.closest("[data-print]");
     if (trigger) {
       event.preventDefault();
       window.print();
+      return;
+    }
+    var copy = event.target.closest("[data-copy]");
+    if (copy) {
+      copyAnswer(copy);
+      return;
+    }
+    var toggle = event.target.closest("[data-toggle-conversations]");
+    if (toggle) {
+      var open = toggle.closest(".sidebar").classList.toggle("open");
+      toggle.setAttribute("aria-expanded", open ? "true" : "false");
     }
   });
 

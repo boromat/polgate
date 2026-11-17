@@ -257,6 +257,7 @@ def audit_log(
         has_next=len(rows) == PAGE_SIZE,
         event=event,
         known_events=known_events,
+        usernames={user.id: user.username for user in session.exec(select(User)).all()},
     )
 
 

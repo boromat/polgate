@@ -13,7 +13,7 @@
   <h3>{{ t("account.identity") }}</h3>
   <dl class="facts">
     <dt>{{ t("auth.username") }}</dt><dd class="mono">{{ user.username }}</dd>
-    <dt>{{ t("admin.role") }}</dt><dd><span class="badge">{{ user.role.value }}</span></dd>
+    <dt>{{ t("admin.role") }}</dt><dd>{{ t("admin.role_admin") if user.role.value == "admin" else t("admin.role_user") }}</dd>
   </dl>
   <form method="post" action="/account/language" class="row">
     <label class="grow">{{ t("admin.language") }}

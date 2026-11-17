@@ -240,13 +240,15 @@ class TestConversationTitles:
         [
             (
                 "Odpisz <OSOBA_1> (PESEL <PESEL_1>), że wniosek jest przyjęty.",
-                "że wniosek jest przyjęty",
+                "Odpisz <OSOBA_1> (PESEL <PESEL_1>), że wniosek jest przyjęty",
             ),
-            ("<OSOBA_1>: „pilne” - umowa (aneks nr 2)", "„pilne” - umowa (aneks nr 2)"),
+            ("<OSOBA_1>: „pilne” - umowa (aneks nr 2)", "<OSOBA_1>: „pilne” - umowa (aneks nr 2)"),
+            ("„Pilne” (dla <OSOBA_1>", "„Pilne” (dla <OSOBA_1>"),
+            ("), że wniosek jest przyjęty.", "że wniosek jest przyjęty"),
         ],
     )
-    def test_a_title_starts_with_a_word_and_leaves_no_bracket_unopened(self, masked, title):
-        """A token cut out of "(PESEL <PESEL_1>), że" left the title opening with "), że"."""
+    def test_a_title_is_the_request_with_its_tokens_and_no_stray_bracket(self, masked, title):
+        """Words cut out between tokens read as "), że wniosek…" and lost the request's verb."""
         from polgate.llm.router import _title_from
 
         assert _title_from(masked) == title
@@ -259,10 +261,18 @@ class TestConversationTitles:
     def test_long_titles_are_cut_on_a_word_boundary(self):
         from polgate.llm.router import _title_from
 
-        title = _title_from("Podsumuj proszę tę bardzo długą wiadomość o wielu szczegółach sprawy")
+        title = _title_from(
+            "Podsumuj proszę tę bardzo długą wiadomość o wielu szczegółach sprawy z klientem"
+        )
         assert title.endswith("…")
-        assert len(title) <= 45
+        assert len(title) <= 61
         assert "  " not in title
+
+    def test_a_token_is_never_cut_in_two_by_the_limit(self):
+        from polgate.llm.router import _title_from
+
+        title = _title_from("Wezwanie do zapłaty dla <FIRMA_12> i <OSOBA_3> jeszcze dziś", limit=30)
+        assert title == "Wezwanie do zapłaty dla <FIRMA_12> i…"
 
     async def test_the_stored_title_never_contains_personal_data(self, turn_setup):
         session, conversation, user, anonymizer, policy = turn_setup

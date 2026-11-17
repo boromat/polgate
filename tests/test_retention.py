@@ -463,3 +463,16 @@ async def test_the_hourly_pass_runs_off_the_event_loop(monkeypatch):
 
     assert len(threads) == 1
     assert threads[0] != threading.get_ident()
+
+
+def test_an_upload_whose_bytes_were_erased_is_skipped_not_unlinked(tmp_path, monkeypatch):
+    """Erasing a person empties the path; an empty path is the working directory."""
+    from polgate.retention import remove_upload
+
+    monkeypatch.chdir(tmp_path)
+    remove_upload("")
+    assert tmp_path.exists()
+    stored = tmp_path / "x.txt"
+    stored.write_text("x", encoding="utf-8")
+    remove_upload(str(stored))
+    assert not stored.exists()

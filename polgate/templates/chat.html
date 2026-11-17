@@ -1,17 +1,24 @@
 {% extends "base.html" %}
-{% block title %}{{ conversation.title or t("chat.untitled") }} · {{ t("app.name") }}{% endblock %}
+{% block title %}{{ conversation.title | redacted_plain if conversation.title else t("chat.untitled") }} · {{ t("app.name") }}{% endblock %}
 {% block body %}
 <div class="chat-layout">
   <aside class="sidebar">
-    <form method="post" action="/chat/new">
-      <button class="btn secondary block" type="submit">{{ icon.plus(14) }} {{ t("chat.new") }}</button>
-    </form>
-    <nav aria-label="{{ t('a11y.conversations') }}">
+    <div class="sidebar-head">
+      <form method="post" action="/chat/new" class="grow">
+        <button class="btn secondary block" type="submit">{{ icon.plus(14) }} {{ t("chat.new") }}</button>
+      </form>
+      {# On a narrow screen the list folds away behind this, so the conversation comes first. #}
+      <button class="btn secondary conversations-toggle" type="button" data-toggle-conversations
+              aria-expanded="false" aria-controls="conversation-list">
+        {{ t("chat.conversations", count=conversations | length) }}
+      </button>
+    </div>
+    <nav id="conversation-list" aria-label="{{ t('a11y.conversations') }}">
       <ul class="conversations">
         {% for c in conversations %}
           <li class="{{ 'active' if c.id == conversation.id }}">
             <a href="/chat/{{ c.id }}" {{ 'aria-current=page' if c.id == conversation.id }}>
-              {{ c.title or t("chat.untitled") }}
+              {{ c.title | redacted if c.title else t("chat.untitled") }}
             </a>
           </li>
         {% endfor %}
@@ -22,10 +29,17 @@
 
   <main class="chat" id="main">
     <header class="chat-header" data-print-note="{{ t('chat.print_note') }}">
-      <span class="chat-title">{{ conversation.title or t("chat.untitled") }}</span>
+      <span class="chat-title" data-chat-title>{{ conversation.title | redacted if conversation.title else t("chat.untitled") }}</span>
       <div class="row">
         {% if messages %}
           <a class="link no-print" href="#" data-print>{{ t("chat.print") }}</a>
+          <details class="confirm no-print">
+            <summary class="link">{{ t("chat.delete") }}</summary>
+            <form method="post" action="/chat/{{ conversation.id }}/delete" class="confirm-box">
+              <p>{{ t("chat.delete_confirm") }}</p>
+              <button class="btn danger small" type="submit">{{ t("chat.delete_button") }}</button>
+            </form>
+          </details>
         {% endif %}
         {% if masking_off %}
           <span class="badge error" title="{{ t('chat.unprotected_hint') }}">{{ t("chat.unprotected") }}</span>
@@ -54,6 +68,9 @@
           {% endif %}
           <div class="msg-meta">
             <time datetime="{{ m.created_at | iso_utc }}" data-local-time>{{ m.created_at.strftime("%H:%M") }}</time>
+            {% if m.role == "assistant" %}
+              <button class="link no-print" type="button" data-copy data-copied-label="{{ t('chat.copied') }}">{{ t("chat.copy") }}</button>
+            {% endif %}
             {% if m.role == "user" %}
               {% if m.entity_count %}
                 <span class="badge shield" title="{{ t('chat.masked_hint') }}">{{ t("chat.masked_count", count=m.entity_count) }}</span>

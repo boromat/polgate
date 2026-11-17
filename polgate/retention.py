@@ -120,6 +120,48 @@ def purge(session: Session, policy: Policy, settings: Settings) -> PurgeReport:
     return report
 
 
+def remove_upload(storage_path: str) -> None:
+    """Delete a stored upload's bytes, when the row still points at any.
+
+    A data subject's erasure deletes the bytes and empties the path, and an empty path is the
+    working directory: unlinking it failed, and with it the retention pass or the rejection.
+    """
+    if storage_path:
+        Path(storage_path).unlink(missing_ok=True)
+
+
+def delete_conversation(session: Session, conversation: Conversation) -> int:
+    """Delete a conversation now, with everything in it, and commit.
+
+    Its messages, its files with their bytes and passages, a message still waiting to stream and
+    the vault mapping go with it, children first, as the database's references require.
+
+    Returns:
+        How many messages went.
+    """
+    conversation_id = conversation.id
+    files = session.exec(
+        select(FileAsset).where(col(FileAsset.conversation_id) == conversation_id)
+    ).all()
+    passages.delete_for_files(session, [f.id for f in files if f.id is not None])
+    for asset in files:
+        remove_upload(asset.storage_path)
+        session.delete(asset)
+    messages = session.exec(
+        select(Message).where(col(Message.conversation_id) == conversation_id)
+    ).all()
+    for message in messages:
+        session.delete(message)
+    for turn in session.exec(
+        select(PendingTurn).where(col(PendingTurn.conversation_id) == conversation_id)
+    ).all():
+        session.delete(turn)
+    _delete_conversation_traces(session, conversation)
+    session.delete(conversation)
+    session.commit()
+    return len(messages)
+
+
 def _purge_pending_turns(session: Session, now: datetime, ttl_minutes: int) -> int:
     """Drop queued turns older than the timeout; their stream is never going to start."""
     if ttl_minutes <= 0:
@@ -155,7 +197,7 @@ def _purge_history(
     ]
     chunks = passages.delete_for_files(session, [f.id for f in files if f.id is not None])
     for asset in files:
-        Path(asset.storage_path).unlink(missing_ok=True)
+        remove_upload(asset.storage_path)
         session.delete(asset)
     session.flush()
 

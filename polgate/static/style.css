@@ -392,6 +392,18 @@ legend + * { clear: both; }
 }
 .code { font-family: var(--mono); font-size: 11.5px; color: var(--faint); letter-spacing: 0.01em; }
 
+/* A token in a title: no label, just the bar where the value was. */
+.redacted {
+  display: inline-block;
+  width: 1.5em;
+  height: 0.72em;
+  margin: 0 0.06em;
+  border-radius: 1px;
+  background: currentColor;
+  opacity: 0.85;
+  vertical-align: -0.04em;
+}
+
 .entity-count { display: inline-flex; align-items: center; gap: 4px; margin: 0 10px 2px 0; white-space: nowrap; font-variant-numeric: tabular-nums; }
 
 /* --- tags: small, square, quiet ------------------------------------------------------------- */
@@ -480,6 +492,8 @@ legend + * { clear: both; }
   overflow: hidden;
 }
 .sidebar .btn { justify-content: flex-start; }
+.sidebar-head { display: flex; gap: 8px; }
+.conversations-toggle { display: none; }
 .sidebar nav { flex: 1; min-height: 0; overflow-y: auto; }
 .sidebar > p { margin: 0; padding: 0 6px; }
 .conversations { display: flex; flex-direction: column; gap: 1px; list-style: none; margin: 0; padding: 0; }
@@ -702,13 +716,36 @@ legend + * { clear: both; }
 .danger p { color: var(--muted); max-width: 56ch; }
 .danger .row, .results .row { align-items: center; }
 
+/* A step that cannot be undone asks once more, in place, without a dialog or a script. */
+.confirm { position: relative; }
+.confirm summary { list-style: none; }
+.confirm summary::-webkit-details-marker { display: none; }
+.confirm-box {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  z-index: 10;
+  width: 280px;
+  padding: 12px 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--surface);
+  font-size: 13px;
+}
+.confirm-box p { margin: 0 0 10px; color: var(--muted); }
+
 /* --- responsive -------------------------------------------------------------------------------- */
 
 @media (max-width: 900px) {
   .chat-layout { grid-template-columns: minmax(0, 1fr); height: auto; }
   .chat { min-height: calc(100vh - var(--topbar-h)); }
-  .chat-header { flex-wrap: wrap; padding: 8px 16px; }
-  .sidebar { max-height: 168px; border-right: 0; border-bottom: 1px solid var(--border); }
+  .chat-header { flex-wrap: wrap; row-gap: 4px; padding: 8px 16px; }
+  .chat-title { flex-basis: 100%; }
+  .sidebar { padding: 10px 16px; border-right: 0; border-bottom: 1px solid var(--border); }
+  .sidebar .btn { justify-content: center; }
+  .conversations-toggle { display: inline-flex; }
+  .sidebar nav, .sidebar > p { display: none; }
+  .sidebar.open nav { display: block; max-height: 50vh; }
   .preview, .sheet-body, .sheet-head { grid-template-columns: 1fr; }
   .sheet-head span + span { border-left: 0; border-top: 1px solid var(--border); }
   .preview .divider, .sheet-divider { height: 1px; }
@@ -843,6 +880,7 @@ legend + * { clear: both; }
 .narrow { max-width: 420px; }
 .wide { max-width: 760px; }
 .grow { flex: 1; min-width: 0; }
+.nowrap { white-space: nowrap; }
 .spaced { margin-top: 16px; }
 .spaced-below { margin-bottom: 16px; }
 

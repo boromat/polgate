@@ -8,6 +8,11 @@ All notable changes to this project are recorded here. The format follows
 
 ### Added
 
+- **A conversation can be deleted** from its header, after one more click to confirm: its
+  messages, files with their bytes, passages and vault mapping go at once instead of when
+  retention gets to them.
+- **An answer can be copied** as it reads, without its markup, also from a hub served over plain
+  HTTP, where the browser offers no clipboard API.
 - **Answers are shown as Markdown**: headings, lists, bold text, tables and code from the model
   are rendered instead of shown with their asterisks. Raw HTML in an answer is escaped, and
   pictures are not rendered, since one could carry a restored value to the server it loads from.
@@ -26,6 +31,17 @@ All notable changes to this project are recorded here. The format follows
 
 ### Fixed
 
+- **A conversation's title is its request**, the sentence of the first message with the most
+  words, with its tokens drawn as short redaction bars: "Odpisz ▮ (PESEL ▮), że wniosek…" rather
+  than the words between two tokens, "że wniosek…". It appears as soon as the first answer ends,
+  without a reload.
+- **Erasing a person no longer breaks the hourly clean-up**: the erasure empties a file's stored
+  path, and the retention pass and a rejection then tried to delete the working directory.
+- **Smaller things on the pages**: roles are "Administrator" and "Employee", not "admin" and
+  "user"; the switch for an account says "Disable" or "Enable" and is not offered on one's own
+  account, which the server refuses anyway; the audit log names the user instead of a number;
+  on a narrow screen the conversation list folds away behind one button and the title gets a
+  line of its own.
 - **An answer that names a person in another case no longer warns of new data.** With names
   restored declined in 0.3.0, "Szanowny Panie Janie Kowalski" after a message about "Janowi
   Kowalskiemu" showed "the answer holds data your message did not" under nearly every Polish
