@@ -882,10 +882,10 @@ legend + * { clear: both; }
 
 .split { display: grid; grid-template-columns: minmax(0, 320px) minmax(0, 1fr); gap: 40px; align-items: start; }
 .results h3 { margin-bottom: 12px; }
-.danger { margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--border); }
-.danger h3 { color: var(--bad); }
-.danger p { color: var(--muted); max-width: 56ch; }
-.danger .row, .results .row { align-items: center; }
+.danger-zone { margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--border); }
+.danger-zone h3 { color: var(--bad); }
+.danger-zone p { color: var(--muted); max-width: 56ch; }
+.danger-zone .row, .results .row { align-items: center; }
 
 /* A step that cannot be undone asks once more, in place, without a dialog or a script. */
 .confirm { position: relative; }
