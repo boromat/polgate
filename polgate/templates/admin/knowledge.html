@@ -50,7 +50,7 @@
             {% else %}<span class="badge warn">{{ t("knowledge.pending") }}</span>{% endif %}
           </td>
           <td class="num">{{ document.passages }}</td>
-          <td class="muted"><time datetime="{{ document.created_at | iso_utc }}">{{ document.created_at.strftime("%Y-%m-%d %H:%M") }}</time></td>
+          <td class="muted"><time datetime="{{ document.created_at | iso_utc }}" data-local-time="date">{{ document.created_at.strftime("%Y-%m-%d %H:%M") }}</time></td>
         </tr>
       {% endfor %}
     </tbody>

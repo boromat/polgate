@@ -17,7 +17,7 @@
     <tbody>
       {% for r in rows %}
         <tr>
-          <td class="mono nowrap">{{ r.created_at.strftime("%Y-%m-%d %H:%M") }}</td>
+          <td class="mono nowrap"><time datetime="{{ r.created_at | iso_utc }}" data-local-time="date">{{ r.created_at.strftime("%Y-%m-%d %H:%M") }}</time></td>
           <td class="mono">{{ r.event }}</td>
           <td>{{ usernames.get(r.user_id, r.user_id) if r.user_id else "-" }}</td>
           <td>

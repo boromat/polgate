@@ -39,10 +39,20 @@
   }
 
   /* The server stores and renders UTC. Shown as is, a message sent at 17:23 in Warsaw read 15:23,
-     so every timestamp is rewritten in the reader's own time zone. */
+     so every timestamp is rewritten in the reader's own time zone; a table of events keeps the
+     date in front, in the same order the server writes it. */
+  function pad(number) {
+    return (number < 10 ? "0" : "") + number;
+  }
+
   function localTime(element) {
     var moment = new Date(element.getAttribute("datetime"));
     if (isNaN(moment.getTime())) {
+      return;
+    }
+    if (element.dataset.localTime === "date") {
+      element.textContent = moment.getFullYear() + "-" + pad(moment.getMonth() + 1) + "-" +
+        pad(moment.getDate()) + " " + pad(moment.getHours()) + ":" + pad(moment.getMinutes());
       return;
     }
     element.textContent = moment.toLocaleTimeString(document.documentElement.lang || [], {

@@ -1545,3 +1545,11 @@ def test_setting_a_password_for_someone_says_it_is_set(admin_client):
     assert "Nowe hasło jest ustawione" in admin_client.get(done.headers["location"]).text
     assert weak.status_code == 400
     assert "Nowe hasło jest za krótkie." in weak.text
+
+
+def test_the_audit_log_marks_its_times_for_the_reader_s_time_zone(admin_client):
+    """The table printed UTC while the chat showed local time: 20:58 beside 21:58 for one moment."""
+    page = admin_client.get("/admin/audit").text
+
+    assert 'data-local-time="date">' in page
+    assert 'datetime="20' in page
