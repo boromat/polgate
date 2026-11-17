@@ -20,7 +20,7 @@
 </head>
 <body>
 <a class="skip-link" href="#main">{{ t("a11y.skip") }}</a>
-<header class="topbar">
+<header class="topbar{{ ' signed-in' if user }}">
   <a class="brand" href="/"><span class="brand-mark" aria-hidden="true"></span>{{ t("app.name") }}</a>
   <nav class="topnav">
     {% if user %}
@@ -55,6 +55,24 @@
       <a href="?lang=en" class="{{ 'active' if lang == 'en' }}">EN</a>
     </span>
   </div>
+  {% if user %}
+    {# On a phone the bar holds the name and this one menu; the links above stay for wider screens. #}
+    <details class="mobile-menu">
+      <summary class="navlink" aria-label="{{ t('nav.menu') }}">{{ icon.menu(20) }}</summary>
+      <nav class="menu-panel">
+        <a href="/chat" class="{{ 'active' if request.url.path.startswith('/chat') }}">{{ t("nav.chat") }}</a>
+        {% if user.role.value == "admin" %}
+          <a href="/admin" class="{{ 'active' if request.url.path.startswith('/admin') }}">{{ t("nav.admin") }}</a>
+        {% endif %}
+        <a href="/account" class="{{ 'active' if request.url.path.startswith('/account') }}">{{ t("nav.account") }} · {{ user.username }}</a>
+        <form method="post" action="/logout"><button type="submit">{{ t("nav.logout") }}</button></form>
+        <div class="menu-lang">
+          <a href="?lang=pl" class="{{ 'active' if lang == 'pl' }}">Polski</a>
+          <a href="?lang=en" class="{{ 'active' if lang == 'en' }}">English</a>
+        </div>
+      </nav>
+    </details>
+  {% endif %}
 </header>
 {% block body %}
 <main class="container" id="main">{% block content %}{% endblock %}</main>

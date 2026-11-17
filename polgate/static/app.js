@@ -101,9 +101,9 @@
   /* The first message gives the conversation its title: in the header, in the list beside it
      and in the browser's tab. The markup is the server's own, tokens drawn as bars. */
   function showTitle(html, text) {
-    var header = document.querySelector("[data-chat-title]");
-    var current = document.querySelector(".conversations li.active a");
-    [header, current].forEach(function (element) {
+    var targets = Array.prototype.slice.call(document.querySelectorAll("[data-chat-title]"));
+    targets.push(document.querySelector(".conversations li.active a"));
+    targets.forEach(function (element) {
       if (element) {
         element.innerHTML = html;
       }
@@ -318,8 +318,9 @@
       return;
     }
     var toggle = event.target.closest("[data-toggle-conversations]");
-    if (toggle) {
-      var open = toggle.closest(".sidebar").classList.toggle("open");
+    var layout = document.querySelector(".chat-layout");
+    if (toggle && layout) {
+      var open = layout.classList.toggle("list-open");
       toggle.setAttribute("aria-expanded", open ? "true" : "false");
     }
   });

@@ -58,3 +58,14 @@
   stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
   <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
   <rect x="8" y="2" width="8" height="4" rx="1"/></svg>{% endmacro %}
+
+{% macro menu(size=20) %}<svg width="{{ size }}" height="{{ size }}" viewBox="0 0 24 24" fill="none"
+  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+  <line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg>{% endmacro %}
+
+{% macro more(size=20) %}<svg width="{{ size }}" height="{{ size }}" viewBox="0 0 24 24" fill="currentColor"
+  aria-hidden="true"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg>{% endmacro %}
+
+{% macro chevron(size=14) %}<svg width="{{ size }}" height="{{ size }}" viewBox="0 0 24 24" fill="none"
+  stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+  <polyline points="6 9 12 15 18 9"/></svg>{% endmacro %}

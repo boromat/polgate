@@ -492,8 +492,6 @@ legend + * { clear: both; }
   overflow: hidden;
 }
 .sidebar .btn { justify-content: flex-start; }
-.sidebar-head { display: flex; gap: 8px; }
-.conversations-toggle { display: none; }
 .sidebar nav { flex: 1; min-height: 0; overflow-y: auto; }
 .sidebar > p { margin: 0; padding: 0 6px; }
 .conversations { display: flex; flex-direction: column; gap: 1px; list-style: none; margin: 0; padding: 0; }
@@ -521,8 +519,86 @@ legend + * { clear: both; }
   padding: 8px 24px;
   border-bottom: 1px solid var(--border);
 }
-.chat-title { flex: 1; min-width: 0; font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.chat-header .row { gap: 16px; }
+.chat-title { min-width: 0; font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* On a wide screen the title is only a title: the list is beside it. */
+.chat-title-button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  pointer-events: none;
+}
+.chat-title-button svg { display: none; color: var(--faint); flex-shrink: 0; transition: transform 0.15s; }
+.chat-actions { display: flex; align-items: center; gap: 6px; }
+.chat-actions .badge { margin-right: 8px; }
+.header-new { display: none; margin: 0; }
+
+.icon-button {
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+  list-style: none;
+}
+.icon-button:hover { background: var(--surface-2); color: var(--text); }
+.icon-button::-webkit-details-marker { display: none; }
+
+/* A small menu that opens under its button: the chat's more, and the phone's main menu. */
+.more, .mobile-menu { position: relative; }
+.more[open] > summary, .mobile-menu[open] > summary { background: var(--surface-2); color: var(--text); }
+.menu-panel {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  min-width: 200px;
+  padding: 6px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+.menu-panel > a, .menu-panel > form > button, .menu-panel > details > summary {
+  display: block;
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  list-style: none;
+}
+.menu-panel > a:hover, .menu-panel > form > button:hover, .menu-panel > details > summary:hover { background: var(--surface-2); }
+.menu-panel > a.active { font-weight: 600; }
+.menu-panel > form { margin: 0; }
+.menu-panel > details > summary { color: var(--bad); }
+.menu-panel > details > summary::-webkit-details-marker { display: none; }
+.menu-panel .confirm-box { position: static; width: auto; margin: 4px 0 2px; border: 0; padding: 4px 10px 8px; }
+.menu-lang { display: flex; gap: 4px; margin-top: 4px; padding: 8px 10px 4px; border-top: 1px solid var(--border); }
+.menu-lang a { padding: 2px 8px; border-radius: var(--radius-sm); color: var(--muted); font-size: 13px; text-decoration: none; }
+.menu-lang a.active { background: var(--surface-2); color: var(--text); font-weight: 600; }
+.mobile-menu { display: none; margin-left: auto; }
+.mobile-menu > summary { list-style: none; }
+.mobile-menu > summary::-webkit-details-marker { display: none; }
 
 #messages {
   flex: 1;
@@ -768,15 +844,41 @@ legend + * { clear: both; }
 /* --- responsive -------------------------------------------------------------------------------- */
 
 @media (max-width: 900px) {
-  .chat-layout { grid-template-columns: minmax(0, 1fr); height: auto; }
+  .chat-layout { grid-template-columns: minmax(0, 1fr); height: auto; position: relative; }
   .chat { min-height: calc(100vh - var(--topbar-h)); }
-  .chat-header { flex-wrap: wrap; row-gap: 4px; padding: 8px 16px; }
-  .chat-title { flex-basis: 100%; }
-  .sidebar { padding: 10px 16px; border-right: 0; border-bottom: 1px solid var(--border); }
-  .sidebar .btn { justify-content: center; }
-  .conversations-toggle { display: inline-flex; }
-  .sidebar nav, .sidebar > p { display: none; }
-  .sidebar.open nav { display: block; max-height: 50vh; }
+  /* One thin bar above the conversation: its title, which opens the others, a new one, and more. */
+  .chat-header { min-height: 46px; padding: 6px 8px 6px 16px; gap: 8px; }
+  .chat-title-button { pointer-events: auto; cursor: pointer; }
+  .chat-title-button svg { display: block; }
+  .list-open .chat-title-button svg { transform: rotate(180deg); }
+  .chat-actions { gap: 2px; }
+  .chat-actions .badge { margin-right: 4px; }
+  .chat-actions .badge-text, .tool > span:not(.redacted) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .header-new { display: block; }
+  /* The list is not a column on a phone: it drops down under the bar when the title is tapped. */
+  .sidebar { display: none; }
+  .list-open .sidebar {
+    display: block;
+    position: absolute;
+    top: 46px;
+    left: 0;
+    right: 0;
+    z-index: 25;
+    max-height: 60vh;
+    padding: 6px 8px 10px;
+    overflow-y: auto;
+    border-bottom: 1px solid var(--border-strong);
+    background: var(--surface);
+  }
+  .list-open .sidebar .sidebar-new { display: none; }
+  .conversations li a { padding: 10px 8px; font-size: 14.5px; }
   .preview, .sheet-body, .sheet-head { grid-template-columns: 1fr; }
   .sheet-head span + span { border-left: 0; border-top: 1px solid var(--border); }
   .preview .divider, .sheet-divider { height: 1px; }
@@ -785,20 +887,26 @@ legend + * { clear: both; }
   .points { grid-template-columns: 1fr 1fr; }
   .point:nth-child(3) { padding-left: 0; border-left: 0; }
   .split { grid-template-columns: 1fr; gap: 24px; }
-  /* The composer stays at hand at the bottom of a phone's screen. */
-  .composer { position: sticky; bottom: 0; padding-top: 10px; background: var(--surface); }
-  #messages { padding: 20px 16px 28px; }
-  .composer, .attachments, .file-list { padding-left: 16px; padding-right: 16px; }
+  /* The composer stays at hand at the bottom of a phone's screen, its tools as icons. */
+  .composer { position: sticky; bottom: 0; padding: 8px 12px 10px; background: var(--surface); }
+  .composer-tools .tool { padding: 0 8px; }
+  #messages { padding: 18px 16px 24px; gap: 18px; }
+  .msg.user .bubble { max-width: 92%; }
+  .attachments, .file-list { padding-left: 16px; padding-right: 16px; }
 }
 
 @media (max-width: 720px) {
-  .topbar { gap: 8px; padding: 0 12px; }
-  .navlink { padding: 0 8px; }
-  .navlink span { display: none; }
-  .container { padding: 18px 16px 48px; }
+  .topbar { gap: 8px; height: 48px; padding: 0 8px 0 16px; }
+  .topbar.signed-in .topnav, .topbar.signed-in .topbar-side { display: none; }
+  .mobile-menu { display: block; }
+  .container { padding: 16px 16px 48px; }
+  .page-title { font-size: 19px; margin-bottom: 10px; }
+  /* The admin's tabs are one line that scrolls sideways, not three lines of tabs. */
+  .subnav { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin: 0 -16px 20px; padding: 0 16px; }
+  .subnav::-webkit-scrollbar { display: none; }
+  .subnav a { padding: 9px 10px; }
   .points { grid-template-columns: 1fr; }
   .point + .point { padding-left: 0; border-left: 0; border-top: 1px solid var(--border); }
-  /* Two figures a line: the one that starts a line has no rule on its left. */
   .ledger { grid-template-columns: 1fr 1fr; }
   .ledger div:nth-child(odd) { padding-left: 0; border-left: 0; }
   .ledger div:nth-child(n + 3) { border-top: 1px solid var(--border); }

@@ -1355,3 +1355,15 @@ def test_a_new_conversation_reuses_the_empty_one_the_list_already_has(admin_clie
     assert again == f"/chat/{first}"
     with Session(get_engine()) as session:
         assert len(session.exec(select(Conversation)).all()) == 1
+
+
+def test_a_phone_gets_one_menu_and_a_title_that_opens_the_list(admin_client):
+    """On a narrow screen the bar holds the name and one menu, the list folds under the title."""
+    conversation_id = _open_conversation(admin_client)
+
+    page = admin_client.get(f"/chat/{conversation_id}").text
+
+    assert 'class="mobile-menu"' in page
+    assert 'action="/logout"' in page
+    assert "data-toggle-conversations" in page
+    assert 'aria-controls="conversation-list"' in page

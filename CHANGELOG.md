@@ -8,6 +8,10 @@ All notable changes to this project are recorded here. The format follows
 
 ### Added
 
+- **A phone shows the conversation, not the controls**: the top bar holds the name and one menu,
+  and the conversation's bar its title, which opens the list of conversations under it, a "+"
+  for a new one, a dot for masking and "⋯" for printing and deleting. The composer's tools are
+  icons there, and the admin's tabs are one line that scrolls sideways.
 - **The composer is one box**: the message, and under it in the same frame "Attach a file",
   "Also mask…" with the extra terms in a small pop-up, and the send key. A picked file is
   uploaded at once, without a second "Upload" key.
