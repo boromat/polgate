@@ -78,6 +78,19 @@ def _conversations(session: Session, user: User) -> list[Conversation]:
     )
 
 
+def _listed(session: Session, user: User, current: int) -> list[Conversation]:
+    """Return the conversations the sidebar shows: those with something in them, and the open one.
+
+    An empty conversation is a blank page waiting for its first message; a second tab or an old
+    habit of clicking "New conversation" left several of them, each a "New conversation" row.
+    """
+    return [
+        c
+        for c in _conversations(session, user)
+        if c.id == current or c.title or c.pinned or retention.has_content(session, c)
+    ]
+
+
 def _load_conversation(session: Session, conversation_id: int, user: User) -> Conversation:
     conversation = session.get(Conversation, conversation_id)
     if conversation is None or conversation.user_id != user.id:
@@ -161,7 +174,7 @@ def show_conversation(
         request,
         "chat.html",
         conversation=conversation,
-        conversations=_conversations(session, user),
+        conversations=_listed(session, user, conversation_id),
         messages=[
             {
                 "id": m.id,

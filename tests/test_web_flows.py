@@ -1450,3 +1450,25 @@ def test_nobody_pins_a_conversation_that_is_not_theirs(admin_client):
 
     assert response.status_code == 404
     assert not _pinned(conversation_id)
+
+
+def test_the_list_leaves_out_empty_conversations_but_the_open_one(admin_client, monkeypatch):
+    from polgate.llm import router
+
+    monkeypatch.setattr(router, "stream_chat", _fake_stream(["ok"]))
+    empty = _open_conversation(admin_client)
+    with Session(get_engine()) as session:
+        user_id = session.exec(select(User)).first().id
+        other = Conversation(user_id=user_id)
+        session.add(other)
+        session.commit()
+        session.refresh(other)
+        written = other.id
+    admin_client.post(f"/chat/{written}/send", data={"text": "Cześć", "extra_terms": ""})
+    admin_client.get(f"/chat/{written}/stream", headers=STREAM)
+
+    page = admin_client.get(f"/chat/{written}").text
+
+    assert f'href="/chat/{empty}"' not in page
+    assert f'href="/chat/{written}"' in page
+    assert f'href="/chat/{empty}"' in admin_client.get(f"/chat/{empty}").text
