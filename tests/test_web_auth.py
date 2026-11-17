@@ -76,8 +76,8 @@ def test_admin_panel_opens_for_administrators(admin_client):
 
 def test_icon_only_navigation_links_carry_accessible_names(admin_client):
     """The labels are hidden on narrow screens, so the links need names of their own."""
-    page = admin_client.get("/chat", follow_redirects=True)
-    for label in ("Czat", "Administracja", "Wyloguj"):
+    page = admin_client.get("/account")
+    for label in ("Czat", "Administracja", "Konto", "Menu"):
         assert f'aria-label="{label}"' in page.text
 
 

@@ -1,0 +1,22 @@
+{# The account: a name to click, and under it everything about the person rather than the page.
+   Opens downwards from the top bar and upwards from the foot of the chat's sidebar (`up`). #}
+<details class="account-menu{{ ' up' if up }}">
+  <summary class="account-summary" aria-label="{{ t('nav.account') }}">
+    <span class="avatar" aria-hidden="true">{{ user.username[:1] | upper }}</span>
+    <span class="account-name">{{ user.username }}</span>
+    {{ icon.chevron(13) }}
+  </summary>
+  <nav class="menu-panel">
+    {% if in_sidebar and user.role.value == "admin" %}
+      <a href="/admin">{{ t("nav.admin") }}</a>
+    {% endif %}
+    <a href="/account">{{ t("nav.account") }}</a>
+    <div class="menu-lang" role="group" aria-label="{{ t('a11y.language') }}">
+      <a href="?lang=pl" class="{{ 'active' if lang == 'pl' }}">Polski</a>
+      <a href="?lang=en" class="{{ 'active' if lang == 'en' }}">English</a>
+    </div>
+    <form class="inline-form" method="post" action="/logout">
+      <button type="submit">{{ t("nav.logout") }}</button>
+    </form>
+  </nav>
+</details>

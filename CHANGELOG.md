@@ -8,6 +8,14 @@ All notable changes to this project are recorded here. The format follows
 
 ### Added
 
+- **The chat is a page with nothing above it**: no top bar, the sidebar carries the name, a new
+  conversation, the recent ones and, at its foot, the account with administration, the account
+  page, the language and sign-out. A new conversation asks "Where shall we start?" with the
+  composer in the middle of the screen, which moves down with the first message. The header is a
+  quiet title and "⋯"; copying and the time show when the pointer is on a message; one line
+  under the composer says that personal data is masked and asks for only what the task needs,
+  rather than inviting names and numbers, since masking is pseudonymisation. On a phone the
+  sidebar slides in from the left. The other pages keep a top bar, with the account as one menu.
 - **A phone shows the conversation, not the controls**: the top bar holds the name and one menu,
   and the conversation's bar its title, which opens the list of conversations under it, a "+"
   for a new one, a dot for masking and "⋯" for printing and deleting. The composer's tools are

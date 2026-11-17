@@ -37,7 +37,8 @@ def test_conversation_page_renders_the_composer(admin_client):
     admin_client.get("/chat")
     page = admin_client.get(f"/chat/{_conversation_id()}")
     assert page.status_code == 200
-    assert "dane osobowe zostaną zamaskowane" in page.text
+    assert 'id="composer-text"' in page.text
+    assert "Dane osobowe są maskowane przed wysłaniem do modelu." in page.text
 
 
 def test_another_users_conversation_is_not_reachable(admin_client):
@@ -1357,13 +1358,23 @@ def test_a_new_conversation_reuses_the_empty_one_the_list_already_has(admin_clie
         assert len(session.exec(select(Conversation)).all()) == 1
 
 
-def test_a_phone_gets_one_menu_and_a_title_that_opens_the_list(admin_client):
-    """On a narrow screen the bar holds the name and one menu, the list folds under the title."""
+def test_the_chat_keeps_the_account_in_its_sidebar_and_opens_it_as_a_drawer(admin_client):
+    """The chat has no top bar: the sidebar holds the name, the account and the drawer's button."""
     conversation_id = _open_conversation(admin_client)
 
     page = admin_client.get(f"/chat/{conversation_id}").text
 
-    assert 'class="mobile-menu"' in page
-    assert 'action="/logout"' in page
+    assert 'class="topbar' not in page
+    assert 'class="account-menu up"' in page
+    assert 'method="post" action="/logout"' in page
+    assert 'href="/admin"' in page
     assert "data-toggle-conversations" in page
     assert 'aria-controls="conversation-list"' in page
+
+
+def test_the_chat_does_not_invite_more_personal_data_than_needed(admin_client):
+    """Masking is pseudonymisation: the page asks for what the task needs, not for everything."""
+    page = admin_client.get(f"/chat/{_open_conversation(admin_client)}").text
+
+    assert "Podawaj tylko te, które są potrzebne." in page
+    assert "z nazwiskami i numerami" not in page

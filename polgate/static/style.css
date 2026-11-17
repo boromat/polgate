@@ -480,20 +480,42 @@ legend + * { clear: both; }
 
 /* --- chat ------------------------------------------------------------------------------------- */
 
-.chat-layout { display: grid; grid-template-columns: 248px minmax(0, 1fr); height: calc(100vh - var(--topbar-h)); }
+/* No bar above the chat: the sidebar carries the name and the account, and the conversation has
+   the rest of the screen. */
+.chat-layout { display: grid; grid-template-columns: 264px minmax(0, 1fr); height: 100vh; height: 100dvh; }
 
 .sidebar {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding: 14px 10px;
+  gap: 2px;
+  min-height: 0;
+  padding: 12px 10px 10px;
   background: var(--bg);
   border-right: 1px solid var(--border);
-  overflow: hidden;
 }
-.sidebar .btn { justify-content: flex-start; }
-.sidebar nav { flex: 1; min-height: 0; overflow-y: auto; }
-.sidebar > p { margin: 0; padding: 0 6px; }
+.sidebar-top { display: flex; align-items: center; justify-content: space-between; padding: 4px 8px 14px; }
+.sidebar-top .sidebar-close { display: none; }
+.sidebar-close svg { transform: rotate(45deg); }
+.sidebar-new { margin: 0 0 10px; }
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 7px 8px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--text);
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+}
+.sidebar-link:hover { background: var(--surface-2); }
+.sidebar-list { flex: 1; min-height: 0; overflow-y: auto; }
+.sidebar-label { margin: 0 0 4px; padding: 0 8px; color: var(--faint); font-size: 12px; font-weight: 500; }
 .conversations { display: flex; flex-direction: column; gap: 1px; list-style: none; margin: 0; padding: 0; }
 .conversations li a {
   display: block;
@@ -507,36 +529,58 @@ legend + * { clear: both; }
   text-overflow: ellipsis;
 }
 .conversations li a:hover { background: var(--surface-2); color: var(--text); }
-.conversations li.active a { background: var(--surface-2); color: var(--text); font-weight: 600; }
+.conversations li.active a { background: var(--surface-2); color: var(--text); }
+.sidebar-foot { padding-top: 8px; border-top: 1px solid var(--border); }
+.backdrop { display: none; }
 
-.chat { display: flex; flex-direction: column; min-height: 0; background: var(--surface); }
+/* The account: an initial, a name, and a menu of what is about the person. */
+.account-menu { position: relative; }
+.account-summary {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-size: 13.5px;
+  font-weight: 500;
+  cursor: pointer;
+  list-style: none;
+}
+.account-summary::-webkit-details-marker { display: none; }
+.account-summary:hover, .account-menu[open] .account-summary { background: var(--surface-2); }
+.account-summary svg { color: var(--faint); }
+.account-menu.up .account-summary svg { transform: rotate(180deg); }
+.account-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.topbar .account-name { flex: none; }
+.avatar {
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: 11.5px;
+  font-weight: 650;
+  flex-shrink: 0;
+}
+.account-menu.up .menu-panel { top: auto; bottom: calc(100% + 6px); left: 0; right: 0; }
+
+.chat { position: relative; display: flex; flex-direction: column; min-height: 0; background: var(--surface); }
+/* An empty conversation centres its greeting and the composer, as a blank page does a title. */
+.chat:not(:has(.msg)) #messages { flex: 1; justify-content: flex-end; }
+.chat:not(:has(.msg))::after { content: ""; flex: 1; }
 .chat-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  gap: 8px;
   min-height: 48px;
-  padding: 8px 24px;
-  border-bottom: 1px solid var(--border);
+  padding: 8px 16px 8px 24px;
 }
-.chat-title { min-width: 0; font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-/* On a wide screen the title is only a title: the list is beside it. */
-.chat-title-button {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex: 1;
-  min-width: 0;
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--text);
-  font: inherit;
-  text-align: left;
-  pointer-events: none;
-}
-.chat-title-button svg { display: none; color: var(--faint); flex-shrink: 0; transition: transform 0.15s; }
-.chat-actions { display: flex; align-items: center; gap: 6px; }
+.chat-header .sidebar-open { display: none; }
+.chat-title { flex: 1; min-width: 0; color: var(--muted); font-size: 13.5px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.chat-actions { display: flex; align-items: center; gap: 2px; }
 .chat-actions .badge { margin-right: 8px; }
 .header-new { display: none; margin: 0; }
 
@@ -556,7 +600,7 @@ legend + * { clear: both; }
 .icon-button:hover { background: var(--surface-2); color: var(--text); }
 .icon-button::-webkit-details-marker { display: none; }
 
-/* A small menu that opens under its button: the chat's more, and the phone's main menu. */
+/* A small menu that opens from its button: the chat's more, the account, the phone's menu. */
 .more, .mobile-menu { position: relative; }
 .more[open] > summary, .mobile-menu[open] > summary { background: var(--surface-2); color: var(--text); }
 .menu-panel {
@@ -567,21 +611,22 @@ legend + * { clear: both; }
   display: flex;
   flex-direction: column;
   min-width: 200px;
-  padding: 6px;
+  padding: 5px;
   border: 1px solid var(--border-strong);
-  border-radius: var(--radius);
+  border-radius: 8px;
   background: var(--surface);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
 }
 .menu-panel > a, .menu-panel > form > button, .menu-panel > details > summary {
   display: block;
   width: 100%;
-  padding: 8px 10px;
+  padding: 7px 10px;
   border: 0;
   border-radius: var(--radius-sm);
   background: none;
   color: var(--text);
   font: inherit;
-  font-size: 14px;
+  font-size: 13.5px;
   text-align: left;
   text-decoration: none;
   cursor: pointer;
@@ -589,11 +634,11 @@ legend + * { clear: both; }
 }
 .menu-panel > a:hover, .menu-panel > form > button:hover, .menu-panel > details > summary:hover { background: var(--surface-2); }
 .menu-panel > a.active { font-weight: 600; }
-.menu-panel > form { margin: 0; }
+.menu-panel > form { display: block; margin: 0; }
 .menu-panel > details > summary { color: var(--bad); }
 .menu-panel > details > summary::-webkit-details-marker { display: none; }
-.menu-panel .confirm-box { position: static; width: auto; margin: 4px 0 2px; border: 0; padding: 4px 10px 8px; }
-.menu-lang { display: flex; gap: 4px; margin-top: 4px; padding: 8px 10px 4px; border-top: 1px solid var(--border); }
+.menu-panel .confirm-box { position: static; width: auto; margin: 4px 0 2px; border: 0; padding: 4px 10px 8px; box-shadow: none; }
+.menu-lang { display: flex; gap: 4px; margin: 4px 0; padding: 6px 6px; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
 .menu-lang a { padding: 2px 8px; border-radius: var(--radius-sm); color: var(--muted); font-size: 13px; text-decoration: none; }
 .menu-lang a.active { background: var(--surface-2); color: var(--text); font-weight: 600; }
 .mobile-menu { display: none; margin-left: auto; }
@@ -601,78 +646,96 @@ legend + * { clear: both; }
 .mobile-menu > summary::-webkit-details-marker { display: none; }
 
 #messages {
-  flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 22px;
+  flex: 1;
+  gap: 26px;
   overflow-y: auto;
-  padding: 28px 24px 40px;
+  padding: 16px 24px 32px;
   max-width: calc(var(--reading) + 48px);
   width: 100%;
   margin: 0 auto;
 }
 
-/* The employee's turn is a quiet block on the right; the model's is text on the page, the way
-   an answer in a document is, since it is the part that gets read, copied and printed. */
-.msg { display: flex; flex-direction: column; align-items: flex-start; gap: 5px; width: 100%; }
+/* The employee's turn is a soft block on the right; the model's is text on the page, the way an
+   answer in a document is, since it is the part that gets read, copied and printed. */
+.msg { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; width: 100%; }
 .msg.user { align-items: flex-end; }
-.msg::before { content: attr(data-speaker); color: var(--faint); font-size: 11.5px; font-weight: 600; }
-.msg.user::before { display: none; }
-.bubble { max-width: 100%; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; }
+.msg::before { display: none; content: attr(data-speaker); }
+.bubble { max-width: 100%; line-height: 1.65; white-space: pre-wrap; overflow-wrap: anywhere; }
 .msg.user .bubble {
-  max-width: min(560px, 88%);
-  padding: 9px 13px;
-  border-radius: 8px 8px 2px 8px;
+  max-width: min(560px, 85%);
+  padding: 10px 15px;
+  border-radius: 16px;
   background: var(--surface-2);
 }
-.msg.assistant .bubble { font-size: 14.5px; }
+.msg.assistant .bubble { font-size: 15px; }
 .bubble:empty { display: none; }
-.msg-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin: 0; font-size: 12px; color: var(--faint); }
+.msg-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin: 0; padding: 0 4px; font-size: 12px; color: var(--faint); }
 .msg-meta time { font-variant-numeric: tabular-nums; }
+/* What can be done with a message shows when the pointer is on it; a touch screen always shows it. */
+@media (hover: hover) {
+  .msg-tools, .msg.user .msg-meta time { opacity: 0; transition: opacity 0.15s; }
+  .msg:hover .msg-tools, .msg:focus-within .msg-tools, .msg.user:hover .msg-meta time { opacity: 1; }
+}
 .inline-preview { align-self: stretch; }
 .inline-preview:empty { display: none; }
 
-.empty-state { margin: 12vh auto 0; max-width: var(--reading); width: 100%; color: var(--muted); }
-.empty-state h3 { margin: 0 0 6px; color: var(--text); font-size: 18px; }
-.empty-state p { margin: 0; max-width: 52ch; }
+.empty-state { margin: 0 auto 22px; text-align: center; }
+.empty-state h1 { margin: 0; font-size: 26px; font-weight: 600; letter-spacing: -0.02em; }
 
 .cursor { display: inline-block; width: 0.5em; background: var(--text); animation: blink 1.1s steps(2, start) infinite; }
 @keyframes blink { to { opacity: 0; } }
 
-.composer { padding: 0 24px 18px; }
+.composer { padding: 0 24px 14px; }
 .composer-box {
   max-width: var(--reading);
   margin: 0 auto;
   border: 1px solid var(--border-strong);
-  border-radius: 10px;
+  border-radius: 18px;
   background: var(--surface);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
 }
-.composer-box:focus-within { border-color: var(--text); }
+.composer-box:focus-within { border-color: var(--faint); }
 .composer-form { margin: 0; }
 .composer-form textarea {
   display: block;
   width: 100%;
-  min-height: 46px;
-  max-height: 200px;
-  padding: 13px 14px 4px;
+  min-height: 50px;
+  max-height: 220px;
+  padding: 14px 18px 4px;
   border: 0;
   background: transparent;
+  font-size: 15px;
   resize: none; /* it grows with its text, see data-autogrow */
 }
 .composer-form textarea:focus { outline: none; }
-.composer-tools { display: flex; align-items: center; gap: 2px; padding: 4px 6px 6px 6px; }
-.composer-tools .send { margin-left: auto; width: 34px; min-height: 34px; padding: 0; border-radius: 7px; }
+.composer-tools { display: flex; align-items: center; gap: 2px; padding: 4px 8px 8px 10px; }
+.composer-tools .send { margin-left: auto; width: 34px; min-height: 34px; padding: 0; border-radius: 10px; }
+.composer-caption {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  max-width: var(--reading);
+  margin: 8px auto 0;
+  color: var(--faint);
+  font-size: 12px;
+  text-align: center;
+}
+.composer-caption .badge { font-size: 12px; font-weight: 500; }
 
-/* A tool in the composer: an icon and a word, quiet until pointed at. */
+/* A tool in the composer: an icon and, on a wide screen, a word; quiet until pointed at. */
 .tool {
   position: relative;
   display: inline-flex;
   flex-direction: row;
   align-items: center;
   gap: 7px;
-  min-height: 30px;
+  min-height: 32px;
   padding: 0 9px;
-  border-radius: var(--radius-sm);
+  border-radius: 8px;
   color: var(--muted);
   font-size: 12.5px;
   font-weight: 500;
@@ -701,8 +764,9 @@ legend + * { clear: both; }
   width: min(360px, 80vw);
   padding: 12px;
   border: 1px solid var(--border-strong);
-  border-radius: var(--radius);
+  border-radius: 10px;
   background: var(--surface);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
 }
 
 .attachments, .file-list { max-width: var(--reading); width: 100%; margin: 0 auto; }
@@ -844,16 +908,28 @@ legend + * { clear: both; }
 /* --- responsive -------------------------------------------------------------------------------- */
 
 @media (max-width: 900px) {
-  .chat-layout { grid-template-columns: minmax(0, 1fr); height: auto; position: relative; }
-  .chat { min-height: calc(100vh - var(--topbar-h)); }
-  /* One thin bar above the conversation: its title, which opens the others, a new one, and more. */
-  .chat-header { min-height: 46px; padding: 6px 8px 6px 16px; gap: 8px; }
-  .chat-title-button { pointer-events: auto; cursor: pointer; }
-  .chat-title-button svg { display: block; }
-  .list-open .chat-title-button svg { transform: rotate(180deg); }
-  .chat-actions { gap: 2px; }
-  .chat-actions .badge { margin-right: 4px; }
-  .chat-actions .badge-text, .tool > span:not(.redacted) {
+  .chat-layout { grid-template-columns: minmax(0, 1fr); }
+  .chat { min-height: 100vh; min-height: 100dvh; }
+  /* One thin bar: the drawer, the title, a new conversation and more. */
+  .chat-header { min-height: 48px; padding: 6px 8px; gap: 4px; }
+  .chat-header .sidebar-open, .sidebar-top .sidebar-close { display: inline-grid; }
+  .header-new { display: block; }
+  .chat-title { text-align: center; }
+  /* The sidebar is a drawer on a phone: it slides in from the left over a shade. */
+  .sidebar {
+    position: fixed;
+    inset: 0 auto 0 0;
+    z-index: 40;
+    width: min(320px, 86vw);
+    transform: translateX(-100%);
+    transition: transform 0.2s ease;
+    border-right: 1px solid var(--border-strong);
+  }
+  .list-open .sidebar { transform: none; }
+  .list-open .backdrop { display: block; position: fixed; inset: 0; z-index: 35; background: rgba(0, 0, 0, 0.35); }
+  .sidebar-top { padding-bottom: 10px; }
+  .conversations li a { padding: 9px 8px; font-size: 14.5px; }
+  .tool > span:not(.redacted) {
     position: absolute;
     width: 1px;
     height: 1px;
@@ -861,24 +937,6 @@ legend + * { clear: both; }
     clip-path: inset(50%);
     white-space: nowrap;
   }
-  .header-new { display: block; }
-  /* The list is not a column on a phone: it drops down under the bar when the title is tapped. */
-  .sidebar { display: none; }
-  .list-open .sidebar {
-    display: block;
-    position: absolute;
-    top: 46px;
-    left: 0;
-    right: 0;
-    z-index: 25;
-    max-height: 60vh;
-    padding: 6px 8px 10px;
-    overflow-y: auto;
-    border-bottom: 1px solid var(--border-strong);
-    background: var(--surface);
-  }
-  .list-open .sidebar .sidebar-new { display: none; }
-  .conversations li a { padding: 10px 8px; font-size: 14.5px; }
   .preview, .sheet-body, .sheet-head { grid-template-columns: 1fr; }
   .sheet-head span + span { border-left: 0; border-top: 1px solid var(--border); }
   .preview .divider, .sheet-divider { height: 1px; }
@@ -887,11 +945,13 @@ legend + * { clear: both; }
   .points { grid-template-columns: 1fr 1fr; }
   .point:nth-child(3) { padding-left: 0; border-left: 0; }
   .split { grid-template-columns: 1fr; gap: 24px; }
-  /* The composer stays at hand at the bottom of a phone's screen, its tools as icons. */
-  .composer { position: sticky; bottom: 0; padding: 8px 12px 10px; background: var(--surface); }
-  .composer-tools .tool { padding: 0 8px; }
-  #messages { padding: 18px 16px 24px; gap: 18px; }
-  .msg.user .bubble { max-width: 92%; }
+  /* The composer stays at hand at the bottom of a phone's screen. */
+  .chat:has(.msg) .composer { position: sticky; bottom: 0; }
+  .composer { padding: 6px 10px 8px; background: var(--surface); }
+  .composer-caption .caption-text { display: none; }
+  #messages { padding: 12px 16px 20px; gap: 20px; }
+  .empty-state h1 { font-size: 22px; }
+  .msg.user .bubble { max-width: 90%; }
   .attachments, .file-list { padding-left: 16px; padding-right: 16px; }
 }
 

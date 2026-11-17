@@ -1,12 +1,21 @@
 {% extends "base.html" %}
 {% block title %}{{ conversation.title | redacted_plain if conversation.title else t("chat.untitled") }} · {{ t("app.name") }}{% endblock %}
+{% block topbar %}{% endblock %}
 {% block body %}
 <div class="chat-layout">
-  <aside class="sidebar">
+  {# Everything that is not the conversation lives here: the name, a new conversation, the others,
+     and the account. On a phone it slides in from the left. #}
+  <aside class="sidebar" id="conversation-list">
+    <div class="sidebar-top">
+      <a class="brand" href="/"><span class="brand-mark" aria-hidden="true"></span>{{ t("app.name") }}</a>
+      <button class="icon-button sidebar-close" type="button" data-toggle-conversations
+              aria-label="{{ t('a11y.close') }}">{{ icon.plus(18) }}</button>
+    </div>
     <form method="post" action="/chat/new" class="sidebar-new">
-      <button class="btn secondary block" type="submit">{{ icon.plus(14) }} {{ t("chat.new") }}</button>
+      <button class="sidebar-link" type="submit">{{ icon.plus(15) }} {{ t("chat.new") }}</button>
     </form>
-    <nav id="conversation-list" aria-label="{{ t('a11y.conversations') }}">
+    <nav class="sidebar-list" aria-label="{{ t('a11y.conversations') }}">
+      <p class="sidebar-label">{{ t("chat.recent") }}</p>
       <ul class="conversations">
         {% for c in conversations %}
           <li class="{{ 'active' if c.id == conversation.id }}">
@@ -17,22 +26,21 @@
         {% endfor %}
       </ul>
     </nav>
+    <div class="sidebar-foot">
+      {% with up=True, in_sidebar=True %}{% include "partials/account_menu.html" %}{% endwith %}
+    </div>
   </aside>
+  <div class="backdrop" data-toggle-conversations aria-hidden="true"></div>
 
   <main class="chat" id="main">
     <header class="chat-header" data-print-note="{{ t('chat.print_note') }}">
-      {# On a phone the title is the way to the other conversations, which fold away under it. #}
-      <button class="chat-title-button" type="button" data-toggle-conversations
+      <button class="icon-button sidebar-open" type="button" data-toggle-conversations
               aria-expanded="false" aria-controls="conversation-list"
-              title="{{ t('chat.conversations', count=conversations | length) }}">
-        <span class="chat-title" data-chat-title>{{ conversation.title | redacted if conversation.title else t("chat.untitled") }}</span>
-        {{ icon.chevron(14) }}
-      </button>
+              aria-label="{{ t('a11y.conversations') }}">{{ icon.menu(18) }}</button>
+      <span class="chat-title" data-chat-title>{{ conversation.title | redacted if conversation.title else "" }}</span>
       <div class="chat-actions">
         {% if masking_off %}
-          <span class="badge error" title="{{ t('chat.unprotected_hint') }}"><span class="badge-text">{{ t("chat.unprotected") }}</span></span>
-        {% else %}
-          <span class="badge shield" title="{{ t('chat.protected_hint') }}"><span class="badge-text">{{ t("chat.protected") }}</span></span>
+          <span class="badge error" title="{{ t('chat.unprotected_hint') }}">{{ t("chat.unprotected") }}</span>
         {% endif %}
         <form method="post" action="/chat/new" class="header-new no-print">
           <button class="icon-button" type="submit" aria-label="{{ t('chat.new') }}" title="{{ t('chat.new') }}">{{ icon.plus(18) }}</button>
@@ -60,8 +68,7 @@
     <div id="messages">
       {% if not messages %}
         <div class="empty-state">
-          <h3>{{ t("chat.empty_title") }}</h3>
-          <p>{{ t("chat.empty_body") }}</p>
+          <h1>{{ t("chat.empty_title") }}</h1>
         </div>
       {% endif %}
       {% for m in messages %}
@@ -69,15 +76,13 @@
                  data-speaker="{{ t('chat.speaker_you') if m.role == 'user' else t('chat.speaker_model') }}">
           {% if m.role == "assistant" %}
             <div class="bubble prose">{{ m.text | markdown }}</div>
+            <div class="msg-meta msg-tools">
+              <button class="link no-print" type="button" data-copy data-copied-label="{{ t('chat.copied') }}">{{ t("chat.copy") }}</button>
+              <time datetime="{{ m.created_at | iso_utc }}" data-local-time>{{ m.created_at.strftime("%H:%M") }}</time>
+            </div>
           {% else %}
             <div class="bubble">{{ m.text }}</div>
-          {% endif %}
-          <div class="msg-meta">
-            <time datetime="{{ m.created_at | iso_utc }}" data-local-time>{{ m.created_at.strftime("%H:%M") }}</time>
-            {% if m.role == "assistant" %}
-              <button class="link no-print" type="button" data-copy data-copied-label="{{ t('chat.copied') }}">{{ t("chat.copy") }}</button>
-            {% endif %}
-            {% if m.role == "user" %}
+            <div class="msg-meta">
               {% if m.entity_count %}
                 <span class="badge shield" title="{{ t('chat.masked_hint') }}">{{ t("chat.masked_count", count=m.entity_count) }}</span>
               {% else %}
@@ -91,9 +96,10 @@
                       aria-controls="preview-{{ m.id }}">
                 {{ t("chat.preview") }}
               </button>
-            {% endif %}
-          </div>
-          {% if m.role == "user" %}<div class="inline-preview" id="preview-{{ m.id }}"></div>{% endif %}
+              <time datetime="{{ m.created_at | iso_utc }}" data-local-time>{{ m.created_at.strftime("%H:%M") }}</time>
+            </div>
+            <div class="inline-preview" id="preview-{{ m.id }}"></div>
+          {% endif %}
         </article>
       {% endfor %}
     </div>
@@ -129,12 +135,12 @@
                 hx-encoding="multipart/form-data" hx-target="#file-list" hx-swap="beforeend"
                 data-reset-on-success>
             <label class="tool" title="{{ t('files.attach_hint') }}">
-              {{ icon.paperclip(15) }} <span>{{ t("files.attach") }}</span>
+              {{ icon.paperclip(16) }} <span>{{ t("files.attach") }}</span>
               <input type="file" name="file" required data-upload-on-pick>
             </label>
           </form>
           <details class="composer-details">
-            <summary class="tool"><span class="redacted" aria-hidden="true"></span> <span>{{ t("chat.more_options") }}</span></summary>
+            <summary class="tool" title="{{ t('chat.extra_terms') }}"><span class="redacted" aria-hidden="true"></span> <span>{{ t("chat.more_options") }}</span></summary>
             <div class="composer-popover">
               <label for="extra-terms">{{ t("chat.extra_terms") }}</label>
               <input id="extra-terms" name="extra_terms" form="composer-form"
@@ -143,10 +149,19 @@
           </details>
           <button id="composer-send" class="btn send" type="submit" form="composer-form"
                   aria-label="{{ t('chat.send') }}" title="{{ t('chat.send_hint') }}">
-            {{ icon.send() }}
+            {{ icon.send(16) }}
           </button>
         </div>
       </div>
+      {# What the whole hub is for, said once, quietly, where the message is written. #}
+      <p class="composer-caption">
+        {% if masking_off %}
+          <span class="badge error" title="{{ t('chat.unprotected_hint') }}">{{ t("chat.unprotected") }}</span>
+        {% else %}
+          <span class="badge shield" title="{{ t('chat.protected_hint') }}">{{ t("chat.protected") }}</span>
+          <span class="caption-text">{{ t("chat.caption") }}</span>
+        {% endif %}
+      </p>
     </div>
   </main>
 </div>

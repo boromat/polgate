@@ -241,6 +241,24 @@
 
   /* Enter sends and Shift+Enter starts a new line, as in every other chat window. The Enter that
      confirms an IME composition is not a send, and a message of nothing but spaces is not sent. */
+  /* On a phone the conversations slide in over the chat; Escape or the shade behind them closes them. */
+  function setConversations(open) {
+    var layout = document.querySelector(".chat-layout");
+    if (!layout) {
+      return;
+    }
+    layout.classList.toggle("list-open", open);
+    document.querySelectorAll("[data-toggle-conversations][aria-expanded]").forEach(function (button) {
+      button.setAttribute("aria-expanded", open ? "true" : "false");
+    });
+  }
+
+  document.addEventListener("keydown", function (event) {
+    if (event.key === "Escape") {
+      setConversations(false);
+    }
+  });
+
   document.addEventListener("keydown", function (event) {
     var field = event.target;
     if (!field.matches || !field.matches("[data-submit-on-enter]")) {
@@ -318,10 +336,8 @@
       return;
     }
     var toggle = event.target.closest("[data-toggle-conversations]");
-    var layout = document.querySelector(".chat-layout");
-    if (toggle && layout) {
-      var open = layout.classList.toggle("list-open");
-      toggle.setAttribute("aria-expanded", open ? "true" : "false");
+    if (toggle) {
+      setConversations(!document.querySelector(".chat-layout.list-open"));
     }
   });
 
