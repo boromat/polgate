@@ -1,6 +1,6 @@
 {# The account: a name to click, and under it everything about the person rather than the page.
    Opens downwards from the top bar and upwards from the foot of the chat's sidebar (`up`). #}
-<details class="account-menu{{ ' up' if up }}">
+<details class="account-menu{{ ' up' if up }}" data-menu>
   <summary class="account-summary" aria-label="{{ t('nav.account') }}">
     <span class="avatar" aria-hidden="true">{{ user.username[:1] | upper }}</span>
     <span class="account-name">{{ user.username }}</span>

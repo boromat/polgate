@@ -114,10 +114,17 @@
     }
   }
 
-  function revealCopy(article) {
+  /* A finished answer gets what a reloaded one has under it: the copy key and its time. */
+  function revealTools(article) {
     var button = article.querySelector("[data-copy]");
     if (button) {
       button.hidden = false;
+    }
+    var time = article.querySelector("[data-answer-time]");
+    if (time) {
+      time.setAttribute("datetime", new Date().toISOString());
+      localTime(time);
+      time.hidden = false;
     }
   }
 
@@ -192,7 +199,7 @@
       if (data.title) {
         showTitle(data.title, data.title_text || "");
       }
-      revealCopy(article);
+      revealTools(article);
       if (data.detail) {
         showBadge(status, "warn", article.dataset.warnLabel);
       }
@@ -251,10 +258,26 @@
     });
   }
 
+  /* A menu closes the way menus do: a click anywhere outside it, or Escape, which hands the focus
+     back to the button that opened it. Opening one menu closes the other. */
+  function closeMenus(keep) {
+    document.querySelectorAll("details[data-menu][open]").forEach(function (menu) {
+      if (!keep || !menu.contains(keep)) {
+        menu.open = false;
+      }
+    });
+  }
+
   document.addEventListener("keydown", function (event) {
-    if (event.key === "Escape") {
-      setConversations(false);
+    if (event.key !== "Escape") {
+      return;
     }
+    var open = document.querySelector("details[data-menu][open]");
+    if (open) {
+      open.open = false;
+      open.querySelector("summary").focus();
+    }
+    setConversations(false);
   });
 
   /* Enter sends and Shift+Enter starts a new line, as in every other chat window. The Enter that
@@ -335,7 +358,30 @@
     selection.removeAllRanges();
   }
 
+  /* "Edit" on a held message puts it back in the composer as it was written, with its extra
+     terms, and drops the preview: nothing was sent, and the next send is shown for review again. */
+  function editReview(card) {
+    var text = document.getElementById("composer-text");
+    var terms = document.getElementById("extra-terms");
+    if (!card || !text) {
+      return;
+    }
+    text.value = card.querySelector('input[name="text"]').value;
+    if (terms) {
+      terms.value = card.querySelector('input[name="extra_terms"]').value;
+    }
+    card.remove();
+    autogrow(text);
+    text.focus();
+  }
+
   document.addEventListener("click", function (event) {
+    closeMenus(event.target);
+    var edit = event.target.closest("[data-review-edit]");
+    if (edit) {
+      editReview(edit.closest("form"));
+      return;
+    }
     var trigger = event.target.closest("[data-print]");
     if (trigger) {
       event.preventDefault();

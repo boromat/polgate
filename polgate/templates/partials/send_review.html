@@ -4,7 +4,7 @@
   <pre>{{ preview.anonymized | highlight_tokens }}</pre>
   <div class="stat-row">
     {% for name, count in preview.entity_counts.items() %}
-      <span class="chip">{{ name }} &times;{{ count }}</span>
+      <span class="chip" title="{{ name }}">{{ t(entity_labels[name]) if name in entity_labels else name }} &times;{{ count }}</span>
     {% endfor %}
     {% if not preview.entity_counts %}
       <span class="chip">{{ t("chat.review_nothing") }}</span>
@@ -14,5 +14,8 @@
   <input type="hidden" name="text" value="{{ text }}">
   <input type="hidden" name="extra_terms" value="{{ extra_terms }}">
   <input type="hidden" name="approved" value="1">
-  <button class="btn" type="submit">{{ icon.send() }} {{ t("chat.send") }}</button>
+  <div class="row">
+    <button class="btn" type="submit">{{ icon.send() }} {{ t("chat.send") }}</button>
+    <button class="btn secondary" type="button" data-review-edit>{{ t("chat.review_edit") }}</button>
+  </div>
 </form>

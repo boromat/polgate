@@ -3,7 +3,6 @@
 <article class="msg user" data-speaker="{{ t('chat.speaker_you') }}">
   <div class="bubble">{{ text }}</div>
   <div class="msg-meta" data-sent-meta hidden>
-    <time data-local-time></time>
     <span class="badge shield" title="{{ t('chat.masked_hint') }}" data-masked-count hidden>
       {{ t("chat.masked_label") }} <span data-count></span>
     </span>
@@ -14,6 +13,7 @@
             data-preview-button data-preview-base="/chat/{{ conversation.id }}/messages/">
       {{ t("chat.preview") }}
     </button>
+    <time data-local-time></time>
   </div>
   <div class="inline-preview" data-preview-target></div>
 </article>
@@ -29,6 +29,7 @@
   <div class="bubble" data-sink><span class="waiting">{{ t("chat.masking") }}</span></div>
   <div class="msg-meta msg-tools">
     <button class="link no-print" type="button" data-copy data-copied-label="{{ t('chat.copied') }}" hidden>{{ t("chat.copy") }}</button>
+    <time data-local-time data-answer-time hidden></time>
   </div>
   <p class="msg-meta" data-status hidden></p>
 </article>

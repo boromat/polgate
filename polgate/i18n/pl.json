@@ -89,6 +89,7 @@
   "chat.print": "Drukuj",
   "chat.print_note": "Wydruk z hubu. Zawiera dane osobowe: chroń jak dokument papierowy.",
   "chat.recent": "Ostatnie",
+  "chat.review_edit": "Popraw",
   "chat.review_hint": "Zamaskowano elementów: {count}",
   "chat.review_nothing": "nic do zamaskowania",
   "chat.review_title": "Sprawdź, co zostanie wysłane",

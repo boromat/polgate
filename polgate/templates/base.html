@@ -51,7 +51,7 @@
   </div>
   {% if user %}
     {# On a phone the bar holds the name and this one menu; the links above stay for wider screens. #}
-    <details class="mobile-menu">
+    <details class="mobile-menu" data-menu>
       <summary class="navlink" aria-label="{{ t('nav.menu') }}">{{ icon.menu(20) }}</summary>
       <nav class="menu-panel">
         <a href="/chat" class="{{ 'active' if request.url.path.startswith('/chat') }}">{{ t("nav.chat") }}</a>

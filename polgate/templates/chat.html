@@ -58,8 +58,7 @@
         <form method="post" action="/chat/new" class="header-new no-print">
           <button class="icon-button" type="submit" aria-label="{{ t('chat.new') }}" title="{{ t('chat.new') }}">{{ icon.plus(18) }}</button>
         </form>
-        {% if messages %}
-          <details class="more no-print">
+          <details class="more no-print" data-menu>
             <summary class="icon-button" aria-label="{{ t('chat.actions') }}" title="{{ t('chat.actions') }}">{{ icon.more(18) }}</summary>
             <div class="menu-panel">
               <form method="post" action="/chat/{{ conversation.id }}/pin">
@@ -76,7 +75,6 @@
               </details>
             </div>
           </details>
-        {% endif %}
       </div>
     </header>
 
@@ -156,7 +154,7 @@
               <input type="file" name="file" required data-upload-on-pick>
             </label>
           </form>
-          <details class="composer-details">
+          <details class="composer-details" data-menu>
             <summary class="tool" title="{{ t('chat.extra_terms') }}"><span class="redacted" aria-hidden="true"></span> <span>{{ t("chat.more_options") }}</span></summary>
             <div class="composer-popover">
               <label for="extra-terms">{{ t("chat.extra_terms") }}</label>

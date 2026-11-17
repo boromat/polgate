@@ -89,6 +89,7 @@
   "chat.print": "Print",
   "chat.print_note": "Printed from the hub. Contains personal data: handle as a paper record.",
   "chat.recent": "Recent",
+  "chat.review_edit": "Edit",
   "chat.review_hint": "Masked items: {count}",
   "chat.review_nothing": "nothing to mask",
   "chat.review_title": "Check what will be sent",

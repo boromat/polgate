@@ -69,6 +69,9 @@ def test_review_policy_shows_the_mask_before_sending(admin_client):
     assert response.status_code == 200
     assert "&lt;PESEL_1&gt;" in response.text
     assert "50810112354" not in response.text.split("<pre>")[1].split("</pre>")[0]
+    # The kinds are named as on the policy page, and the message can go back to be corrected.
+    assert 'title="PESEL">PESEL &times;1' in response.text
+    assert "data-review-edit" in response.text
 
 
 def test_upload_masks_the_document_before_it_can_be_attached(admin_client):
@@ -1482,3 +1485,24 @@ def test_every_admin_page_has_a_title_of_its_own(admin_client):
         ("/admin/audit", "Dziennik audytu"),
     ):
         assert f"<title>{title} · PolGate</title>" in admin_client.get(path).text
+
+
+def test_a_message_sent_live_reads_like_one_reloaded(admin_client):
+    """Badge, preview and then the time under the message; a time under the answer once it ends."""
+    conversation_id = _open_conversation(admin_client)
+
+    pair = admin_client.post(
+        f"/chat/{conversation_id}/send", data={"text": "Cześć", "extra_terms": ""}
+    ).text
+
+    assert pair.index("data-preview-button") < pair.index("<time data-local-time></time>")
+    assert "data-answer-time" in pair
+
+
+def test_an_empty_conversation_carries_its_menu_for_the_first_message(admin_client):
+    """The menu is hidden by the stylesheet until a message is on the page, without a reload."""
+    page = admin_client.get(f"/chat/{_open_conversation(admin_client)}").text
+
+    assert 'class="more no-print" data-menu' in page
+    assert 'class="composer-details" data-menu' in page
+    assert 'class="account-menu up" data-menu' in page
