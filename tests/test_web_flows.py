@@ -1,5 +1,6 @@
 """Chat, upload and admin flows through the HTTP layer."""
 
+import json
 from pathlib import Path
 
 import pytest
@@ -381,6 +382,23 @@ def test_streaming_returns_the_preview_then_the_restored_answer(admin_client, mo
     payload = str(_fake_stream.sent)
     assert "50810112354" not in payload
     assert "Jan Kowalski" not in payload
+
+
+def test_a_finished_answer_is_sent_and_shown_again_as_markdown(admin_client, monkeypatch):
+    from polgate.llm import router
+
+    monkeypatch.setattr(router, "stream_chat", _fake_stream(["**Gotowe**, ", "<OSOBA_1>."]))
+    conversation_id = _open_conversation(admin_client)
+    admin_client.post(
+        f"/chat/{conversation_id}/send", data={"text": "Napisz do Jan Kowalski", "extra_terms": ""}
+    )
+
+    body = admin_client.get(f"/chat/{conversation_id}/stream", headers=STREAM).text
+
+    done = next(line for line in body.splitlines() if line.startswith("data:") and "html" in line)
+    assert "<strong>Gotowe</strong>, Jan Kowalski." in json.loads(done[5:])["html"]
+    page = admin_client.get(f"/chat/{conversation_id}").text
+    assert '<div class="bubble prose"><p><strong>Gotowe</strong>, Jan Kowalski.</p>' in page
 
 
 def test_the_preview_shows_the_original_beside_what_was_sent(admin_client, monkeypatch):

@@ -30,7 +30,7 @@ from polgate.models import (
     User,
 )
 from polgate.policy_loader import get_policy, masking_is_off
-from polgate.rendering import render
+from polgate.rendering import markdown, render
 from polgate.security import is_same_origin
 from polgate.vault import store as vault
 
@@ -261,6 +261,7 @@ async def stream_answer(
         anonymizer.guards = [*anonymizer.guards, _manual_guard(pending.extra_terms)]
 
     async def events() -> AsyncIterator[dict[str, str]]:
+        answer: list[str] = []
         async for event in run_turn(
             session,
             conversation,
@@ -270,10 +271,14 @@ async def stream_answer(
             anonymizer=anonymizer,
             settings=get_settings(),
         ):
-            yield {
-                "event": event.type,
-                "data": json.dumps({"text": event.text, "detail": event.detail}),
-            }
+            data = {"text": event.text, "detail": event.detail}
+            if event.type == "token":
+                answer.append(event.text)
+            elif event.type == "done":
+                # The answer streams as plain text and is replaced, once whole, by its Markdown:
+                # a half-written table or list rendered at every token would jump about.
+                data["html"] = str(markdown("".join(answer)))
+            yield {"event": event.type, "data": json.dumps(data)}
 
     return EventSourceResponse(events())
 

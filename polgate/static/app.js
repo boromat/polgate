@@ -158,8 +158,15 @@
       scrollMessages();
     });
 
+    /* The answer arrives as text and leaves as Markdown: the server renders it once it is whole,
+       from the answer as restored, with raw HTML escaped, so the markup is the server's own. */
     source.addEventListener("done", function (event) {
-      if (read(event).detail) {
+      var data = read(event);
+      if (data.html && started) {
+        sink.innerHTML = data.html;
+        sink.classList.add("prose");
+      }
+      if (data.detail) {
         showBadge(status, "warn", article.dataset.warnLabel);
       }
       finish();

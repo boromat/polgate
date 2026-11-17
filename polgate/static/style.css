@@ -964,3 +964,18 @@ legend {
   color: var(--muted);
   animation: blink 1.1s steps(2, start) infinite;
 }
+
+/* --- an answer rendered from Markdown ------------------------------------------------- */
+
+.bubble.prose { white-space: normal; }
+.prose > :first-child { margin-top: 0; }
+.prose > :last-child { margin-bottom: 0; }
+.prose p, .prose ul, .prose ol, .prose pre, .prose table, .prose blockquote { margin: 0 0 10px; }
+.prose ul, .prose ol { padding-left: 1.3em; }
+.prose li + li { margin-top: 2px; }
+.prose h1, .prose h2, .prose h3, .prose h4 { margin: 14px 0 6px; color: var(--text); font-size: 1em; }
+.prose code { font-family: var(--mono); font-size: 0.9em; }
+.prose pre { padding: 10px 12px; overflow-x: auto; border: 1px solid var(--border); border-radius: 4px; background: var(--surface-2); }
+.prose blockquote { padding-left: 12px; border-left: 2px solid var(--border-strong); color: var(--muted); }
+.prose table { border-collapse: collapse; font-size: 13px; }
+.prose th, .prose td { padding: 5px 10px; border: 1px solid var(--border); text-align: left; }

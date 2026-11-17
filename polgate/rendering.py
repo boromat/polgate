@@ -14,6 +14,10 @@ from typing import Any
 from fastapi import Request
 from fastapi.responses import Response
 from fastapi.templating import Jinja2Templates
+from markdown_it import MarkdownIt
+from markdown_it.renderer import RendererHTML
+from markdown_it.token import Token
+from markdown_it.utils import EnvType, OptionsDict
 from markupsafe import Markup, escape
 
 from polgate.config import get_settings
@@ -24,6 +28,33 @@ from polgate.vault import store as vault
 
 TEMPLATE_DIR = Path(__file__).parent / "templates"
 templates = Jinja2Templates(directory=str(TEMPLATE_DIR))
+
+
+def _link_open(
+    renderer: RendererHTML, tokens: list[Token], index: int, options: OptionsDict, env: EnvType
+) -> str:
+    """Open a link from an answer so the page it leads to learns nothing about this one."""
+    tokens[index].attrSet("rel", "noopener noreferrer")
+    return renderer.renderToken(tokens, index, options, env)
+
+
+#: Markdown as models write it, with what an answer must not do switched off. Raw HTML is
+#: escaped, not rendered. Images are not rendered either: a picture loads by itself, and one whose
+#: address a model wrote with a token in it would carry the restored value to whoever serves the
+#: picture, before anybody clicked anything. markdown-it refuses javascript: and data: links.
+_MARKDOWN = (
+    MarkdownIt("commonmark", {"html": False, "breaks": True})
+    .enable(["table", "strikethrough"])
+    .disable("image")
+)
+_MARKDOWN.add_render_rule("link_open", _link_open)
+
+
+def markdown(text: str) -> Markup:
+    """Render a model's answer, as restored for its reader, from Markdown into safe HTML."""
+    # Safe by construction: markdown-it escapes every character of the text it does not turn into
+    # markup of its own, and raw HTML is off.
+    return Markup(_MARKDOWN.render(text))  # noqa: S704
 
 
 def highlight_tokens(text: str) -> Markup:
@@ -84,6 +115,7 @@ def entity_counts(counts_json: str | None) -> list[tuple[str, int]]:
 
 
 templates.env.filters["highlight_tokens"] = highlight_tokens
+templates.env.filters["markdown"] = markdown
 templates.env.filters["entity_counts"] = entity_counts
 templates.env.filters["original_filename"] = original_filename
 templates.env.filters["iso_utc"] = iso_utc

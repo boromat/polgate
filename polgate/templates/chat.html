@@ -52,7 +52,11 @@
       {% for m in messages %}
         <article class="msg {{ m.role }}"
                  data-speaker="{{ t('chat.speaker_you') if m.role == 'user' else t('chat.speaker_model') }}">
-          <div class="bubble">{{ m.text }}</div>
+          {% if m.role == "assistant" %}
+            <div class="bubble prose">{{ m.text | markdown }}</div>
+          {% else %}
+            <div class="bubble">{{ m.text }}</div>
+          {% endif %}
           <div class="msg-meta">
             <time datetime="{{ m.created_at | iso_utc }}" data-local-time>{{ m.created_at.strftime("%H:%M") }}</time>
             {% if m.role == "user" %}

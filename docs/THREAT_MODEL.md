@@ -137,6 +137,11 @@ used on its own; this one covers the hub, the library's detection limits include
   passages and reaches every conversation that draws on them. The administrator reviews the masked
   passages before publishing, and the last check before sending still searches each passage for
   every value the store and the conversation hold.
+- **Links in an answer.** Answers are rendered from Markdown with raw HTML escaped and pictures
+  not rendered at all, since a picture loads by itself and its address, restored, could carry a
+  value to whoever serves it. A link is rendered and opens without a referrer, but a model that
+  writes a token into a link's address makes the restored address carry the value: following it
+  sends the value to that site. Read a link before following it.
 - **Images and scans without OCR.** If tesseract is not installed, image uploads are rejected rather than
   silently sent. With OCR enabled, recognition errors become detection gaps.
 - **More of a long attachment goes to the embeddings endpoint.** With the search on, the whole
