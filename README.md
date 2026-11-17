@@ -49,7 +49,7 @@ spaCy model and Tesseract for scans, on Intel and ARM machines alike.
 export ADMIN_PASSWORD=$(openssl rand -hex 12)  # the administrator's first password
 export LLM_API_KEY=sk-or-...                   # your provider's key, OpenRouter by default
 docker run -d --name polgate -p 127.0.0.1:8000:8000 -v polgate-data:/data \
-    -e ADMIN_PASSWORD -e LLM_API_KEY ghcr.io/boromat/polgate:0.3
+    -e ADMIN_PASSWORD -e LLM_API_KEY ghcr.io/boromat/polgate:0.4
 ```
 
 Open http://127.0.0.1:8000, sign in as `admin` with that password (`echo $ADMIN_PASSWORD`) and
@@ -61,12 +61,12 @@ such as Ollama, is `-e LLM_BASE_URL=http://host.docker.internal:11434/v1`, on Li
 `--add-host=host.docker.internal:host-gateway`. `-p 127.0.0.1:8000:8000` keeps the hub on this
 machine; a team reaches it behind HTTPS, see the [company deployment](#run-from-source). The
 volume `polgate-data` keeps the database, the uploads and the keys; keep a copy of `vault.key`
-from it elsewhere. The image is tagged with the version, such as `0.3.0`, the minor version,
-`0.3`, and `latest`.
+from it elsewhere. The image is tagged with the version, such as `0.4.0`, the minor version,
+`0.4`, and `latest`.
 
 | You want | Install |
 |---|---|
-| The hub, a chat for the whole company | `docker pull ghcr.io/boromat/polgate:0.3` |
+| The hub, a chat for the whole company | `docker pull ghcr.io/boromat/polgate:0.4` |
 | The masking in your own Python code | `pip install polanon` |
 | A gateway that masks calls from tools you already use | `docker pull ghcr.io/boromat/polanon-gateway:0.3` |
 
@@ -249,10 +249,10 @@ With Docker, pull the new image and start the container again on the same volume
 the database, the uploads and the keys:
 
 ```bash
-docker pull ghcr.io/boromat/polgate:0.3  # or the next minor version's tag
+docker pull ghcr.io/boromat/polgate:0.4  # or the next minor version's tag
 docker rm -f polgate
 docker run -d --name polgate -p 127.0.0.1:8000:8000 -v polgate-data:/data \
-    -e LLM_API_KEY ghcr.io/boromat/polgate:0.3
+    -e LLM_API_KEY ghcr.io/boromat/polgate:0.4
 ```
 
 From a source checkout, `git pull`

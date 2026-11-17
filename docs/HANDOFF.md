@@ -9,7 +9,10 @@ evaluation that measures what reaches the provider, requires polanon 0.3.3, whic
 that evaluation found, and fixes everything a review of the whole project found (see *0.2.0*).
 Version 0.3.0, dated 2026-11-17, adds stage B, the company knowledge base, answers data subject
 requests from the admin panel, restores names in the case the answer needs and requires polanon
-0.3.9 (see *0.3.0*). What is left is under *Known detection gaps* and under *After MVP*.
+0.3.9 (see *0.3.0*). Version 0.4.0, dated 2026-11-17, redesigns the interface: a chat with nothing
+above it, pinned conversations, Markdown answers, a phone layout, an admin panel that says what it
+did, and the Docker image started in one command (see step 7 and the changelog). What is left is
+under *Known detection gaps* and under *After MVP*.
 
 Read `CLAUDE.md` (rules) and `docs/ARCHITECTURE.md` (data flow) first. Run `/env-check` at the start
 of a session and `/quality-gate` before every commit, and `/pii-safety-review` as well for anything
@@ -77,8 +80,7 @@ Tests: `tests/test_router.py`, including the no-leak assertion and a token split
 
 ### Step 7: chat UI — done
 Conversation list, message history, SSE streaming, per-message "what the model saw" preview, optional
-approve-before-send flow, per-message extra terms to mask. Since 0.3.0 (on `main`, see the changelog's
-*Unreleased*): a chat page with no top bar and the account at the sidebar's foot, a drawer on a
+approve-before-send flow, per-message extra terms to mask. In 0.4.0: a chat page with no top bar and the account at the sidebar's foot, a drawer on a
 phone, Markdown answers, copying an answer, deleting and pinning a conversation, and a list that
 leaves out empty conversations. The README's demo and audit picture were retaken in this look on
 2026-11-17 against a stand-in provider with made-up data; the recording scripts are kept outside

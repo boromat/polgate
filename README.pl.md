@@ -53,7 +53,7 @@ z modelem spaCy i Tesseract do skanów, na komputerach z procesorem Intel i ARM.
 export ADMIN_PASSWORD=$(openssl rand -hex 12)  # pierwsze hasło administratora
 export LLM_API_KEY=sk-or-...                   # klucz dostawcy, domyślnie OpenRouter
 docker run -d --name polgate -p 127.0.0.1:8000:8000 -v polgate-data:/data \
-    -e ADMIN_PASSWORD -e LLM_API_KEY ghcr.io/boromat/polgate:0.3
+    -e ADMIN_PASSWORD -e LLM_API_KEY ghcr.io/boromat/polgate:0.4
 ```
 
 Otwórz http://127.0.0.1:8000, zaloguj się jako `admin` tym hasłem (`echo $ADMIN_PASSWORD`) i zmień
@@ -66,12 +66,12 @@ LLM_MODEL=...`; model na tym samym komputerze, na przykład Ollama, to
 `--add-host=host.docker.internal:host-gateway`. `-p 127.0.0.1:8000:8000` zostawia hub na tym
 komputerze; zespół korzysta z niego przez HTTPS, zobacz [wdrożenie w firmie](#uruchomienie-ze-źródeł).
 Wolumen `polgate-data` przechowuje bazę danych, wgrane pliki i klucze; kopię `vault.key` z niego
-trzymaj gdzie indziej. Obraz ma tagi z wersją, na przykład `0.3.0`, z wersją minor, `0.3`, oraz
+trzymaj gdzie indziej. Obraz ma tagi z wersją, na przykład `0.4.0`, z wersją minor, `0.4`, oraz
 `latest`.
 
 | Chcesz | Instalacja |
 |---|---|
-| Hub, czyli czat dla całej firmy | `docker pull ghcr.io/boromat/polgate:0.3` |
+| Hub, czyli czat dla całej firmy | `docker pull ghcr.io/boromat/polgate:0.4` |
 | Maskowanie we własnym kodzie w Pythonie | `pip install polanon` |
 | Bramkę, która maskuje wywołania z narzędzi, których już używasz | `docker pull ghcr.io/boromat/polanon-gateway:0.3` |
 
@@ -268,10 +268,10 @@ W Dockerze pobierz nowy obraz i uruchom kontener ponownie na tym samym wolumenie
 bazę danych, wgrane pliki i klucze:
 
 ```bash
-docker pull ghcr.io/boromat/polgate:0.3  # albo tag kolejnej wersji minor
+docker pull ghcr.io/boromat/polgate:0.4  # albo tag kolejnej wersji minor
 docker rm -f polgate
 docker run -d --name polgate -p 127.0.0.1:8000:8000 -v polgate-data:/data \
-    -e LLM_API_KEY ghcr.io/boromat/polgate:0.3
+    -e LLM_API_KEY ghcr.io/boromat/polgate:0.4
 ```
 
 Przy instalacji ze źródeł wykonaj

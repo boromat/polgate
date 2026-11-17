@@ -6,6 +6,14 @@ All notable changes to this project are recorded here. The format follows
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-11-17
+
+A chat that looks like one: nothing above the conversation, the account at the sidebar's foot,
+pinned conversations above the recent ones, Markdown answers that can be copied, conversations
+that can be deleted, and a phone layout with the list as a drawer. The admin panel reads as a list
+of decisions, says what it saved and keeps a refused form, and its tables become blocks on a phone.
+Trying the hub in Docker is one command, as polanon's gateway is.
+
 ### Added
 
 - **The chat is a page with nothing above it**: no top bar, the sidebar carries the name, a new
@@ -45,7 +53,7 @@ All notable changes to this project are recorded here. The format follows
 
 - **Docker in one command, as polanon has it.** The README starts the published image with the
   administrator's first password and the provider key in `ADMIN_PASSWORD` and `LLM_API_KEY`, on a
-  port this machine alone can reach and on the pinned minor version, `ghcr.io/boromat/polgate:0.3`,
+  port this machine alone can reach and on the pinned minor version, `ghcr.io/boromat/polgate:0.4`,
   instead of three commands that waited for a generated password. A table names the hub's image,
   polanon on PyPI and polanon's gateway image, and upgrading in Docker is three commands. CI starts
   the image the same way and signs in with that password.
