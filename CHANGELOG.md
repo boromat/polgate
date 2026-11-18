@@ -6,6 +6,13 @@ All notable changes to this project are recorded here. The format follows
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-11-18
+
+polanon 0.4.0 masks a person named again in another case as `<OSOBA_1:dopełniacz>`. The hub now
+requires it and reads such tokens wherever it counted or trimmed tokens itself: a conversation
+title keeps them whole and draws them as bars, and the count under a message just sent matches
+the one after a reload.
+
 ### Fixed
 
 - **A conversation title keeps a token with a case whole.** polanon 0.4.0 masks a person named

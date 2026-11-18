@@ -11,8 +11,9 @@ Version 0.3.0, dated 2026-11-17, adds stage B, the company knowledge base, answe
 requests from the admin panel, restores names in the case the answer needs and requires polanon
 0.3.9 (see *0.3.0*). Version 0.4.0, dated 2026-11-17, redesigns the interface: a chat with nothing
 above it, pinned conversations, Markdown answers, a phone layout, an admin panel that says what it
-did, and the Docker image started in one command (see step 7 and the changelog). What is left is
-under *Known detection gaps* and under *After MVP*.
+did, and the Docker image started in one command (see step 7 and the changelog). Version 0.4.1,
+dated 2026-11-18, requires polanon 0.4.0 and reads its tokens with a case in titles and in the
+masked count (see *0.4.1*). What is left is under *Known detection gaps* and under *After MVP*.
 
 Read `CLAUDE.md` (rules) and `docs/ARCHITECTURE.md` (data flow) first. Run `/env-check` at the start
 of a session and `/quality-gate` before every commit, and `/pii-safety-review` as well for anything
@@ -208,7 +209,7 @@ moved to polanon and has grown since; the current numbers are in its
 - [x] The company knowledge base, stage B: see *Company knowledge base* below.
 - [x] Data subject requests: find, export and erase one person, under Admin, Data subjects.
 
-### After 0.4.0
+### 0.4.1 (2026-11-18)
 - [x] polanon 0.4.0 as the lower bound. It masks a person named again in another case as
       `<OSOBA_1:dopełniacz>`, which `TOKEN_PATTERN` does not match, so a conversation title that
       opened with one lost its `<` and showed the rest as text. The title code in
