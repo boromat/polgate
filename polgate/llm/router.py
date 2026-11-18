@@ -16,7 +16,7 @@ from typing import Literal
 import httpx
 from polanon import Anonymizer, StreamRestorer, mask_known_values
 from polanon.judge.base import JudgeError
-from polanon.policy import TOKEN_PATTERN, entity_type_for_token
+from polanon.policy import CASED_TOKEN_PATTERN, entity_type_for_token
 from polanon.stream_restore import restored as restore_text
 from sqlmodel import Session, col, select
 
@@ -43,7 +43,9 @@ from polgate.vault import store as vault
 
 logger = logging.getLogger(__name__)
 
-_TOKEN_RE = re.compile(TOKEN_PATTERN)
+#: A token in masked text, with or without the case polanon writes after a colon: a person named
+#: again in another case is masked as ``<OSOBA_1:dopełniacz>``, and a title keeps it whole.
+_TOKEN_RE = re.compile(CASED_TOKEN_PATTERN)
 
 #: ``status`` tells the page what the hub is doing before the answer starts: ``indexing`` while a
 #: long attachment is indexed for the first time, ``capped`` when one was longer than it indexes.

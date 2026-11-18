@@ -6,7 +6,17 @@ All notable changes to this project are recorded here. The format follows
 
 ## [Unreleased]
 
+### Fixed
+
+- **A conversation title keeps a token with a case whole.** polanon 0.4.0 masks a person named
+  again in another case as `<OSOBA_1:dopełniacz>`. The title code read only tokens without a case,
+  so a title that opened with one lost its `<` and showed `OSOBA_1:dopełniacz>` as text instead of
+  a bar; the case also counted as a word when the title's sentence was chosen, and the whole token
+  as its length against the 60 characters. Titles now read tokens with `CASED_TOKEN_PATTERN`.
+
 ### Changed
+
+- polanon 0.4.0 or later is required (from 0.3.9), for `CASED_TOKEN_PATTERN`.
 
 - **The README's pictures follow the reader's theme**: the demo, in English and in Polish, and the
   audit log picture are recorded in the dark theme as well, and GitHub shows the dark ones to a
