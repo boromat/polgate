@@ -2,7 +2,7 @@
 
 Status: steps 1-12 are done and tested. The masking engine that steps 3-5 and 12 built lived here as
 `piianon/` and is now a library of its own, [polanon](https://github.com/boromat/polanon), which the
-hub installs from PyPI, now at 0.3.9 or later. Version 0.1.0 was released on 2026-11-03: the
+hub installs from PyPI, now at 0.4.0 or later. Version 0.1.0 was released on 2026-11-03: the
 repository is public and the image is on GitHub Container Registry. Version 0.2.0, dated
 2026-11-13, adds the search in long attachments, `start.bat` to run the hub on Windows and a leak
 evaluation that measures what reaches the provider, requires polanon 0.3.3, which fixed every leak
@@ -207,6 +207,12 @@ moved to polanon and has grown since; the current numbers are in its
       the check and the preview read cased tokens.
 - [x] The company knowledge base, stage B: see *Company knowledge base* below.
 - [x] Data subject requests: find, export and erase one person, under Admin, Data subjects.
+
+### After 0.4.0
+- [x] polanon 0.4.0 as the lower bound. It masks a person named again in another case as
+      `<OSOBA_1:dopełniacz>`, which `TOKEN_PATTERN` does not match, so a conversation title that
+      opened with one lost its `<` and showed the rest as text. The title code in
+      `polgate/llm/router.py` reads tokens with `CASED_TOKEN_PATTERN`.
 
 ### Search in long attachments (in 0.2.0)
 - [x] Search in long attachments, stage A: the files of one conversation. A file over the

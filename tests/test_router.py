@@ -282,6 +282,28 @@ class TestConversationTitles:
         title = _title_from("Wezwanie do zapłaty dla <FIRMA_12> i <OSOBA_3> jeszcze dziś", limit=30)
         assert title == "Wezwanie do zapłaty dla <FIRMA_12> i…"
 
+    def test_a_token_with_a_case_opens_a_title_whole_and_is_drawn_as_a_bar(self):
+        """polanon 0.4 masks a person named in another case as <OSOBA_1:dopełniacz>. Its "<" was
+        trimmed off the start of a title, and the rest showed as text instead of a bar."""
+        from polgate.llm.router import _title_from
+        from polgate.rendering import redacted
+
+        title = _title_from("<OSOBA_1:dopełniacz> nie było dziś na spotkaniu.")
+        assert title == "<OSOBA_1:dopełniacz> nie było dziś na spotkaniu"
+        assert "dopełniacz" not in redacted(title)
+
+    def test_the_case_of_a_token_is_not_a_word_of_the_title(self):
+        from polgate.llm.router import _title_from
+
+        masked = "Przypomnij <OSOBA_1:celownik> i <OSOBA_2:celownik>. Termin mija jutro."
+        assert _title_from(masked) == "Termin mija jutro"
+
+    def test_a_token_with_a_case_counts_as_its_bar_against_the_limit(self):
+        from polgate.llm.router import _title_from
+
+        title = _title_from("Podziękuj <OSOBA_1:celownik> za szybką odpowiedź", limit=30)
+        assert title == "Podziękuj <OSOBA_1:celownik> za szybką…"
+
     async def test_the_stored_title_never_contains_personal_data(self, turn_setup):
         session, conversation, user, anonymizer, policy = turn_setup
         await _collect(session, conversation, user, anonymizer, policy, ["x"], [])
