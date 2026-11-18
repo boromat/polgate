@@ -290,8 +290,10 @@ async def stream_answer(
             anonymizer=anonymizer,
             settings=get_settings(),
         ):
-            data = {"text": event.text, "detail": event.detail}
-            if event.type == "token":
+            data: dict[str, str | int] = {"text": event.text, "detail": event.detail}
+            if event.type == "preview":
+                data["count"] = event.count
+            elif event.type == "token":
                 answer.append(event.text)
             elif event.type == "done":
                 # The answer streams as plain text and is replaced, once whole, by its Markdown:

@@ -1315,6 +1315,29 @@ def test_the_first_answer_names_the_conversation_without_a_reload(admin_client, 
     assert "Kowalski" not in body.split("event: done")[1]
 
 
+def test_the_preview_counts_a_name_in_another_case_as_a_reload_does(admin_client, monkeypatch):
+    """The badge under a sent message counted the tokens of the masked text with a pattern that
+    missed <OSOBA_1:celownik>, so it said 1 where the same message said 2 after a reload."""
+    from polgate.llm import router
+
+    monkeypatch.setattr(router, "stream_chat", _fake_stream(["ok"]))
+    conversation_id = _open_conversation(admin_client)
+    admin_client.post(
+        f"/chat/{conversation_id}/send",
+        data={"text": "Jan Kowalski prosi o zwrot. Odpisz Janowi Kowalskiemu.", "extra_terms": ""},
+    )
+
+    body = admin_client.get(f"/chat/{conversation_id}/stream", headers=STREAM).text
+
+    lines = body.splitlines()
+    preview = json.loads(lines[lines.index("event: preview") + 1][5:])
+    assert "<OSOBA_1:celownik>" in preview["text"]
+    with Session(get_engine()) as session:
+        stored = session.get(Message, int(preview["detail"]))
+        assert stored is not None
+        assert preview["count"] == stored.entity_count == 2
+
+
 def test_an_answer_offers_to_copy_itself(admin_client, monkeypatch):
     from polgate.llm import router
 
