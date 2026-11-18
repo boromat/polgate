@@ -213,6 +213,9 @@ moved to polanon and has grown since; the current numbers are in its
       `<OSOBA_1:dopełniacz>`, which `TOKEN_PATTERN` does not match, so a conversation title that
       opened with one lost its `<` and showed the rest as text. The title code in
       `polgate/llm/router.py` reads tokens with `CASED_TOKEN_PATTERN`.
+- [x] The masked count under a message just sent comes from the server with the `preview` event
+      (`TurnEvent.count`, the message's `entity_count`) instead of `app.js` counting tokens with a
+      pattern of its own, which missed cased tokens and said 1 where a reload said 2.
 
 ### Search in long attachments (in 0.2.0)
 - [x] Search in long attachments, stage A: the files of one conversation. A file over the

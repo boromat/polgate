@@ -54,11 +54,16 @@ EventType = Literal["status", "preview", "token", "done", "error"]
 
 @dataclass
 class TurnEvent:
-    """One server-sent event of a streamed turn."""
+    """One server-sent event of a streamed turn.
+
+    ``count`` goes with ``preview``: how many fragments of the message were masked, the number the
+    stored message keeps as its ``entity_count`` and the page shows after a reload.
+    """
 
     type: EventType
     text: str = ""
     detail: str = ""
+    count: int = 0
 
 
 def _history_messages(
@@ -469,7 +474,12 @@ async def run_turn(
         session.refresh(user_message)
 
     # The message id lets the page offer the stored preview for a message it has not reloaded.
-    yield TurnEvent("preview", text=result.anonymized, detail=str(user_message.id))
+    yield TurnEvent(
+        "preview",
+        text=result.anonymized,
+        detail=str(user_message.id),
+        count=user_message.entity_count,
+    )
 
     messages = [{"role": "system", "content": system_prompt(user.language)}, *conversation_messages]
     restorer = StreamRestorer(turn_mapping)

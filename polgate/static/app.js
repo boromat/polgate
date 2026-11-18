@@ -16,8 +16,6 @@
     judge_unavailable: "judgeLabel",
   };
 
-  var TOKEN = /<[A-Z_]+_\d+>/g;
-
   function messageBox() {
     return document.getElementById("messages");
   }
@@ -81,13 +79,13 @@
 
   /* Once the message is masked and stored, show under it what the provider is about to receive:
      how many values became tokens, or plainly that nothing did, and the same preview button a
-     reloaded conversation has. */
-  function showSent(question, maskedText, messageId) {
+     reloaded conversation has. The count is the server's, the one the message keeps: counting the
+     tokens here missed a name masked again in another case, <OSOBA_1:celownik>. */
+  function showSent(question, count, messageId) {
     var meta = question && question.querySelector("[data-sent-meta]");
     if (!meta) {
       return;
     }
-    var count = (maskedText.match(TOKEN) || []).length;
     var time = meta.querySelector("[data-local-time]");
     time.setAttribute("datetime", new Date().toISOString());
     localTime(time);
@@ -182,7 +180,7 @@
 
     source.addEventListener("preview", function (event) {
       var data = read(event);
-      showSent(question, data.text || "", data.detail);
+      showSent(question, Number(data.count) || 0, data.detail);
       if (!started) {
         setWaiting(sink, article.dataset.waitingLabel);
       }

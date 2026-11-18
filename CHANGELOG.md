@@ -13,6 +13,10 @@ All notable changes to this project are recorded here. The format follows
   so a title that opened with one lost its `<` and showed `OSOBA_1:dopełniacz>` as text instead of
   a bar; the case also counted as a word when the title's sentence was chosen, and the whole token
   as its length against the 60 characters. Titles now read tokens with `CASED_TOKEN_PATTERN`.
+- **The count under a message just sent matches the one after a reload.** The page counted the
+  tokens of the masked text itself, with a pattern that missed `<OSOBA_1:celownik>`, so "Jan
+  Kowalski prosi o zwrot. Odpisz Janowi Kowalskiemu." showed "Masked: 1" until a reload made it 2.
+  The server now sends the number the message keeps with the preview, and the page shows that.
 
 ### Changed
 
