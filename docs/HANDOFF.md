@@ -218,6 +218,12 @@ moved to polanon and has grown since; the current numbers are in its
       (`TurnEvent.count`, the message's `entity_count`) instead of `app.js` counting tokens with a
       pattern of its own, which missed cased tokens and said 1 where a reload said 2.
 
+### After 0.4.1
+- [x] The search in attachments reads tokens with `CASED_TOKEN_PATTERN`
+      (`polgate/retrieval/select.py`): a token with a case counts as the token it declines when
+      passages are ranked, and a long row is never cut inside one. `polgate/knowledge/search.py`
+      keeps `TOKEN_PATTERN` on purpose, since the stable tokens of the index never carry a case.
+
 ### Search in long attachments (in 0.2.0)
 - [x] Search in long attachments, stage A: the files of one conversation. A file over the
       attachment budget is indexed on the first turn that needs it, in passages of

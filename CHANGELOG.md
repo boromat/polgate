@@ -6,6 +6,15 @@ All notable changes to this project are recorded here. The format follows
 
 ## [Unreleased]
 
+### Fixed
+
+- **The search in attachments knows a person named in another case.** It read only tokens without
+  a case, so `<OSOBA_1:dopełniacz>` in a question met nothing in a passage about `<OSOBA_1>`, and
+  its label and case were matched as words instead; a passage holding such a token did not count
+  for the person either. A token with a case now counts as the token it declines, and a long row
+  of a table is never cut inside one. The knowledge base was not affected: its tokens carry no
+  case.
+
 ## [0.4.1] - 2026-11-18
 
 polanon 0.4.0 masks a person named again in another case as `<OSOBA_1:dopełniacz>`. The hub now

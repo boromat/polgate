@@ -70,6 +70,25 @@ def test_a_token_in_the_question_outweighs_words_in_common():
     assert scores[1] > scores[0] > scores[2] == 0
 
 
+def test_a_token_with_a_case_in_the_question_is_the_person_in_the_passage():
+    """polanon 0.4 masks a person named again in another case as <OSOBA_1:dopełniacz>. The ranking
+    read only tokens without a case, so that token met nothing in the passages, and its "OSOBA"
+    and "dopełniacz" were taken for words instead."""
+    texts = [
+        "Wynagrodzenie zasadnicze pracownika działu sprzedaży wynosi 6200 zł.",
+        "<OSOBA_1> pracuje w dziale kadr od marca.",
+        "Regulamin pracy zdalnej obowiązuje od kwietnia.",
+    ]
+    scores = word_scores("Ile wynosi wynagrodzenie <OSOBA_1:dopełniacz>?", texts)
+    assert scores[1] > scores[0] > scores[2] == 0
+
+
+def test_a_token_with_a_case_in_a_passage_is_the_person_in_the_question():
+    texts = ["Umowę podpisano z <OSOBA_1:narzędnik> w maju.", "Umowa najmu lokalu w maju."]
+    scores = word_scores("Co wiemy o <OSOBA_1>?", texts)
+    assert scores[0] > scores[1] == 0
+
+
 def test_words_meet_across_polish_case_endings():
     scores = word_scores("Co mówi umowa o kaucji?", ["Zapisy umowy dotyczące kaucja", "Inne"])
     assert scores[0] > scores[1]
@@ -151,4 +170,12 @@ def test_a_cut_that_would_split_a_token_moves_to_its_start():
     text = "x" * 50 + "<OSOBA_12>" + "y" * 50
     passages = split_passages(text, target_chars=55)
     assert "<OSOBA_12>" in "".join(passages)
+    assert all(p.count("<") == p.count(">") for p in passages)
+
+
+def test_a_cut_never_splits_a_token_with_a_case():
+    text = "x" * 50 + "<OSOBA_12:dopełniacz>" + "y" * 50
+    passages = split_passages(text, target_chars=55)
+    assert tokens_in(text) == ["<OSOBA_12:dopełniacz>"]
+    assert [t for p in passages for t in tokens_in(p)] == ["<OSOBA_12:dopełniacz>"]
     assert all(p.count("<") == p.count(">") for p in passages)
