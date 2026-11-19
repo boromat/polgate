@@ -15,6 +15,13 @@ All notable changes to this project are recorded here. The format follows
   of a table is never cut inside one. The knowledge base was not affected: its tokens carry no
   case.
 
+### Changed
+
+- polanon 0.4.1 or later is required (from 0.4.0). It masks a PESEL however its digits are
+  grouped, which sent the last two digits of "508 101 123 54" in clear, a name written with
+  Cyrillic letters that look Latin, and a KRS number as KRS rather than NIP. The leak evaluation
+  still finds 0 of 125.
+
 ## [0.4.1] - 2026-11-18
 
 polanon 0.4.0 masks a person named again in another case as `<OSOBA_1:dopełniacz>`. The hub now
