@@ -22,12 +22,16 @@ from typing import Literal
 
 import numpy as np
 from numpy.typing import NDArray
-from polanon.policy import TOKEN_PATTERN
+from polanon.policy import CASED_TOKEN_PATTERN
+
+from polgate.tokens import base_token
 
 Vector = NDArray[np.float32]
 Mode = Literal["hybrid", "vector", "words"]
 
-_TOKEN_RE = re.compile(TOKEN_PATTERN)
+#: A token, also one with the case polanon writes when a person is named again in another case,
+#: ``<OSOBA_1:dopełniacz>``: it is never cut in two, and it is the same person as ``<OSOBA_1>``.
+_TOKEN_RE = re.compile(CASED_TOKEN_PATTERN)
 _WORD_RE = re.compile(r"[^\W\d_]{4,}")
 _SENTENCE_END = re.compile(r"(?<=[.!?…])\s+")
 #: Letters a word is matched by, so the case endings of Polish do not keep it apart from itself.
@@ -192,9 +196,9 @@ def _cosines(question_vector: Vector | None, passages: Sequence[Passage]) -> NDA
 def word_scores(question: str, texts: Sequence[str]) -> NDArray[np.float64]:
     """Score each text by the question's terms it contains, rarer terms counting more.
 
-    A term is a token, matched exactly, or a word of four letters or more, matched by its first
-    five letters regardless of case. Each term found adds its inverse document frequency, and a
-    token counts three times as much as a word.
+    A term is a token, matched exactly whatever grammatical case it carries, or a word of four
+    letters or more, matched by its first five letters regardless of case. Each term found adds
+    its inverse document frequency, and a token counts three times as much as a word.
     """
     wanted = _terms(question)
     if not wanted or not texts:
@@ -213,8 +217,12 @@ def word_scores(question: str, texts: Sequence[str]) -> NDArray[np.float64]:
 
 
 def _terms(text: str) -> dict[str, float]:
-    """Return the terms of a text with their weight: tokens exactly, words by their stem."""
-    terms = dict.fromkeys(tokens_in(text), _TOKEN_WEIGHT)
+    """Return the terms of a text with their weight: tokens exactly, words by their stem.
+
+    A token with a case is the token it declines, so ``<OSOBA_1:dopełniacz>`` in a question meets
+    ``<OSOBA_1>`` in a passage, and neither its label nor its case is taken for a word.
+    """
+    terms = dict.fromkeys((base_token(match) for match in _TOKEN_RE.finditer(text)), _TOKEN_WEIGHT)
     for word in _WORD_RE.findall(_TOKEN_RE.sub(" ", text)):
         terms.setdefault(word.casefold()[:_STEM], 1.0)
     return terms
