@@ -13,4 +13,4 @@ docs/ARCHITECTURE.md and docs/HANDOFF.md):
     web            HTML routers (Jinja2 + HTMX)
 """
 
-__version__ = "0.4.1"
+__version__ = "0.4.2"

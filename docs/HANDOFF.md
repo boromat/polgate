@@ -13,7 +13,9 @@ requests from the admin panel, restores names in the case the answer needs and r
 above it, pinned conversations, Markdown answers, a phone layout, an admin panel that says what it
 did, and the Docker image started in one command (see step 7 and the changelog). Version 0.4.1,
 dated 2026-11-18, requires polanon 0.4.0 and reads its tokens with a case in titles and in the
-masked count (see *0.4.1*). What is left is under *Known detection gaps* and under *After MVP*.
+masked count (see *0.4.1*). Version 0.4.2, dated 2026-11-19, reads them in the search in
+attachments too and requires polanon 0.4.1 (see *0.4.2*). What is left is under *Known detection
+gaps* and under *After MVP*.
 
 Read `CLAUDE.md` (rules) and `docs/ARCHITECTURE.md` (data flow) first. Run `/env-check` at the start
 of a session and `/quality-gate` before every commit, and `/pii-safety-review` as well for anything
@@ -218,7 +220,7 @@ moved to polanon and has grown since; the current numbers are in its
       (`TurnEvent.count`, the message's `entity_count`) instead of `app.js` counting tokens with a
       pattern of its own, which missed cased tokens and said 1 where a reload said 2.
 
-### After 0.4.1
+### 0.4.2 (2026-11-19)
 - [x] The search in attachments reads tokens with `CASED_TOKEN_PATTERN`
       (`polgate/retrieval/select.py`): a token with a case counts as the token it declines when
       passages are ranked, and a long row is never cut inside one. `polgate/knowledge/search.py`

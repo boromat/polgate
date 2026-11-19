@@ -6,6 +6,12 @@ All notable changes to this project are recorded here. The format follows
 
 ## [Unreleased]
 
+## [0.4.2] - 2026-11-19
+
+The search in attachments reads polanon's tokens with a case too, so a question about a person
+named in another case finds the passages about that person, and the hub requires polanon 0.4.1,
+which masks a PESEL in any grouping, names in lookalike letters and KRS numbers as such.
+
 ### Fixed
 
 - **The search in attachments knows a person named in another case.** It read only tokens without
