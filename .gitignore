@@ -18,3 +18,8 @@ htmlcov/
 # build output
 dist/
 build/
+
+# Claude Code files that belong to one machine: the preview config holds local paths. The shared
+# skills in .claude/skills/ stay in the repository.
+.claude/launch.json
+.claude/settings.local.json
