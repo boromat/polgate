@@ -98,7 +98,7 @@ On 19 November 2026 with polanon 0.4.1, which the hub now requires, the result i
 125 values leaked, 0 phrases masked anyway, no turn refused, 60 of 60 answers restored exactly and
 2 values masked off the list.
 
-On 22 November 2026 with polanon 0.4.2, which the hub now requires, and its `leaked_tokens` as the
+On 22 November 2026 with polanon 0.4.3, which the hub now requires, and its `leaked_tokens` as the
 last check before sending, the result is the same as with the hub's own check on 0.4.1 or 0.4.2:
 0 of 125 values leaked, 0 phrases masked anyway, no turn refused, 60 of 60 answers restored exactly
 and the same 2 values masked off the list. The two checks agreed on all 75 payloads the run checked,
