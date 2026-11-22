@@ -17,7 +17,6 @@ import httpx
 from polanon import Anonymizer, StreamRestorer, mask_known_values
 from polanon.judge.base import JudgeError
 from polanon.policy import CASED_TOKEN_PATTERN, entity_type_for_token
-from polanon.stream_restore import restored as restore_text
 from sqlmodel import Session, col, select
 
 from polgate import audit
@@ -37,7 +36,6 @@ from polgate.models import (
     utcnow,
 )
 from polgate.retrieval.search import AttachmentSearch, SearchResult, SearchUnavailableError
-from polgate.tokens import WRITTEN_TOKEN_RE, base_token
 from polgate.vault import fingerprints
 from polgate.vault import store as vault
 
@@ -327,18 +325,6 @@ def _trimmed(fragment: str) -> str:
     return text
 
 
-def _for_sweep(answer: str, mapping: dict[str, str]) -> str:
-    """Restore an answer for the output sweep with every name in the form the mapping holds.
-
-    A token with a case comes back declined, "Janie Kowalski" for "Janowi Kowalskiemu", and
-    polanon's sweep, which knows a known name with Polish endings glued on but not one whose stem
-    changes, reported every such answer as holding a person the message never named. Restored
-    without the cases, the answer holds the same tokens and nothing the sweep has to guess about.
-    """
-    plain = WRITTEN_TOKEN_RE.sub(base_token, answer)
-    return restore_text(plain, mapping)
-
-
 async def run_turn(
     session: Session,
     conversation: Conversation,
@@ -538,10 +524,9 @@ async def run_turn(
 
     restored = "".join(restored_parts)
     # Same reason the guards run in a thread inside the pipeline: the sweep runs them again, over
-    # the whole answer, and the event loop still has other people's requests to serve.
-    report = await asyncio.to_thread(
-        anonymizer.sweep, _for_sweep("".join(raw_parts), turn_mapping), turn_mapping
-    )
+    # the whole answer, and the event loop still has other people's requests to serve. It reads
+    # the answer as the employee sees it, with the names declined.
+    report = await asyncio.to_thread(anonymizer.sweep, restored, turn_mapping)
     session.add(
         Message(
             conversation_id=_require_id(conversation),
