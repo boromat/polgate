@@ -9,13 +9,10 @@ from __future__ import annotations
 
 import json
 import logging
-import re
 from collections.abc import AsyncIterator, Iterable, Mapping
 
 import httpx
 from polanon import leaked_tokens
-
-from polgate.tokens import WRITTEN_TOKEN_RE, base_token
 
 logger = logging.getLogger(__name__)
 
@@ -56,47 +53,21 @@ def assert_no_raw_values(messages: Iterable[Mapping[str, str]], mapping: Mapping
     by the rules the masking follows, independently of how the text was masked: a value that is
     part of a token's label, as the denylisted word "KARTA" is of "<KARTA_1>", a PIN inside a date
     and a short surname inside a longer word ("Lis" in "Lista") are no leak, since they would not be
-    masked either. It reads a token whole, so the messages are searched once more with the inside
-    of the tokens that can carry a value written out; see :func:`_written_out`.
+    masked either. Token-shaped text that can carry a value is read too: a word after a token's
+    colon that names no case, as in ``<OSOBA_1:Kowalski>``, and a placeholder that stands for itself
+    in the mapping, ``<ADMIN_2024>`` where ``ADMIN_2024`` is a password.
 
     Raises:
         LLMError: when a mapping value appears in any message content. The error names the token,
             never the value, so it may be logged and audited.
     """
     contents = [str(message.get("content", "")) for message in messages]
-    opened = [_written_out(content, mapping) for content in contents]
-    leaked = leaked_tokens([*contents, *(text for text in opened if text is not None)], mapping)
+    leaked = leaked_tokens(contents, mapping)
     if leaked:
         token = leaked[0]
         raise LLMError(
             f"refusing to send: original value for {token} present in the payload", token=token
         )
-
-
-def _written_out(content: str, mapping: Mapping[str, str]) -> str | None:
-    """Return the content with the inside of every token that can carry a value written out.
-
-    polanon reads token-shaped text as a token and never looks inside it, and two kinds carry a
-    value all the same. The word after a token's colon is a case only when one was written there:
-    ``<OSOBA_1:Kowalski>``, typed by an employee or replayed from an answer, holds a surname, and
-    the masking leaves it as it is. A placeholder an employee typed stands for itself in the
-    mapping, and its name can be a value the mapping hides, ``<ADMIN_2024>`` where ``ADMIN_2024``
-    is a password. Written out in place, ``Kowalski`` and ``ADMIN_2024`` are searched with the
-    sentence around them; every other token stays, so a label is still no leak.
-
-    Returns:
-        The content with those tokens written out, or None when it holds neither kind.
-    """
-
-    def write_out(match: re.Match[str]) -> str:
-        token = base_token(match)
-        words = [token[1:-1]] if mapping.get(token) == token else []
-        if match["case"]:
-            words.append(match["case"])
-        return " ".join(words) if words else match.group(0)
-
-    opened = WRITTEN_TOKEN_RE.sub(write_out, content)
-    return None if opened == content else opened
 
 
 async def stream_chat(

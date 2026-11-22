@@ -1,5 +1,6 @@
 """One full chat turn, against a fake provider, with the no-leak guarantee asserted."""
 
+import dataclasses
 import json
 
 import httpx
@@ -575,20 +576,15 @@ async def test_a_name_comes_back_in_the_case_the_model_asks_for(turn_setup):
     assert not session.exec(select(AuditEvent).where(AuditEvent.event == "output_sweep_hit")).all()
 
 
-async def test_a_surname_typed_after_a_tokens_colon_is_refused_and_never_logged(turn_setup, caplog):
-    """polanon reads "<OSOBA_1:Kowalski>" as a token and leaves the surname in it as written."""
+async def test_a_surname_typed_after_a_tokens_colon_never_reaches_the_provider(turn_setup):
+    """A surname after a token's colon, "<OSOBA_1:Kowalski>", goes out masked or not at all."""
     session, conversation, user, _, policy = turn_setup
     anonymizer = Anonymizer([PersonNameGuard()], enabled=set(ENTITY_TYPES))
     captured: list[dict] = []
     for text in ("Umowa dla Jan Kowalski.", "Kowalski podpisze jutro."):
         await _collect(session, conversation, user, anonymizer, policy, ["ok"], captured, text=text)
-    surname = next(
-        token
-        for token, value in vault.load_mapping(session, conversation.id).items()
-        if value == "Kowalski"
-    )
 
-    events = await _collect(
+    await _collect(
         session,
         conversation,
         user,
@@ -599,12 +595,32 @@ async def test_a_surname_typed_after_a_tokens_colon_is_refused_and_never_logged(
         text="Wyślij to <OSOBA_1:Kowalski> jutro.",
     )
 
+    assert "Kowalski" not in json.dumps(captured, ensure_ascii=False)
+
+
+async def test_a_value_the_masking_missed_is_refused_and_never_logged(
+    turn_setup, monkeypatch, caplog
+):
+    """The last check is there for a miss: the turn stops, and only the token is written down."""
+    session, conversation, user, anonymizer, policy = turn_setup
+    masking = anonymizer.anonymize
+
+    async def missing_everything(text, mapping=None):
+        return dataclasses.replace(await masking(text, mapping), anonymized=text)
+
+    monkeypatch.setattr(anonymizer, "anonymize", missing_everything)
+    captured: list[dict] = []
+
+    events = await _collect(session, conversation, user, anonymizer, policy, ["ok"], captured)
+
     assert [(event.type, event.detail) for event in events] == [("error", "refused_unmasked")]
-    assert len(captured) == 2
+    assert captured == []
     row = session.exec(select(AuditEvent).where(AuditEvent.event == "turn_refused_unmasked")).one()
-    assert row.detail == f"token={surname}"
+    assert row.detail.startswith("token=<")
     assert "turn refused before sending" in caplog.text
-    assert "Kowalski" not in caplog.text
+    for value in ("Jan Kowalski", "50810112354", "jan@example.com"):
+        assert value not in caplog.text
+        assert value not in row.detail
 
 
 @pytest.mark.parametrize("language", ["pl", "en"])
