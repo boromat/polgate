@@ -98,6 +98,15 @@ On 19 November 2026 with polanon 0.4.1, which the hub now requires, the result i
 125 values leaked, 0 phrases masked anyway, no turn refused, 60 of 60 answers restored exactly and
 2 values masked off the list.
 
+On 22 November 2026 with polanon 0.4.2, which the hub now requires, and its `leaked_tokens` as the
+last check before sending, the result is the same as with the hub's own check on 0.4.1 or 0.4.2:
+0 of 125 values leaked, 0 phrases masked anyway, no turn refused, 60 of 60 answers restored exactly
+and the same 2 values masked off the list. The two checks agreed on all 75 payloads the run checked,
+60 chat requests and 15 batches for the embeddings endpoint. Every value of those payloads'
+mappings was then written into one of them once more in another shape: the new check found 225
+shapes the old one missed (88 in capitals, 57 in lowercase, 64 with no-break spaces and 16 with
+their spaces left out), and the old one found none the new one missed.
+
 Having found no leak in conversations its author wrote says little about conversations nobody has
 written yet. Each new miss belongs in `conversations.json`, and in `known_gaps.json` until polanon
 fixes it.

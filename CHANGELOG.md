@@ -6,6 +6,29 @@ All notable changes to this project are recorded here. The format follows
 
 ## [Unreleased]
 
+The hub requires polanon 0.4.2 and hands it three things it did itself: the last check before a
+call leaves, a document's second masking for the knowledge base, and the answer the sweep reads.
+
+### Changed
+
+- **The last check before sending is polanon's `leaked_tokens`.** `assert_no_raw_values` looked
+  for each value letter for letter, with polanon's thresholds for a short number and a short
+  surname copied in by hand, so a value in capitals, with a no-break space or with its spaces left
+  out went out unnoticed. It now asks polanon, which searches by the rules the masking follows:
+  on the evaluation's 75 payloads both checks agree, and with every value of their mappings
+  written in another shape, the new one finds 225 the old one missed and misses none it found. The
+  refusal still names the token and never the value, in the log, the error and the audit row.
+  polanon reads a token whole, so the hub still writes out the two kinds of token that can carry a
+  value before the check: a surname typed after a token's colon, `<OSOBA_1:Kowalski>`, and a
+  placeholder an employee typed whose name is a value the mapping hides.
+- **A document for the knowledge base is masked in one call.** polanon 0.4.2 masks a surname
+  written alone in another case, "Wróblowi" after "Jan Wróbel", the first time it indexes a
+  document, so the hub's second `index_chunks` call is gone.
+- **The output sweep reads the answer as it was restored.** It read an answer restored without
+  its cases, since polanon reported "Janie Kowalski" for "Janowi Kowalskiemu" as a person nobody
+  sent; 0.4.2 knows a person the restore declined.
+- polanon 0.4.2 or later is required (from 0.4.1). The leak evaluation still finds 0 of 125.
+
 ## [0.4.2] - 2026-11-19
 
 The search in attachments reads polanon's tokens with a case too, so a question about a person

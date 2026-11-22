@@ -2,7 +2,7 @@
 
 Status: steps 1-12 are done and tested. The masking engine that steps 3-5 and 12 built lived here as
 `piianon/` and is now a library of its own, [polanon](https://github.com/boromat/polanon), which the
-hub installs from PyPI, now at 0.4.1 or later. Version 0.1.0 was released on 2026-11-03: the
+hub installs from PyPI, now at 0.4.2 or later. Version 0.1.0 was released on 2026-11-03: the
 repository is public and the image is on GitHub Container Registry. Version 0.2.0, dated
 2026-11-13, adds the search in long attachments, `start.bat` to run the hub on Windows and a leak
 evaluation that measures what reaches the provider, requires polanon 0.3.3, which fixed every leak
@@ -228,6 +228,15 @@ moved to polanon and has grown since; the current numbers are in its
 - [x] polanon 0.4.1 as the lower bound: a PESEL in any grouping after its label, names in Cyrillic
       lookalike letters, a KRS number as KRS; the leak evaluation still finds 0 of 125.
 
+### Unreleased
+- [x] polanon 0.4.2 as the lower bound, and three of the hub's own workarounds removed:
+      - `assert_no_raw_values` (`polgate/llm/openai_compat.py`) asks `polanon.leaked_tokens`
+        instead of searching each value itself with the masking's thresholds copied in
+        (`_SHORT_NUMBER_LENGTHS`, `_short_word`, `_without_tokens`). It writes out the two kinds of
+        token polanon does not look inside, `_written_out`; see *Known detection gaps*.
+      - `polgate/knowledge/index.py` calls `index_chunks` once.
+      - `polgate/llm/router.py` sweeps the answer as restored; `_for_sweep` is gone.
+
 ### Search in long attachments (in 0.2.0)
 - [x] Search in long attachments, stage A: the files of one conversation. A file over the
       attachment budget is indexed on the first turn that needs it, in passages of
@@ -353,11 +362,17 @@ that is also a word typed in lowercase before a common surname.
   "anna.kowalczyk" after "Login". A fix in polanon would join a known first name, a `.`, `_` or `-`
   and a word that reads as a surname into one person, make the local part of a masked address of
   that shape a known value, and accept five letters in the login rule when a separator is there.
-- `index_chunks` stores the surname of a person it finds by the full name, "Wróbel" of "Jan
-  Wróbel", but masks the surname's other forms written alone in the same document, "Wróbla",
-  "Wróblowi", only on a later call, once the store holds it: one call left them in clear in the
-  passages. The hub calls it twice (`knowledge/index.py`); polanon should look its new surnames up
-  within the same call, and the hub can then drop the second pass.
+- [x] `index_chunks` masked the other forms of a surname written alone, "Wróbla" and "Wróblowi"
+  after "Jan Wróbel", only on a later call, so the hub called it twice. polanon 0.4.2 does it in
+  one call, and the hub calls it once.
+- polanon reads token-shaped text as a token and never looks inside it, in the masking and in
+  `leaked_tokens` alike. Two kinds can carry a value: the word after a token's colon, where an
+  employee or a model wrote a surname instead of a case (`<OSOBA_1:Kowalski>` goes out as it is
+  typed once "Kowalski" is in the mapping), and a placeholder that stands for itself in the
+  mapping whose name is a value it hides (`<ADMIN_2024>` where `ADMIN_2024` is a password; the
+  masking masks it, but `leaked_tokens` drops the entries that stand for themselves before it
+  calls `mask_known_values`, so the last check misses it). The hub writes both out before its
+  check (`_written_out` in `polgate/llm/openai_compat.py`) and can drop that once polanon does.
 - [x] The hub's own gap, fixed: a word an employee asked to mask that also occurs in
   `SYSTEM_PROMPT` ("company") made the final check refuse every turn of that conversation. The
   check now reads what came from people and files and leaves out the system prompt, which is the
