@@ -47,9 +47,9 @@ used on its own; this one covers the hub, the library's detection limits include
   no-break space or with its spaces left out counts, and a short number such as a PIN counts only
   where the library masks it, which leaves a date that holds its digits alone (see below). The
   check is independent of how the text was masked, so it catches a value the masking missed; a
-  spelling the masking rules do not know either relies on the library. polanon reads a token
-  whole, so the hub writes out a surname typed after a token's colon (`<OSOBA_1:Kowalski>`) and a
-  placeholder that stands for itself before the check, since either can carry a value.
+  spelling the masking rules do not know either relies on the library. Token-shaped text that
+  can carry a value is read as well: a word after a token's colon that names no case
+  (`<OSOBA_1:Kowalski>`) and a placeholder that stands for itself.
   This is enforced in code and covered by tests; it does not depend on the model following
   instructions.
 - **Data at rest.** Originals in message history, file text and the vault are encrypted with Fernet and
