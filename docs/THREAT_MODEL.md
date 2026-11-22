@@ -42,10 +42,14 @@ used on its own; this one covers the hub, the library's detection limits include
 - **The outbound path itself.** `assert_no_raw_values` runs before every chat request to the provider
   and before every request to the embeddings endpoint, passages and question alike (the `remote`
   stage-2 judge, a testing aid, sends stage-1 text without it), and raises if any
-  known original value appears in the payload letter for letter, outside the conversation's tokens.
-  A short number such as a PIN counts only where the library masks it, which leaves a date that holds
-  its digits alone (see below). The check is independent of how the library masked, so it catches
-  a value the masking missed in its exact spelling; other spellings of a value rely on the library.
+  known original value appears in the payload outside the conversation's tokens. It asks polanon's
+  `leaked_tokens`, which searches by the rules the masking follows: a value in capitals, with a
+  no-break space or with its spaces left out counts, and a short number such as a PIN counts only
+  where the library masks it, which leaves a date that holds its digits alone (see below). The
+  check is independent of how the text was masked, so it catches a value the masking missed; a
+  spelling the masking rules do not know either relies on the library. polanon reads a token
+  whole, so the hub writes out a surname typed after a token's colon (`<OSOBA_1:Kowalski>`) and a
+  placeholder that stands for itself before the check, since either can carry a value.
   This is enforced in code and covered by tests; it does not depend on the model following
   instructions.
 - **Data at rest.** Originals in message history, file text and the vault are encrypted with Fernet and

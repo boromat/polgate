@@ -172,9 +172,11 @@ do dostawcy.
 - **Żadna znana wartość oryginalna nie wychodzi.** Funkcja `assert_no_raw_values` jest wywoływana
   przed każdym zapytaniem czatu do dostawcy (sędzia etapu 2 w trybie `remote`, narzędzie do testów,
   wysyła tekst po etapie 1 bez tej kontroli) i zgłasza wyjątek, jeśli którakolwiek znana wartość
-  oryginalna pojawi się w wysyłanych danych znak w znak, poza tokenami tej rozmowy; krótka liczba,
-  np. PIN, jest brana pod uwagę tam, gdzie polanon by ją zamaskował, więc data zawierająca jej cyfry
-  już nie. Pilnują tego kod i testy, a nie uprzejma prośba do modelu.
+  oryginalna pojawi się w wysyłanych danych poza tokenami tej rozmowy. Funkcja `leaked_tokens`
+  z polanon szuka według tych samych reguł co maskowanie, więc liczy się też wartość wielkimi
+  literami albo ze zmienionymi spacjami, a krótka liczba, np. PIN, jest brana pod uwagę tam, gdzie
+  polanon by ją zamaskował, więc data zawierająca jej cyfry już nie. Pilnują tego kod i testy,
+  a nie uprzejma prośba do modelu.
 - **Content-Security-Policy bez `unsafe-inline` i bez `unsafe-eval`.** Nigdzie w szablonach nie ma
   skryptu inline, handlera zdarzeń inline ani atrybutu `style=`; logika strony znajduje się w jednym
   pliku w `/static` i podpina się przez atrybuty `data-`. Test nie przejdzie, jeśli coś z tego wróci.

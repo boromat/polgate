@@ -45,6 +45,21 @@ def test_the_word_after_a_tokens_colon_is_still_searched():
         assert_no_raw_values([{"role": "assistant", "content": "Dla <OSOBA_1:Kowalski>."}], mapping)
 
 
+@pytest.mark.parametrize(
+    ("content", "mapping"),
+    [
+        ("Umowa dla JAN KOWALSKI.", {"<OSOBA_1>": "Jan Kowalski"}),
+        ("Umowa dla Jan" + chr(0xA0) + "Kowalski.", {"<OSOBA_1>": "Jan Kowalski"}),
+        ("Zadzwoń 600700800 jutro.", {"<TELEFON_1>": "600 700 800"}),
+    ],
+    ids=["capitals", "no-break space", "spaces left out"],
+)
+def test_a_value_written_in_another_shape_is_refused(content, mapping):
+    """The hub's own check looked for a value letter for letter and let these three go out."""
+    with pytest.raises(LLMError, match=next(iter(mapping))):
+        assert_no_raw_values([{"role": "user", "content": content}], mapping)
+
+
 def test_a_blank_mapping_value_never_blocks_a_send():
     """An empty string appears in every text; treating it as a leak would block everything."""
     assert assert_no_raw_values(MESSAGES, {"<OSOBA_1>": "   "}) is None
