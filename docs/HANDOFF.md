@@ -2,7 +2,7 @@
 
 Status: steps 1-12 are done and tested. The masking engine that steps 3-5 and 12 built lived here as
 `piianon/` and is now a library of its own, [polanon](https://github.com/boromat/polanon), which the
-hub installs from PyPI, now at 0.4.2 or later. Version 0.1.0 was released on 2026-11-03: the
+hub installs from PyPI, now at 0.4.3 or later. Version 0.1.0 was released on 2026-11-03: the
 repository is public and the image is on GitHub Container Registry. Version 0.2.0, dated
 2026-11-13, adds the search in long attachments, `start.bat` to run the hub on Windows and a leak
 evaluation that measures what reaches the provider, requires polanon 0.3.3, which fixed every leak
@@ -14,8 +14,10 @@ above it, pinned conversations, Markdown answers, a phone layout, an admin panel
 did, and the Docker image started in one command (see step 7 and the changelog). Version 0.4.1,
 dated 2026-11-18, requires polanon 0.4.0 and reads its tokens with a case in titles and in the
 masked count (see *0.4.1*). Version 0.4.2, dated 2026-11-19, reads them in the search in
-attachments too and requires polanon 0.4.1 (see *0.4.2*). What is left is under *Known detection
-gaps* and under *After MVP*.
+attachments too and requires polanon 0.4.1 (see *0.4.2*). Version 0.4.3, dated 2026-11-22,
+requires polanon 0.4.3 and leaves to it the last check before sending, a document's masking for
+the knowledge base in one call and the sweep of a declined answer (see *0.4.3*). What is left is
+under *Known detection gaps* and under *After MVP*.
 
 Read `CLAUDE.md` (rules) and `docs/ARCHITECTURE.md` (data flow) first. Run `/env-check` at the start
 of a session and `/quality-gate` before every commit, and `/pii-safety-review` as well for anything
@@ -228,12 +230,13 @@ moved to polanon and has grown since; the current numbers are in its
 - [x] polanon 0.4.1 as the lower bound: a PESEL in any grouping after its label, names in Cyrillic
       lookalike letters, a KRS number as KRS; the leak evaluation still finds 0 of 125.
 
-### Unreleased
-- [x] polanon 0.4.2 as the lower bound, and three of the hub's own workarounds removed:
+### 0.4.3 (2026-11-22)
+- [x] polanon 0.4.3 as the lower bound, and three of the hub's own workarounds removed:
       - `assert_no_raw_values` (`polgate/llm/openai_compat.py`) asks `polanon.leaked_tokens`
         instead of searching each value itself with the masking's thresholds copied in
-        (`_SHORT_NUMBER_LENGTHS`, `_short_word`, `_without_tokens`). It writes out the two kinds of
-        token polanon does not look inside, `_written_out`; see *Known detection gaps*.
+        (`_SHORT_NUMBER_LENGTHS`, `_short_word`, `_without_tokens`). 0.4.2's `leaked_tokens`
+        missed two kinds of token-shaped text the hub's own check had read (see *Known detection
+        gaps*); 0.4.3 reads both, so the hub needs nothing of its own around the call.
       - `polgate/knowledge/index.py` calls `index_chunks` once.
       - `polgate/llm/router.py` sweeps the answer as restored; `_for_sweep` is gone.
 
@@ -365,14 +368,13 @@ that is also a word typed in lowercase before a common surname.
 - [x] `index_chunks` masked the other forms of a surname written alone, "Wróbla" and "Wróblowi"
   after "Jan Wróbel", only on a later call, so the hub called it twice. polanon 0.4.2 does it in
   one call, and the hub calls it once.
-- polanon reads token-shaped text as a token and never looks inside it, in the masking and in
-  `leaked_tokens` alike. Two kinds can carry a value: the word after a token's colon, where an
-  employee or a model wrote a surname instead of a case (`<OSOBA_1:Kowalski>` goes out as it is
-  typed once "Kowalski" is in the mapping), and a placeholder that stands for itself in the
-  mapping whose name is a value it hides (`<ADMIN_2024>` where `ADMIN_2024` is a password; the
-  masking masks it, but `leaked_tokens` drops the entries that stand for themselves before it
-  calls `mask_known_values`, so the last check misses it). The hub writes both out before its
-  check (`_written_out` in `polgate/llm/openai_compat.py`) and can drop that once polanon does.
+- [x] polanon 0.4.2 read token-shaped text as a token and never looked inside it. Two kinds carry
+  a value: a word after a token's colon that names no case, a surname typed in place of one
+  (`<OSOBA_1:Kowalski>` went out as typed once "Kowalski" was in the mapping), and a placeholder
+  that stands for itself whose name is a value the mapping hides (`<ADMIN_2024>` where
+  `ADMIN_2024` is a password: the masking masked it, but `leaked_tokens` left the entries that
+  stand for themselves out, so the last check missed it). polanon 0.4.3 masks the first as
+  `<OSOBA_1:<OSOBA_2>>` and its `leaked_tokens` reports both, so the hub requires it.
 - [x] The hub's own gap, fixed: a word an employee asked to mask that also occurs in
   `SYSTEM_PROMPT` ("company") made the final check refuse every turn of that conversation. The
   check now reads what came from people and files and leaves out the system prompt, which is the
