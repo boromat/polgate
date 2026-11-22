@@ -575,6 +575,38 @@ async def test_a_name_comes_back_in_the_case_the_model_asks_for(turn_setup):
     assert not session.exec(select(AuditEvent).where(AuditEvent.event == "output_sweep_hit")).all()
 
 
+async def test_a_surname_typed_after_a_tokens_colon_is_refused_and_never_logged(turn_setup, caplog):
+    """polanon reads "<OSOBA_1:Kowalski>" as a token and leaves the surname in it as written."""
+    session, conversation, user, _, policy = turn_setup
+    anonymizer = Anonymizer([PersonNameGuard()], enabled=set(ENTITY_TYPES))
+    captured: list[dict] = []
+    for text in ("Umowa dla Jan Kowalski.", "Kowalski podpisze jutro."):
+        await _collect(session, conversation, user, anonymizer, policy, ["ok"], captured, text=text)
+    surname = next(
+        token
+        for token, value in vault.load_mapping(session, conversation.id).items()
+        if value == "Kowalski"
+    )
+
+    events = await _collect(
+        session,
+        conversation,
+        user,
+        anonymizer,
+        policy,
+        ["ok"],
+        captured,
+        text="Wyślij to <OSOBA_1:Kowalski> jutro.",
+    )
+
+    assert [(event.type, event.detail) for event in events] == [("error", "refused_unmasked")]
+    assert len(captured) == 2
+    row = session.exec(select(AuditEvent).where(AuditEvent.event == "turn_refused_unmasked")).one()
+    assert row.detail == f"token={surname}"
+    assert "turn refused before sending" in caplog.text
+    assert "Kowalski" not in caplog.text
+
+
 @pytest.mark.parametrize("language", ["pl", "en"])
 async def test_the_model_is_told_about_tokens_in_the_employees_language(turn_setup, language):
     session, conversation, user, anonymizer, policy = turn_setup
@@ -806,6 +838,7 @@ def test_a_refusal_names_the_token_and_nothing_else():
     with pytest.raises(LLMError) as raised:
         assert_no_raw_values([{"content": "PESEL 50810112354"}], {"<PESEL_1>": "50810112354"})
     assert raised.value.audit_detail == "token=<PESEL_1>"
+    assert "50810112354" not in str(raised.value)
     assert LLMError("connection reset").audit_detail == "transport"
 
 

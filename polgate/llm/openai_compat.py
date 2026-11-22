@@ -13,24 +13,13 @@ import re
 from collections.abc import AsyncIterator, Iterable, Mapping
 
 import httpx
-from polanon import mask_known_values
+from polanon import leaked_tokens
 
 from polgate.tokens import WRITTEN_TOKEN_RE, base_token
 
 logger = logging.getLogger(__name__)
 
 _DONE = "[DONE]"
-#: Stands in for a removed token, so a value cannot match across the place where one was.
-_GAP = chr(0)
-#: The lengths polanon calls a short number: four or five digits, such as a PIN. It leaves one
-#: alone inside a date, a time or an amount, and the check asks it where it would mask one.
-_SHORT_NUMBER_LENGTHS = range(4, 6)
-#: polanon looks for a known value shorter than this only as a whole word: the surname "Lis" it
-#: masks on its own is not in "Lista" or "Kotłownia", so the check does not find it there either.
-_WHOLE_WORD_BELOW = 4
-#: Polish case endings, so the same short surname written in another case ("Lisa", "Lisowi") is
-#: still found as the value it is.
-_CASE_ENDING = "owie|ach|ami|owi|em|om|ie|ów|[aeiuyąę]"
 
 
 class LLMError(RuntimeError):
@@ -62,61 +51,52 @@ class LLMError(RuntimeError):
 def assert_no_raw_values(messages: Iterable[Mapping[str, str]], mapping: Mapping[str, str]) -> None:
     """Fail loudly if any original value would be sent to the provider.
 
-    This is the core guarantee of the hub, so it is checked in code rather than trusted to reviews:
-    each original value is looked for letter for letter, independently of how the library masked.
-
-    Tokens are taken out of the content first: a value can be part of a token's label, as the
-    denylisted word "KARTA" is of "<KARTA_1>", and finding it there refused a payload that held no
-    original value at all. Token-shaped text stays where it is no token: a placeholder the user
-    typed, which the mapping records as standing for itself, and a value the mapping hides, such as
-    a password written as "<ADMIN_2024>". A short number such as a PIN counts only where the library
-    would mask it: "15.04.2025" does not hold the PIN 2025, and refusing it would refuse every date
-    of that year. A one-word value shorter than four letters, such as a surname masked on its own,
-    counts as a whole word or with a case ending ("Lis", "Lisa"), not inside another word ("Lista").
+    This is the core guarantee of the hub, so it is checked in code rather than trusted to reviews.
+    polanon's :func:`~polanon.leaked_tokens` searches every message for every value of the mapping
+    by the rules the masking follows, independently of how the text was masked: a value that is
+    part of a token's label, as the denylisted word "KARTA" is of "<KARTA_1>", a PIN inside a date
+    and a short surname inside a longer word ("Lis" in "Lista") are no leak, since they would not be
+    masked either. It reads a token whole, so the messages are searched once more with the inside
+    of the tokens that can carry a value written out; see :func:`_written_out`.
 
     Raises:
-        LLMError: when a mapping value appears in any message content.
+        LLMError: when a mapping value appears in any message content. The error names the token,
+            never the value, so it may be logged and audited.
     """
-    values = {token: value.strip() for token, value in mapping.items() if value != token}
-    hidden = set(values.values())
     contents = [str(message.get("content", "")) for message in messages]
-    stripped = [_without_tokens(content, mapping, hidden) for content in contents]
-    for token, value in values.items():
-        if not value:
-            continue
-        if value.isdigit() and len(value) in _SHORT_NUMBER_LENGTHS:
-            present = any(mask_known_values(text, {token: value}) != text for text in contents)
-        elif value.isalpha() and len(value) < _WHOLE_WORD_BELOW:
-            present = any(_short_word(value).search(text) for text in stripped)
-        else:
-            present = any(value in text for text in stripped)
-        if present:
-            raise LLMError(
-                f"refusing to send: original value for {token} present in the payload", token=token
-            )
+    opened = [_written_out(content, mapping) for content in contents]
+    leaked = leaked_tokens([*contents, *(text for text in opened if text is not None)], mapping)
+    if leaked:
+        token = leaked[0]
+        raise LLMError(
+            f"refusing to send: original value for {token} present in the payload", token=token
+        )
 
 
-def _short_word(value: str) -> re.Pattern[str]:
-    """Match a short value as a word of its own, bare or with a Polish case ending."""
-    return re.compile(rf"(?<!\w){re.escape(value)}(?:{_CASE_ENDING})?(?!\w)")
+def _written_out(content: str, mapping: Mapping[str, str]) -> str | None:
+    """Return the content with the inside of every token that can carry a value written out.
 
+    polanon reads token-shaped text as a token and never looks inside it, and two kinds carry a
+    value all the same. The word after a token's colon is a case only when one was written there:
+    ``<OSOBA_1:Kowalski>``, typed by an employee or replayed from an answer, holds a surname, and
+    the masking leaves it as it is. A placeholder an employee typed stands for itself in the
+    mapping, and its name can be a value the mapping hides, ``<ADMIN_2024>`` where ``ADMIN_2024``
+    is a password. Written out in place, ``Kowalski`` and ``ADMIN_2024`` are searched with the
+    sentence around them; every other token stays, so a label is still no leak.
 
-def _without_tokens(content: str, mapping: Mapping[str, str], hidden: set[str]) -> str:
-    """Replace every token with a character no value contains, except text that is no token.
-
-    A token a model wrote with a case, as a replayed answer holds it, goes like the token it
-    declines, but the word after its colon stays to be searched: ``<OSOBA_1:Kowalski>`` would
-    otherwise hide a surname from the check, which must never see less than the text holds.
+    Returns:
+        The content with those tokens written out, or None when it holds neither kind.
     """
 
-    def replace(match: re.Match[str]) -> str:
-        written = match.group(0)
+    def write_out(match: re.Match[str]) -> str:
         token = base_token(match)
-        if mapping.get(token) == token or written in hidden:
-            return written
-        return f"{_GAP}{match['case'] or ''}{_GAP}"
+        words = [token[1:-1]] if mapping.get(token) == token else []
+        if match["case"]:
+            words.append(match["case"])
+        return " ".join(words) if words else match.group(0)
 
-    return WRITTEN_TOKEN_RE.sub(replace, content)
+    opened = WRITTEN_TOKEN_RE.sub(write_out, content)
+    return None if opened == content else opened
 
 
 async def stream_chat(

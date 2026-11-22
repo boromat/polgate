@@ -159,9 +159,10 @@ treated as seriously as the outbound side.
 
 - **No known original leaves.** `assert_no_raw_values` runs before every chat request to the provider
   (the `remote` stage-2 judge, a testing aid, sends stage-1 text without it) and raises if any
-  known original appears in the payload letter for letter, outside the conversation's tokens; a short
-  number such as a PIN counts where polanon would mask it, so a date holding its digits does
-  not. Enforced in code and tests, not by asking the model nicely.
+  known original appears in the payload outside the conversation's tokens. polanon's `leaked_tokens`
+  searches by the rules the masking follows, so a value in capitals or with its spaces changed
+  counts too, and a short number such as a PIN counts where polanon would mask it, so a date
+  holding its digits does not. Enforced in code and tests, not by asking the model nicely.
 - **Content-Security-Policy with no `unsafe-inline` and no `unsafe-eval`.** There is no inline script,
   no inline event handler and no `style=` attribute anywhere in the templates; behaviour lives in one
   file under `/static` behind `data-` hooks. A test fails if any of it creeps back.
