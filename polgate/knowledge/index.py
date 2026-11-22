@@ -131,10 +131,6 @@ def _ingest(
     document_id = _require_id(document)
     mapping_store = KnowledgeMappingStore(session, document_id)
     try:
-        # Twice: polanon stores the surname of a person it finds by the full name, but masks the
-        # surname's other forms written alone, "Wróbla" or "Wróblowi", only once the store holds
-        # it. The first pass stores it; the second masks every form the store now knows.
-        index_chunks(anonymizer, chunks, mapping_store)
         masked = index_chunks(anonymizer, chunks, mapping_store)
         assert_no_raw_values([{"content": t} for t in masked.texts], masked.mapping)
     except (MaskingUnavailableError, PseudonymCollisionError, LLMError) as exc:
